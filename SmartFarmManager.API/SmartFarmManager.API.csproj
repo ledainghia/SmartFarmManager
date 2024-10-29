@@ -13,7 +13,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
     <Folder Include="Validation\" />
     <Folder Include="Payloads\Responses\" />
     <Folder Include="Payloads\Requests\" />
