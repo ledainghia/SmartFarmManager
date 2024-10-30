@@ -26,5 +26,16 @@
                 }
             };
         }
+        public static ApiResult<object> Fail(string message)
+        {
+            return new ApiResult<object>
+            {
+                Success = false,
+                Result = new
+                {
+                    message,
+                }
+            };
+        }
     }
 }
