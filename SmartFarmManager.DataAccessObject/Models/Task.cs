@@ -15,9 +15,9 @@ public partial class Task : EntityBase
     [StringLength(255)]
     public string? Description { get; set; }
 
-    public int AssignedToUserId { get; set; }
+    public int? AssignedToUserId { get; set; }
 
-    public int FarmId { get; set; }
+    public int? FarmId { get; set; }
 
     [Column(TypeName = "datetime")]
     public DateTime? DueDate { get; set; }
@@ -33,6 +33,11 @@ public partial class Task : EntityBase
 
     [Column(TypeName = "datetime")]
     public DateTime? CreatedAt { get; set; }
+    public int CreatedBy { get; set; }  // ID của người tạo
+    public int? ModifiedBy { get; set; } // ID của người chỉnh sửa (có thể null)
+
+    [Column(TypeName = "datetime")]
+    public DateTime? ModifiedAt { get; set; } // Thời gian chỉnh sửa
 
     [ForeignKey("AssignedToUserId")]
     [InverseProperty("Tasks")]

@@ -14,8 +14,6 @@
 
   <ItemGroup>
     <Folder Include="Validation\" />
-    <Folder Include="Payloads\Responses\" />
-    <Folder Include="Payloads\Requests\" />
   </ItemGroup>
 
   <ItemGroup>
