@@ -8,7 +8,7 @@ using System.Text;
 
 namespace SmartFarmManager.Repository.Repositories
 {
-    public class TaskRepository : RepositoryBaseAsync<Farm>, ITaskRepository
+    public class TaskRepository : RepositoryBaseAsync<DataAccessObject.Models.Task>, ITaskRepository
     {
         public TaskRepository(FarmsContext dbContext) : base(dbContext)
         {

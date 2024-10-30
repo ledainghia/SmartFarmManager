@@ -17,6 +17,7 @@ namespace SmartFarmManager.Repository.Interfaces
         IAlertUserRepository AlertUsers { get; }
         ICameraSurveillanceRepository CameraSurveillances { get; }
         IDeviceReadingRepository DeviceReadings { get; }
+        IFarmRepository Farms { get; }
         IFarmStaffAssignmentRepository FarmStaffAssignments { get; }
         IInventoryRepository Inventories { get; }
         IInventoryTransactionRepository InventoryTransactions { get; }
