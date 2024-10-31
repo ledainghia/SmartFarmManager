@@ -70,6 +70,152 @@ namespace SmartFarmManager.Service.Services
 
             return newTask;
         }
+
+        public Task<TaskDetailModel?> GetTaskDetailAsync(int taskId)
+        {
+            var task = await _unitOfWork.Tasks.GetByIdAsync(taskId);
+            if (task == null)
+            {
+                return null;
+            }
+
+            var taskHistories = await _unitOfWork.TaskHistories.GetByTaskIdAsync(taskId);
+
+            // Chuyển đổi sang TaskDetailModel
+            var taskDetailModel = new TaskDetailModel
+            {
+                Id = task.Id,
+                TaskName = task.TaskName,
+                Description = task.Description,
+                DueDate = task.DueDate,
+                TaskType = task.TaskType,
+                FarmId = task.FarmId,
+                AssignedToUserId = task.AssignedToUserId,
+                Status = task.Status,
+                CompleteAt = task.CompleteAt,
+                CreatedAt = task.CreatedAt,
+                ModifiedAt = task.ModifiedAt,
+                TaskHistories = taskHistories.Select(th => new TaskHistoryModel
+                {
+                    StatusBefore = th.StatusBefore,
+                    StatusAfter = th.StatusAfter,
+                    ChangedAt = th.ChangedAt
+                }).ToList()
+            };
+
+        }
+
+        public async System.Threading.Tasks.Task UpdateTaskAsync(int taskId, UpdateTaskModel model)
+        {
+            var taskToUpdate = await _unitOfWork.Tasks.GetByIdAsync(taskId);
+            if (taskToUpdate == null)
+            {
+                throw new ArgumentException("Task not found.");
+            }
+
+            // Cập nhật các trường nếu chúng không null
+            if (model.TaskName != null)
+                taskToUpdate.TaskName = model.TaskName;
+
+            if (model.Description != null)
+                taskToUpdate.Description = model.Description;
+
+            if (model.DueDate.HasValue)
+                taskToUpdate.DueDate = model.DueDate.Value;
+
+            if (model.TaskType != null)
+                taskToUpdate.TaskType = model.TaskType;
+
+            if (model.FarmId.HasValue)
+            {
+                var farmExists = await _unitOfWork.Farms.FindAsync(x=>x.Id==model.FarmId);
+                if (farmExists==null)
+                {
+                    throw new ArgumentException("The specified FarmId does not exist.");
+                }
+                taskToUpdate.FarmId = model.FarmId.Value;
+            }
+
+            if (model.AssignedToUserId.HasValue)
+            {
+                var userExists = await _unitOfWork.Users.FindAsync(x=>x.Id==model.AssignedToUserId);
+                if (userExists == null)
+                {
+                    throw new ArgumentException("The specified AssignedToUserId does not exist.");
+                }
+                taskToUpdate.AssignedToUserId = model.AssignedToUserId;
+            }
+
+            if (model.Status != null &&model.Status!=taskToUpdate.Status)
+            {
+                
+
+                // Lưu lịch sử thay đổi trạng thái
+                var taskHistory = new TaskHistory
+                {
+                    TaskId = taskToUpdate.Id,
+                    StatusBefore = taskToUpdate.Status,
+                    StatusAfter = model.Status,
+                    ChangedAt = DateTime.UtcNow
+                };
+                taskToUpdate.Status = model.Status;
+                await _unitOfWork.TaskHistories.CreateAsync(taskHistory);
+
+                // Nếu status là "Done", cập nhật CompleteAt
+                if (model.Status == TaskStatusEnum.DONE)
+                {
+                    taskToUpdate.CompletedAt = DateTime.UtcNow;
+                }
+            }
+
+
+            taskToUpdate.ModifiedAt = DateTime.UtcNow;
+            taskToUpdate.ModifiedBy = model.ModifiedBy;
+
+            await _unitOfWork.Tasks.UpdateAsync(taskToUpdate); // Cập nhật nhiệm vụ vào DbSet
+            await _unitOfWork.CommitAsync(); // Lưu thay đổi vào cơ sở dữ liệu
+
+        
+        }
+
+        public async System.Threading.Tasks.Task UpdateTaskStatusAsync(int taskId, string newStatus, int modifiedById)
+        {
+            var taskToUpdate = await _unitOfWork.Tasks.GetByIdAsync(taskId);
+            if (taskToUpdate == null)
+            {
+                throw new ArgumentException("Task not found.");
+            }
+
+            // Lưu trạng thái cũ để so sánh
+            var statusBefore = taskToUpdate.Status;
+
+            // Cập nhật trạng thái
+            taskToUpdate.Status = newStatus;
+
+            // Lưu lịch sử thay đổi trạng thái
+            var taskHistory = new TaskHistory
+            {
+                TaskId = taskToUpdate.Id,
+                StatusBefore = statusBefore,
+                StatusAfter = newStatus,
+                ChangedAt = DateTime.UtcNow
+            };
+            await _unitOfWork.TaskHistories.CreateAsync(taskHistory);
+
+            // Nếu trạng thái là "Done", cập nhật CompleteAt
+            if (newStatus == TaskStatusEnum.DONE)
+            {
+                taskToUpdate.CompletedAt = DateTime.UtcNow;
+            }
+
+            taskToUpdate.ModifiedAt = DateTime.UtcNow;
+            taskToUpdate.ModifiedBy = modifiedById;
+
+            await _unitOfWork.Tasks.UpdateAsync(taskToUpdate); // Cập nhật nhiệm vụ vào DbSet
+            await _unitOfWork.CommitAsync(); // Lưu thay đổi vào cơ sở dữ liệu
+        }
+
+        
     }
 
     
