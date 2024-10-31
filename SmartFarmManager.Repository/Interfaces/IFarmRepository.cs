@@ -9,5 +9,6 @@ namespace SmartFarmManager.Repository.Interfaces
 {
     public interface IFarmRepository : IRepositoryBaseAsync<Farm>
     {
+
     }
 }

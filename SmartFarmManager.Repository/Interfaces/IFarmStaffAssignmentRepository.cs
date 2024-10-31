@@ -9,5 +9,6 @@ namespace SmartFarmManager.Repository.Interfaces
 {
     public interface IFarmStaffAssignmentRepository : IRepositoryBaseAsync<FarmStaffAssignment>
     {
+        Task<List<FarmStaffAssignment>> GetByFarmIdAsync(int farmId);
     }
 }
