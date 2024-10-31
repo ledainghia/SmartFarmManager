@@ -1,4 +1,6 @@
 ﻿using SmartFarmManager.DataAccessObject.Models;
+using SmartFarmManager.Service.BusinessModels;
+using SmartFarmManager.Service.BusinessModels.QueryParameters;
 using SmartFarmManager.Service.BusinessModels.Task;
 using System;
 using System.Collections.Generic;
@@ -14,5 +16,7 @@ namespace SmartFarmManager.Service.Interfaces
         System.Threading.Tasks.Task UpdateTaskAsync(int taskId, UpdateTaskModel model);
         System.Threading.Tasks.Task UpdateTaskStatusAsync(int taskId, string newStatus, int modifiedById);
         Task<TaskDetailModel?> GetTaskDetailAsync(int taskId);
+        Task<PagedResult<TaskDetailModel>> GetAllTasksAsync(TasksQuery query);
+
     }
 }

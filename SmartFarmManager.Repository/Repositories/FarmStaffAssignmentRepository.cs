@@ -1,4 +1,5 @@
-﻿using SmartFarmManager.DataAccessObject.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -12,6 +13,12 @@ namespace SmartFarmManager.Repository.Repositories
     {
         public FarmStaffAssignmentRepository(FarmsContext dbContext) : base(dbContext)
         {
+        }
+
+        public async Task<List<FarmStaffAssignment>> GetByFarmIdAsync(int farmId)
+        {
+          return await _dbContext.FarmStaffAssignments.Include(x=>x.Farm)
+                .Include(x=>x.FarmStaff).Where(x=>x.FarmId == farmId) .ToListAsync();
         }
     }
 }

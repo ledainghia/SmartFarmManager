@@ -1,6 +1,9 @@
-﻿using SmartFarmManager.DataAccessObject.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository;
 using SmartFarmManager.Repository.Interfaces;
+using SmartFarmManager.Service.BusinessModels;
+using SmartFarmManager.Service.BusinessModels.QueryParameters;
 using SmartFarmManager.Service.BusinessModels.Task;
 using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Shared.Task;
@@ -71,15 +74,69 @@ namespace SmartFarmManager.Service.Services
             return newTask;
         }
 
-        public Task<TaskDetailModel?> GetTaskDetailAsync(int taskId)
+        public async Task<PagedResult<TaskDetailModel>> GetAllTasksAsync(TasksQuery query)
         {
-            var task = await _unitOfWork.Tasks.GetByIdAsync(taskId);
+            var tasksQuery = _unitOfWork.Tasks.FindAll(); // Giả sử có phương thức này trong repository
+
+            // Lọc theo trạng thái
+            if (!string.IsNullOrEmpty(query.Status))
+            {
+                tasksQuery = tasksQuery.Where(t => t.Status.Equals(query.Status, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Lọc theo loại nhiệm vụ
+            if (!string.IsNullOrEmpty(query.TaskType))
+            {
+                tasksQuery = tasksQuery.Where(t => t.TaskType.Equals(query.TaskType, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Sắp xếp
+            tasksQuery = query.SortDescending
+                ? tasksQuery.OrderByDescending(t => EF.Property<object>(t, query.SortBy))
+                : tasksQuery.OrderBy(t => EF.Property<object>(t, query.SortBy));
+
+            // Phân trang
+            var totalCount = await tasksQuery.CountAsync();
+            var tasks = await tasksQuery.Skip((query.PageIndex - 1) * query.PageSize)
+                                         .Take(query.PageSize)
+                                         .ToListAsync();
+
+            // Chuyển đổi sang TaskDetailResponse
+            var taskDetailResponses = tasks.Select(task => new TaskDetailModel
+            {
+                Id = task.Id,
+                TaskName = task.TaskName,
+                Description = task.Description,
+                DueDate = (DateTime)task.DueDate,
+                TaskType = task.TaskType,
+                FarmId = task.FarmId,
+                AssignedToUserId = task.AssignedToUserId,
+                Status = task.Status,
+                CompleteAt = task.CompletedAt,
+                CreatedAt = (DateTime) task.CreatedAt,
+                ModifiedAt = task.ModifiedAt
+            }).ToList();
+
+            // Trả về kết quả phân trang
+            return new PagedResult<TaskDetailModel>
+            {
+                Items = taskDetailResponses,
+                TotalItems = totalCount,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)query.PageSize),
+                CurrentPage = query.PageIndex,
+                PageSize = query.PageSize
+            };
+        }
+
+        public async Task<TaskDetailModel?> GetTaskDetailAsync(int taskId)
+        {
+            var task =  await _unitOfWork.Tasks.FindAsync(x=>x.Id==taskId);
             if (task == null)
             {
                 return null;
             }
 
-            var taskHistories = await _unitOfWork.TaskHistories.GetByTaskIdAsync(taskId);
+            var taskHistories = await _unitOfWork.TaskHistories.FindAllAsync(x=>x.TaskId==taskId);
 
             // Chuyển đổi sang TaskDetailModel
             var taskDetailModel = new TaskDetailModel
@@ -87,21 +144,23 @@ namespace SmartFarmManager.Service.Services
                 Id = task.Id,
                 TaskName = task.TaskName,
                 Description = task.Description,
-                DueDate = task.DueDate,
+                DueDate = (DateTime)task.DueDate,
                 TaskType = task.TaskType,
                 FarmId = task.FarmId,
                 AssignedToUserId = task.AssignedToUserId,
                 Status = task.Status,
-                CompleteAt = task.CompleteAt,
-                CreatedAt = task.CreatedAt,
+                CompleteAt = task.CompletedAt,
+                CreatedAt = (DateTime)task.CreatedAt,
                 ModifiedAt = task.ModifiedAt,
                 TaskHistories = taskHistories.Select(th => new TaskHistoryModel
                 {
+                    Id=th.Id,
                     StatusBefore = th.StatusBefore,
                     StatusAfter = th.StatusAfter,
-                    ChangedAt = th.ChangedAt
+                    ChangedAt =  (DateTime)th.ChangedAt
                 }).ToList()
             };
+            return taskDetailModel;
 
         }
 
