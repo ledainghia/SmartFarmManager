@@ -5,9 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class VaccineSchedule
+public partial class VaccineSchedule : EntityBase
 {
-    public Guid ScheduleId { get; set; }
 
     public Guid VaccineId { get; set; }
 

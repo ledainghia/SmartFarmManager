@@ -15,14 +15,14 @@ namespace SmartFarmManager.Repository.Interfaces
         IQueryable<T> FindAll(bool trackChanges, params Expression<Func<T, object>>[] includeProperties);
         IQueryable<T> FindByCondition(Expression<Func<T, bool>> expression, bool trackChanges = false);
         IQueryable<T> FindByCondition(Expression<Func<T, bool>> expression, bool trackChanges = false, params Expression<Func<T, object>>[] includeProperties);
-        Task<T?> GetByIdAsync(int id);
-        Task<T?> GetByIdAsync(int id, params Expression<Func<T, object>>[] includeProperties);
+        Task<T?> GetByIdAsync(Guid id);
+        Task<T?> GetByIdAsync(Guid id, params Expression<Func<T, object>>[] includeProperties);
 
     }
     public interface IRepositoryBaseAsync<T> : IRepositoryQueryBase<T> where T : EntityBase
     {
-        Task<int> CreateAsync(T entity);
-        Task<IList<int>> CreateListAsync(IEnumerable<T> entities);
+        Task<Guid> CreateAsync(T entity);
+        Task<IList<Guid>> CreateListAsync(IEnumerable<T> entities);
         System.Threading.Tasks.Task UpdateAsync(T entity);
         System.Threading.Tasks.Task UpdateListAsync(IEnumerable<T> entities);
 

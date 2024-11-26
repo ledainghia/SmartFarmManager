@@ -5,9 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class Picture
+public partial class Picture : EntityBase
 {
-    public Guid PictureId { get; set; }
 
     public Guid RecordId { get; set; }
 

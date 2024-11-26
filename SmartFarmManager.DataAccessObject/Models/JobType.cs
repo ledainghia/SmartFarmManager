@@ -5,9 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class JobType
+public partial class JobType : EntityBase
 {
-    public Guid JobTypeId { get; set; }
 
     public string Name { get; set; }
 

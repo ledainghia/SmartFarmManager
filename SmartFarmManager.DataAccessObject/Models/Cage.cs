@@ -5,10 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class Cage
+public partial class Cage : EntityBase
 {
-    public Guid CageId { get; set; }
-
     public string PenCode { get; set; }
 
     public string Name { get; set; }

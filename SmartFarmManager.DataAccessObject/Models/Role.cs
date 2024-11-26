@@ -5,9 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class Role
+public partial class Role : EntityBase
 {
-    public Guid RoleId { get; set; }
 
     public string RoleName { get; set; }
 

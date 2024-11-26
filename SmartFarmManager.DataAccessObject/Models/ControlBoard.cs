@@ -5,9 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class ControlBoard
+public partial class ControlBoard : EntityBase
 {
-    public Guid ControlBoardId { get; set; }
 
     public Guid CageId { get; set; }
 

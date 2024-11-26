@@ -5,9 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class DailyFoodUsageLog
+public partial class DailyFoodUsageLog : EntityBase
 {
-    public Guid UsageId { get; set; }
 
     public Guid StageId { get; set; }
 

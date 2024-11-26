@@ -5,9 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class FoodStack
-{
-    public Guid StackId { get; set; }
+public partial class FoodStack : EntityBase
+{    
 
     public Guid FarmId { get; set; }
 

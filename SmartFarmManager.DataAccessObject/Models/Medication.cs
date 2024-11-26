@@ -5,10 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class Medication
+public partial class Medication : EntityBase
 {
-    public Guid MedicationId { get; set; }
-
     public string Name { get; set; }
 
     public string UsageInstructions { get; set; }

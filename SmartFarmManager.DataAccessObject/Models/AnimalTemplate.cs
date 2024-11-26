@@ -5,9 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class AnimalTemplate
+public partial class AnimalTemplate : EntityBase
 {
-    public Guid TemplateId { get; set; }
 
     public string Name { get; set; }
 

@@ -5,9 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class PrescriptionMedication
+public partial class PrescriptionMedication : EntityBase
 {
-    public Guid PrescriptionMedicationId { get; set; }
 
     public Guid PrescriptionId { get; set; }
 

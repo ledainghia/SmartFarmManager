@@ -5,9 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class WaterLog
+public partial class WaterLog : EntityBase
 {
-    public Guid WaterLogId { get; set; }
 
     public Guid FarmId { get; set; }
 

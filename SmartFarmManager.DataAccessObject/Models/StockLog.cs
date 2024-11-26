@@ -5,9 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class StockLog
+public partial class StockLog : EntityBase
 {
-    public Guid StockLogId { get; set; }
 
     public Guid StackId { get; set; }
 

@@ -5,9 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class Notification
+public partial class Notification : EntityBase
 {
-    public Guid NotificationId { get; set; }
 
     public Guid UserId { get; set; }
 

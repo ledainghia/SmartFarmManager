@@ -5,9 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class StatusLog
+public partial class StatusLog : EntityBase
 {
-    public Guid StatusLogId { get; set; }
 
     public Guid TaskId { get; set; }
 

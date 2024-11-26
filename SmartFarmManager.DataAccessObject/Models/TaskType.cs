@@ -5,9 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class TaskType
+public partial class TaskType : EntityBase
 {
-    public Guid TaskTypeId { get; set; }
 
     public string TaskTypeName { get; set; }
 

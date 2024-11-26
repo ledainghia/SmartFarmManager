@@ -6,9 +6,8 @@ using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Repository.Repositories;
-using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Mapper;
-using SmartFarmManager.Service.Services;
+
 using SmartFarmManager.Service.Settings;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -114,10 +113,10 @@ namespace SmartFarmManager.API.Extensions
         private static IServiceCollection ConfigureDbContext(this IServiceCollection services, IConfiguration configuration)
         {
 
-            var connectionString = configuration.GetConnectionString("DefaultConnectionString");
+            var connectionString = configuration.GetConnectionString("DbConnection");
             //var connectionString = $"Data Source={dbServer};Initial Catalog={dbName};User ID={dbUser};Password={dbPassword};TrustServerCertificate={dbTrustServerCertificate};MultipleActiveResultSets={dbMultipleActiveResultSets}";
 
-            services.AddDbContext<FarmsContext>(opt =>
+            services.AddDbContext<SmartFarmContext>(opt =>
             {
                 opt.UseSqlServer(connectionString);
             });
@@ -127,53 +126,7 @@ namespace SmartFarmManager.API.Extensions
         }
         private static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
         {
-            // Add repositories
-            services.AddScoped<IUserRepository, UserRepository>();
-            services.AddScoped<IAlertRepository, AlertRepository>();
-            services.AddScoped<IAlertTypeRepository, AlertTypeRepository>();
-            services.AddScoped<IAlertUserRepository, AlertUserRepository>();
-            services.AddScoped<ICameraSurveillanceRepository, CameraSurveillanceRepository>();
-            services.AddScoped<IDeviceReadingRepository, DeviceReadingRepository>();
-            services.AddScoped<IFarmRepository, FarmRepository>();
-            services.AddScoped<IFarmStaffAssignmentRepository, FarmStaffAssignmentRepository>();
-            services.AddScoped<IInventoryRepository, InventoryRepository>();
-            services.AddScoped<IInventoryTransactionRepository, InventoryTransactionRepository>();
-            services.AddScoped<IIoTDeviceRepository, IoTDeviceRepository>();
-            services.AddScoped<ILivestockRepository, LivestockRepository>();
-            services.AddScoped<ILivestockExpenseRepository, LivestockExpenseRepository>();
-            services.AddScoped<ILivestockSaleRepository, LivestockSaleRepository>();
-            services.AddScoped<INotificationRepository, NotificationRepository>();
-            services.AddScoped<IPermissionRepository, PermissionRepository>();
-            services.AddScoped<IRevenueAndProfitReportRepository, RevenueAndProfitReportRepository>();
-            services.AddScoped<IRoleRepository, RoleRepository>();
-            services.AddScoped<ITaskRepository, TaskRepository>();
-            services.AddScoped<ITaskHistoryRepository, TaskHistoryRepository>();
-            services.AddScoped<IUserPermissionRepository, UserPermissionRepository>();
-
-            // Add services
-            services.AddScoped<IUserService, UserService>();
-            services.AddScoped<IAlertService, AlertService>();
-            services.AddScoped<IAlertTypeService, AlertTypeService>();
-            services.AddScoped<IAlertUserService, AlertUserService>();
-            services.AddScoped<ICameraSurveillanceService, CameraSurveillanceService>();
-            services.AddScoped<IDeviceReadingService, DeviceReadingService>();
-            services.AddScoped<IFarmService, FarmService>();
-            services.AddScoped<IFarmStaffAssignmentService, FarmStaffAssignmentService>();
-            services.AddScoped<IInventoryService, InventoryService>();
-            services.AddScoped<IInventoryTransactionService, InventoryTransactionService>();
-            services.AddScoped<IIoTDeviceService, IoTDeviceService>();
-            services.AddScoped<ILivestockService, LivestockService>();
-            services.AddScoped<ILivestockExpenseService, LivestockExpenseService>();
-            services.AddScoped<ILivestockSaleService, LivestockSaleService>();
-            services.AddScoped<INotificationService, NotificationService>();
-            services.AddScoped<IPermissionService, PermissionService>();
-            services.AddScoped<IRevenueAndProfitReportService, RevenueAndProfitReportService>();
-            services.AddScoped<IRoleService, RoleService>();
-            services.AddScoped<ITaskService, TaskService>();
-            services.AddScoped<ITaskHistoryService, TaskHistoryService>();
-            services.AddScoped<IUserPermissionService, UserPermissionService>();
-            services.AddScoped<IAuthenticationService, AuthenticationService>();
-
+           
             //add unit ofwork
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             //add settings

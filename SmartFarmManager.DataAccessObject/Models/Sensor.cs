@@ -5,9 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class Sensor
+public partial class Sensor : EntityBase
 {
-    public Guid SensorId { get; set; }
 
     public Guid SensorTypeId { get; set; }
 

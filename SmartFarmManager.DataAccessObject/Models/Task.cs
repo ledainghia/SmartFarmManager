@@ -5,10 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class Task
+public partial class Task : EntityBase
 {
-    public Guid TaskId { get; set; }
-
     public Guid? TaskTypeId { get; set; }
 
     public Guid CageId { get; set; }
@@ -26,6 +24,7 @@ public partial class Task
     public DateTime? DueDate { get; set; }
 
     public string Status { get; set; }
+    public int Session { get; set; }
 
     public DateTime? CompletedAt { get; set; }
 

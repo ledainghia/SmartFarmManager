@@ -5,9 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class MedicalSymptom
+public partial class MedicalSymptom : EntityBase
 {
-    public Guid MedicalSymptomId { get; set; }
 
     public Guid FarmingBatchId { get; set; }
 

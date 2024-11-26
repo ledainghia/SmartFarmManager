@@ -5,9 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class MqttConfig
+public partial class MqttConfig : EntityBase
 {
-    public Guid MqttConfigId { get; set; }
 
     public int Port { get; set; }
 

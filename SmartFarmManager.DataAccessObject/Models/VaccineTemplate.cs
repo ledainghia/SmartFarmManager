@@ -5,9 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class VaccineTemplate
+public partial class VaccineTemplate : EntityBase
 {
-    public Guid VaccineTemplateId { get; set; }
 
     public Guid TemplateId { get; set; }
 
@@ -16,6 +15,7 @@ public partial class VaccineTemplate
     public string ApplicationMethod { get; set; }
 
     public int? ApplicationAge { get; set; }
+    public int Session { get; set; }
 
     public virtual AnimalTemplate Template { get; set; }
 }

@@ -5,9 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class Status
+public partial class Status : EntityBase
 {
-    public Guid StatusId { get; set; }
 
     public string StatusName { get; set; }
 

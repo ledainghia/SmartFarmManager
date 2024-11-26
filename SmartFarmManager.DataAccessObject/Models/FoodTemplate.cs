@@ -5,15 +5,15 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class FoodTemplate
+public partial class FoodTemplate : EntityBase
 {
-    public Guid FoodTemplateId { get; set; }
 
     public Guid StageTemplateId { get; set; }
 
     public string FoodName { get; set; }
 
     public decimal? RecommendedWeightPerDay { get; set; }
+    public int Session { get; set; }
 
     public decimal? WeightBasedOnBodyMass { get; set; }
 

@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
@@ -16,6 +17,20 @@ public partial class SmartFarmContext : DbContext
 
     public SmartFarmContext()
     {
+    }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        if (!optionsBuilder.IsConfigured)
+        {
+            var builder = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+
+            IConfigurationRoot configuration = builder.Build();
+
+            optionsBuilder.UseSqlServer("Data Source=HAUNGUYEN\\SQLEXPRESS;Initial Catalog=SmartFarm;Integrated Security=True;Connect Timeout=30;Encrypt=True;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False");
+        }
     }
 
     public virtual DbSet<AnimalSale> AnimalSales { get; set; }
@@ -118,9 +133,9 @@ public partial class SmartFarmContext : DbContext
     {
         modelBuilder.Entity<AnimalSale>(entity =>
         {
-            entity.HasKey(e => e.SaleId).HasName("PK__AnimalSa__1EE3C3FF9307295C");
+            entity.HasKey(e => e.Id).HasName("PK__AnimalSa__1EE3C3FF9307295C");
 
-            entity.Property(e => e.SaleId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.BuyerInfo).HasMaxLength(255);
             entity.Property(e => e.SaleDate)
                 .HasDefaultValueSql("(getdate())")
@@ -134,9 +149,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<AnimalTemplate>(entity =>
         {
-            entity.HasKey(e => e.TemplateId).HasName("PK__AnimalTe__F87ADD27AE731EF5");
+            entity.HasKey(e => e.Id).HasName("PK__AnimalTe__F87ADD27AE731EF5");
 
-            entity.Property(e => e.TemplateId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Name)
                 .IsRequired()
                 .HasMaxLength(100);
@@ -148,9 +163,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<Cage>(entity =>
         {
-            entity.HasKey(e => e.CageId).HasName("PK__Cages__792D9F9AACADDF50");
+            entity.HasKey(e => e.Id).HasName("PK__Cages__792D9F9AACADDF50");
 
-            entity.Property(e => e.CageId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.AnimalType).HasMaxLength(255);
             entity.Property(e => e.BoardCode)
                 .IsRequired()
@@ -171,9 +186,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<CageStaff>(entity =>
         {
-            entity.HasKey(e => e.CageStaffId).HasName("PK__CageStaf__666D484D977ED0B7");
+            entity.HasKey(e => e.Id).HasName("PK__CageStaf__666D484D977ED0B7");
 
-            entity.Property(e => e.CageStaffId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.AssignedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -191,9 +206,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<ControlBoard>(entity =>
         {
-            entity.HasKey(e => e.ControlBoardId).HasName("PK__ControlB__AB951CC9E119D9D0");
+            entity.HasKey(e => e.Id).HasName("PK__ControlB__AB951CC9E119D9D0");
 
-            entity.Property(e => e.ControlBoardId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.CommandOff)
                 .IsRequired()
                 .HasMaxLength(50)
@@ -222,9 +237,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<ControlBoardType>(entity =>
         {
-            entity.HasKey(e => e.ControlBoardTypeId).HasName("PK__ControlB__8CDFB1CCB09566BA");
+            entity.HasKey(e => e.Id).HasName("PK__ControlB__8CDFB1CCB09566BA");
 
-            entity.Property(e => e.ControlBoardTypeId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Description).HasMaxLength(2000);
             entity.Property(e => e.Name)
                 .IsRequired()
@@ -233,9 +248,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<DailyFoodUsageLog>(entity =>
         {
-            entity.HasKey(e => e.UsageId).HasName("PK__DailyFoo__29B197206BAA687E");
+            entity.HasKey(e => e.Id).HasName("PK__DailyFoo__29B197206BAA687E");
 
-            entity.Property(e => e.UsageId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.ActualWeight).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.LogTime)
                 .HasDefaultValueSql("(getdate())")
@@ -252,9 +267,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<ElectricityLog>(entity =>
         {
-            entity.HasKey(e => e.ElectricityLogId).HasName("PK__Electric__0B83AE01DB836F69");
+            entity.HasKey(e => e.Id).HasName("PK__Electric__0B83AE01DB836F69");
 
-            entity.Property(e => e.ElectricityLogId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
             entity.HasOne(d => d.Farm).WithMany(p => p.ElectricityLogs)
                 .HasForeignKey(d => d.FarmId)
@@ -264,9 +279,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<Farm>(entity =>
         {
-            entity.HasKey(e => e.FarmId).HasName("PK__Farms__ED7BBAB9F3B62FC0");
+            entity.HasKey(e => e.Id).HasName("PK__Farms__ED7BBAB9F3B62FC0");
 
-            entity.Property(e => e.FarmId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Address).HasMaxLength(255);
             entity.Property(e => e.Email).HasMaxLength(255);
             entity.Property(e => e.FarmCode).HasMaxLength(50);
@@ -282,9 +297,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<FarmAdmin>(entity =>
         {
-            entity.HasKey(e => e.FarmAdminId).HasName("PK__FarmAdmi__78A22BE82F789E8F");
+            entity.HasKey(e => e.Id).HasName("PK__FarmAdmi__78A22BE82F789E8F");
 
-            entity.Property(e => e.FarmAdminId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.AssignedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -302,9 +317,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<FarmCamera>(entity =>
         {
-            entity.HasKey(e => e.FarmCameraId).HasName("PK__FarmCame__0EBA770C379AB5BB");
+            entity.HasKey(e => e.Id).HasName("PK__FarmCame__0EBA770C379AB5BB");
 
-            entity.Property(e => e.FarmCameraId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Description)
                 .IsRequired()
                 .HasMaxLength(2000);
@@ -323,9 +338,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<FarmSubscription>(entity =>
         {
-            entity.HasKey(e => e.SubscriptionId).HasName("PK__FarmSubs__9A2B249D65D4C549");
+            entity.HasKey(e => e.Id).HasName("PK__FarmSubs__9A2B249D65D4C549");
 
-            entity.Property(e => e.SubscriptionId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.EndDate).HasColumnType("datetime");
             entity.Property(e => e.RequiresVet).HasDefaultValue(false);
             entity.Property(e => e.StartDate)
@@ -352,9 +367,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<FarmingBatch>(entity =>
         {
-            entity.HasKey(e => e.FarmingBatchId).HasName("PK__FarmingB__CF22FB97B35EFCF4");
+            entity.HasKey(e => e.Id).HasName("PK__FarmingB__CF22FB97B35EFCF4");
 
-            entity.Property(e => e.FarmingBatchId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Name).HasMaxLength(100);
             entity.Property(e => e.Species).HasMaxLength(50);
             entity.Property(e => e.StartDate)
@@ -374,11 +389,11 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<FoodStack>(entity =>
         {
-            entity.HasKey(e => e.StackId).HasName("PK__FoodStac__E117F10707F5099D");
+            entity.HasKey(e => e.Id).HasName("PK__FoodStac__E117F10707F5099D");
 
             entity.ToTable("FoodStack");
 
-            entity.Property(e => e.StackId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.CostPerKg).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.CurrentStock).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.NameFood).HasMaxLength(100);
@@ -392,9 +407,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<FoodTemplate>(entity =>
         {
-            entity.HasKey(e => e.FoodTemplateId).HasName("PK__FoodTemp__58E25FB67BABBFBB");
+            entity.HasKey(e => e.Id).HasName("PK__FoodTemp__58E25FB67BABBFBB");
 
-            entity.Property(e => e.FoodTemplateId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.FoodName)
                 .IsRequired()
                 .HasMaxLength(100);
@@ -409,9 +424,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<GrowthStage>(entity =>
         {
-            entity.HasKey(e => e.StageId).HasName("PK__GrowthSt__03EB7AD8E9B0E8F9");
+            entity.HasKey(e => e.Id).HasName("PK__GrowthSt__03EB7AD8E9B0E8F9");
 
-            entity.Property(e => e.StageId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.AgeEndDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -436,9 +451,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<GrowthStageTemplate>(entity =>
         {
-            entity.HasKey(e => e.StageTemplateId).HasName("PK__GrowthSt__12B67065BFCFA63B");
+            entity.HasKey(e => e.Id).HasName("PK__GrowthSt__12B67065BFCFA63B");
 
-            entity.Property(e => e.StageTemplateId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Notes).HasMaxLength(255);
             entity.Property(e => e.StageName).HasMaxLength(50);
             entity.Property(e => e.WeightAnimal).HasColumnType("decimal(10, 2)");
@@ -451,9 +466,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<HealthLog>(entity =>
         {
-            entity.HasKey(e => e.HealthLogId).HasName("PK__HealthLo__C872D3274175629B");
+            entity.HasKey(e => e.Id).HasName("PK__HealthLo__C872D3274175629B");
 
-            entity.Property(e => e.HealthLogId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Notes).HasMaxLength(255);
             entity.Property(e => e.Photo).HasMaxLength(255);
 
@@ -465,9 +480,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<Job>(entity =>
         {
-            entity.HasKey(e => e.JobId).HasName("PK__Jobs__056690C2461B319B");
+            entity.HasKey(e => e.Id).HasName("PK__Jobs__056690C2461B319B");
 
-            entity.Property(e => e.JobId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Description).HasMaxLength(2000);
             entity.Property(e => e.JobCode)
                 .IsRequired()
@@ -499,9 +514,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<JobLog>(entity =>
         {
-            entity.HasKey(e => e.JobLogId).HasName("PK__JobLogs__2B515D3E32FD6CEE");
+            entity.HasKey(e => e.Id).HasName("PK__JobLogs__2B515D3E32FD6CEE");
 
-            entity.Property(e => e.JobLogId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Command).HasMaxLength(255);
 
             entity.HasOne(d => d.Job).WithMany(p => p.JobLogs)
@@ -512,9 +527,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<JobType>(entity =>
         {
-            entity.HasKey(e => e.JobTypeId).HasName("PK__JobTypes__E1F462AD8039AD4A");
+            entity.HasKey(e => e.Id).HasName("PK__JobTypes__E1F462AD8039AD4A");
 
-            entity.Property(e => e.JobTypeId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Description).HasMaxLength(2000);
             entity.Property(e => e.Name)
                 .IsRequired()
@@ -523,9 +538,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<MedicalSymptom>(entity =>
         {
-            entity.HasKey(e => e.MedicalSymptomId).HasName("PK__MedicalS__E39D8C018EEF7572");
+            entity.HasKey(e => e.Id).HasName("PK__MedicalS__E39D8C018EEF7572");
 
-            entity.Property(e => e.MedicalSymptomId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Diagnosis).HasMaxLength(100);
             entity.Property(e => e.Notes).HasMaxLength(255);
             entity.Property(e => e.Status)
@@ -542,9 +557,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<Medication>(entity =>
         {
-            entity.HasKey(e => e.MedicationId).HasName("PK__Medicati__62EC1AFA81A8C124");
+            entity.HasKey(e => e.Id).HasName("PK__Medicati__62EC1AFA81A8C124");
 
-            entity.Property(e => e.MedicationId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Name).HasMaxLength(100);
             entity.Property(e => e.Price).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.PricePerDose).HasColumnType("decimal(10, 2)");
@@ -553,9 +568,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<MqttConfig>(entity =>
         {
-            entity.HasKey(e => e.MqttConfigId).HasName("PK__MqttConf__065618CFF49F21BB");
+            entity.HasKey(e => e.Id).HasName("PK__MqttConf__065618CFF49F21BB");
 
-            entity.Property(e => e.MqttConfigId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.BrokerAddress).HasMaxLength(255);
             entity.Property(e => e.Password).HasMaxLength(50);
             entity.Property(e => e.UserName).HasMaxLength(50);
@@ -564,9 +579,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<Notification>(entity =>
         {
-            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__20CF2E12C83A84F0");
+            entity.HasKey(e => e.Id).HasName("PK__Notifica__20CF2E12C83A84F0");
 
-            entity.Property(e => e.NotificationId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Content)
                 .IsRequired()
                 .HasMaxLength(255);
@@ -588,11 +603,11 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<NotificationType>(entity =>
         {
-            entity.HasKey(e => e.NotiTypeId).HasName("PK__Notifica__54F5A3018831B14F");
+            entity.HasKey(e => e.Id).HasName("PK__Notifica__54F5A3018831B14F");
 
             entity.HasIndex(e => e.NotiTypeName, "UQ__Notifica__712AE57216695082").IsUnique();
 
-            entity.Property(e => e.NotiTypeId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.NotiTypeName)
                 .IsRequired()
                 .HasMaxLength(50);
@@ -600,9 +615,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<Picture>(entity =>
         {
-            entity.HasKey(e => e.PictureId).HasName("PK__Pictures__8C2866D8353C89AA");
+            entity.HasKey(e => e.Id).HasName("PK__Pictures__8C2866D8353C89AA");
 
-            entity.Property(e => e.PictureId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.DateCaptured)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -616,9 +631,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<Prescription>(entity =>
         {
-            entity.HasKey(e => e.PrescriptionId).HasName("PK__Prescrip__401308323ACA723E");
+            entity.HasKey(e => e.Id).HasName("PK__Prescrip__401308323ACA723E");
 
-            entity.Property(e => e.PrescriptionId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.CaseType).HasMaxLength(50);
             entity.Property(e => e.Notes).HasMaxLength(255);
             entity.Property(e => e.PrescribedDate).HasDefaultValueSql("(getdate())");
@@ -632,9 +647,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<PrescriptionMedication>(entity =>
         {
-            entity.HasKey(e => e.PrescriptionMedicationId).HasName("PK__Prescrip__CDB4BF945ED62D85");
+            entity.HasKey(e => e.Id).HasName("PK__Prescrip__CDB4BF945ED62D85");
 
-            entity.Property(e => e.PrescriptionMedicationId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
             entity.HasOne(d => d.Medication).WithMany(p => p.PrescriptionMedications)
                 .HasForeignKey(d => d.MedicationId)
@@ -649,20 +664,20 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<Pricing>(entity =>
         {
-            entity.HasKey(e => e.PricingId).HasName("PK__Pricings__EC306B12D14952C7");
+            entity.HasKey(e => e.Id).HasName("PK__Pricings__EC306B12D14952C7");
 
-            entity.Property(e => e.PricingId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Name).IsRequired();
             entity.Property(e => e.Unit).IsRequired();
         });
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE1A640F661E");
+            entity.HasKey(e => e.Id).HasName("PK__Roles__8AFACE1A640F661E");
 
             entity.HasIndex(e => e.RoleName, "UQ__Roles__8A2B61609571AADF").IsUnique();
 
-            entity.Property(e => e.RoleId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.RoleName)
                 .IsRequired()
                 .HasMaxLength(50);
@@ -670,9 +685,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<Schedule>(entity =>
         {
-            entity.HasKey(e => e.ScheduleId).HasName("PK__Schedule__9C8A5B49CADB8578");
+            entity.HasKey(e => e.Id).HasName("PK__Schedule__9C8A5B49CADB8578");
 
-            entity.Property(e => e.ScheduleId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Name)
                 .IsRequired()
                 .HasMaxLength(255);
@@ -691,9 +706,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<Sensor>(entity =>
         {
-            entity.HasKey(e => e.SensorId).HasName("PK__Sensors__D8099BFA33DDEEA4");
+            entity.HasKey(e => e.Id).HasName("PK__Sensors__D8099BFA33DDEEA4");
 
-            entity.Property(e => e.SensorId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Name)
                 .IsRequired()
                 .HasMaxLength(255);
@@ -714,9 +729,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<SensorDataLog>(entity =>
         {
-            entity.HasKey(e => e.SensorDataId).HasName("PK__SensorDa__14C88410F7C62D8F");
+            entity.HasKey(e => e.Id).HasName("PK__SensorDa__14C88410F7C62D8F");
 
-            entity.Property(e => e.SensorDataId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Data).HasColumnType("decimal(18, 1)");
 
             entity.HasOne(d => d.Sensor).WithMany(p => p.SensorDataLogs)
@@ -727,9 +742,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<SensorType>(entity =>
         {
-            entity.HasKey(e => e.SensorTypeId).HasName("PK__SensorTy__B6E7763F2A9179FF");
+            entity.HasKey(e => e.Id).HasName("PK__SensorTy__B6E7763F2A9179FF");
 
-            entity.Property(e => e.SensorTypeId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Description).HasMaxLength(2000);
             entity.Property(e => e.FieldName)
                 .IsRequired()
@@ -747,9 +762,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<Status>(entity =>
         {
-            entity.HasKey(e => e.StatusId).HasName("PK__Statuses__C8EE2063A8C85F92");
+            entity.HasKey(e => e.Id).HasName("PK__Statuses__C8EE2063A8C85F92");
 
-            entity.Property(e => e.StatusId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.StatusName)
                 .IsRequired()
                 .HasMaxLength(50);
@@ -757,9 +772,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<StatusLog>(entity =>
         {
-            entity.HasKey(e => e.StatusLogId).HasName("PK__StatusLo__A1B4D09D3A1C2CC0");
+            entity.HasKey(e => e.Id).HasName("PK__StatusLo__A1B4D09D3A1C2CC0");
 
-            entity.Property(e => e.StatusLogId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -777,9 +792,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<StockLog>(entity =>
         {
-            entity.HasKey(e => e.StockLogId).HasName("PK__StockLog__730D96D8A3211789");
+            entity.HasKey(e => e.Id).HasName("PK__StockLog__730D96D8A3211789");
 
-            entity.Property(e => e.StockLogId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.CostPerKg).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.NameFood).HasMaxLength(100);
             entity.Property(e => e.Quantity).HasColumnType("decimal(10, 2)");
@@ -792,9 +807,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<SubscriptionPlan>(entity =>
         {
-            entity.HasKey(e => e.PlanId).HasName("PK__Subscrip__755C22B7124150BB");
+            entity.HasKey(e => e.Id).HasName("PK__Subscrip__755C22B7124150BB");
 
-            entity.Property(e => e.PlanId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.CostPerUser).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.CostPerVet).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.MonthlyBaseCost).HasColumnType("decimal(10, 2)");
@@ -805,9 +820,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<Task>(entity =>
         {
-            entity.HasKey(e => e.TaskId).HasName("PK__Tasks__7C6949B12CFAA294");
+            entity.HasKey(e => e.Id).HasName("PK__Tasks__7C6949B12CFAA294");
 
-            entity.Property(e => e.TaskId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.CompletedAt).HasColumnType("datetime");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -836,11 +851,11 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<TaskType>(entity =>
         {
-            entity.HasKey(e => e.TaskTypeId).HasName("PK__TaskType__66B23E330DE8C67D");
+            entity.HasKey(e => e.Id).HasName("PK__TaskType__66B23E330DE8C67D");
 
             entity.HasIndex(e => e.TaskTypeName, "UQ__TaskType__3B9D797BA9BD327F").IsUnique();
 
-            entity.Property(e => e.TaskTypeId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.TaskTypeName)
                 .IsRequired()
                 .HasMaxLength(50);
@@ -848,9 +863,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<Transaction>(entity =>
         {
-            entity.HasKey(e => e.TransactionId).HasName("PK__Transact__55433A6BAFE66D2B");
+            entity.HasKey(e => e.Id).HasName("PK__Transact__55433A6BAFE66D2B");
 
-            entity.Property(e => e.TransactionId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Amount).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.PaymentMethod).HasMaxLength(50);
             entity.Property(e => e.Remarks).HasMaxLength(255);
@@ -867,13 +882,13 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4C9404FA6D");
+            entity.HasKey(e => e.Id).HasName("PK__Users__1788CC4C9404FA6D");
 
             entity.HasIndex(e => e.Username, "UQ__Users__536C85E450363FD5").IsUnique();
 
             entity.HasIndex(e => e.Email, "UQ__Users__A9D10534B1C73AFC").IsUnique();
 
-            entity.Property(e => e.UserId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Address).HasMaxLength(100);
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -897,9 +912,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<Vaccine>(entity =>
         {
-            entity.HasKey(e => e.VaccineId).HasName("PK__Vaccines__45DC6889A12FCD5C");
+            entity.HasKey(e => e.Id).HasName("PK__Vaccines__45DC6889A12FCD5C");
 
-            entity.Property(e => e.VaccineId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.AgeEndDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -912,9 +927,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<VaccineSchedule>(entity =>
         {
-            entity.HasKey(e => e.ScheduleId).HasName("PK__VaccineS__9C8A5B49BF96F02B");
+            entity.HasKey(e => e.Id).HasName("PK__VaccineS__9C8A5B49BF96F02B");
 
-            entity.Property(e => e.ScheduleId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasDefaultValue("Chua tiêm");
@@ -932,9 +947,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<VaccineScheduleLog>(entity =>
         {
-            entity.HasKey(e => e.VaccineScheduleLogId).HasName("PK__VaccineS__E2771C19EB9C932E");
+            entity.HasKey(e => e.Id).HasName("PK__VaccineS__E2771C19EB9C932E");
 
-            entity.Property(e => e.VaccineScheduleLogId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Notes).HasMaxLength(255);
             entity.Property(e => e.Photo).HasMaxLength(255);
 
@@ -946,9 +961,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<VaccineTemplate>(entity =>
         {
-            entity.HasKey(e => e.VaccineTemplateId).HasName("PK__VaccineT__B9AB66085E77BB5A");
+            entity.HasKey(e => e.Id).HasName("PK__VaccineT__B9AB66085E77BB5A");
 
-            entity.Property(e => e.VaccineTemplateId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.ApplicationMethod).HasMaxLength(50);
             entity.Property(e => e.VaccineName).HasMaxLength(100);
 
@@ -960,9 +975,9 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<WaterLog>(entity =>
         {
-            entity.HasKey(e => e.WaterLogId).HasName("PK__WaterLog__C32B73CF24992978");
+            entity.HasKey(e => e.Id).HasName("PK__WaterLog__C32B73CF24992978");
 
-            entity.Property(e => e.WaterLogId).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
             entity.HasOne(d => d.Farm).WithMany(p => p.WaterLogs)
                 .HasForeignKey(d => d.FarmId)

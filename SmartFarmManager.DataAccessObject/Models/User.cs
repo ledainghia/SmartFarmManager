@@ -5,9 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class User
+public partial class User : EntityBase
 {
-    public Guid UserId { get; set; }
 
     public string Username { get; set; }
 

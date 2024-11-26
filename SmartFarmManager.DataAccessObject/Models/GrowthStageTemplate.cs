@@ -5,9 +5,8 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class GrowthStageTemplate
+public partial class GrowthStageTemplate : EntityBase
 {
-    public Guid StageTemplateId { get; set; }
 
     public Guid TemplateId { get; set; }
 
