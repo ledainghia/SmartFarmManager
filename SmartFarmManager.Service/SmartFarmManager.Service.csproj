@@ -18,8 +18,6 @@
 
   <ItemGroup>
     <Folder Include="BusinessModels\QueryParameters\" />
-    <Folder Include="Interfaces\" />
-    <Folder Include="Services\" />
     <Folder Include="Shared\" />
   </ItemGroup>
 
