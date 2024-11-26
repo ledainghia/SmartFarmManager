@@ -13,9 +13,9 @@ namespace SmartFarmManager.Repository.Repositories
 {
     public class RepositoryBaseAsync<T> : IRepositoryBaseAsync<T> where T : EntityBase
     {
-        protected readonly FarmsContext _dbContext;
+        protected readonly SmartFarmContext _dbContext;
 
-        public RepositoryBaseAsync(FarmsContext dbContext)
+        public RepositoryBaseAsync(SmartFarmContext dbContext)
         {
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
 
@@ -45,11 +45,11 @@ namespace SmartFarmManager.Repository.Repositories
             return items;
         }
 
-        public async Task<T?> GetByIdAsync(int id)
+        public async Task<T?> GetByIdAsync(Guid id)
         {
             return await FindByCondition(T => T.Id.Equals(id)).FirstOrDefaultAsync();
         }
-        public async Task<T?> GetByIdAsync(int id, params Expression<Func<T, object>>[] includeProperties)
+        public async Task<T?> GetByIdAsync(Guid id, params Expression<Func<T, object>>[] includeProperties)
         {
             return await FindByCondition(T => T.Id.Equals(id), trackChanges: false, includeProperties).FirstOrDefaultAsync();
         }
@@ -66,12 +66,12 @@ namespace SmartFarmManager.Repository.Repositories
             await _dbContext.Database.RollbackTransactionAsync();
         }
 
-        public async Task<int> CreateAsync(T entity)
+        public async Task<Guid> CreateAsync(T entity)
         {
             await _dbContext.Set<T>().AddAsync(entity);
             return entity.Id;
         }
-        public async Task<IList<int>> CreateListAsync(IEnumerable<T> entities)
+        public async Task<IList<Guid>> CreateListAsync(IEnumerable<T> entities)
         {
             await _dbContext.Set<T>().AddRangeAsync(entities);
             return entities.Select(x => x.Id).ToList();

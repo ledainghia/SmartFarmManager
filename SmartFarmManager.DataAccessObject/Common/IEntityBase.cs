@@ -8,6 +8,6 @@ namespace SmartFarmManager.DataAccessObject.Common
 {
     public interface IEntityBase
     {
-        int Id { get; set; }
+        Guid Id { get; set; }
     }
 }

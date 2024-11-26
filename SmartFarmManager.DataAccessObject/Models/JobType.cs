@@ -5,10 +5,12 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class Role : EntityBase
+public partial class JobType : EntityBase
 {
 
-    public string RoleName { get; set; }
+    public string Name { get; set; }
 
-    public virtual ICollection<User> Users { get; set; } = new List<User>();
+    public string Description { get; set; }
+
+    public virtual ICollection<Job> Jobs { get; set; } = new List<Job>();
 }

@@ -5,10 +5,10 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class Role : EntityBase
+public partial class Status : EntityBase
 {
 
-    public string RoleName { get; set; }
+    public string StatusName { get; set; }
 
-    public virtual ICollection<User> Users { get; set; } = new List<User>();
+    public virtual ICollection<StatusLog> StatusLogs { get; set; } = new List<StatusLog>();
 }

@@ -9,7 +9,5 @@ namespace SmartFarmManager.Repository.Interfaces
 {
     public interface IUserRepository : IRepositoryBaseAsync<User>
     {
-        Task<User?> GetUserByUsername(string username);
-        Task<User?> GetUserByIdAsync(int id);
     }
 }

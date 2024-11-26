@@ -5,10 +5,14 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class Role : EntityBase
+public partial class Picture : EntityBase
 {
 
-    public string RoleName { get; set; }
+    public Guid RecordId { get; set; }
 
-    public virtual ICollection<User> Users { get; set; } = new List<User>();
+    public string Image { get; set; }
+
+    public DateTime? DateCaptured { get; set; }
+
+    public virtual MedicalSymptom Record { get; set; }
 }

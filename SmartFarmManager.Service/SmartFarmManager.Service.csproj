@@ -16,4 +16,9 @@
     <ProjectReference Include="..\SmartFarmManager.Repository\SmartFarmManager.Repository.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="BusinessModels\QueryParameters\" />
+    <Folder Include="Shared\" />
+  </ItemGroup>
+
 </Project>

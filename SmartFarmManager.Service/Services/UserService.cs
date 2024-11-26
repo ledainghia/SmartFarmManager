@@ -1,4 +1,5 @@
-﻿using SmartFarmManager.Repository.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels.Auth;
 using SmartFarmManager.Service.Interfaces;
 using System;
@@ -17,19 +18,14 @@ namespace SmartFarmManager.Service.Services
         {
             _unitOfWork = unitOfWork;
         }
-
-        // Implement methods for User operations here
-        public async Task<UserProfileModel> GetUserProfileAsync(int userId)
+        public async Task<UserProfileModel> GetUserProfileAsync(Guid userId)
         {
-            var user = await _unitOfWork.Users.GetUserByIdAsync(userId);
+            var user = await _unitOfWork.Users.FindByCondition(x=>x.Id== userId,false,x=>x.Role).FirstOrDefaultAsync();
 
             if (user == null)
             {
                 return null;
             }
-
-            var roles = user.Roles.Select(r => r.RoleName).ToList();
-            var permissions = user.UserPermissions.Select(up => up.Permission.PermissionName).ToList();
 
             return new UserProfileModel
             {
@@ -38,8 +34,7 @@ namespace SmartFarmManager.Service.Services
                 Email = user.Email,
                 PhoneNumber = user.PhoneNumber,
                 IsActive = user.IsActive ?? false,
-                Roles = roles,
-                Permissions = permissions
+                Role = user.Role.RoleName
             };
         }
     }

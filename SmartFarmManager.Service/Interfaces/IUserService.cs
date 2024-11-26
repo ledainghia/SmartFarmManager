@@ -9,6 +9,6 @@ namespace SmartFarmManager.Service.Interfaces
 {
     public interface IUserService
     {
-        Task<UserProfileModel> GetUserProfileAsync(int userId);
+        Task<UserProfileModel> GetUserProfileAsync(Guid userId);
     }
 }

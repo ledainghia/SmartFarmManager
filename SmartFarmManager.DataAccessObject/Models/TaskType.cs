@@ -5,10 +5,12 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class Role : EntityBase
+public partial class TaskType : EntityBase
 {
 
-    public string RoleName { get; set; }
+    public string TaskTypeName { get; set; }
 
-    public virtual ICollection<User> Users { get; set; } = new List<User>();
+    public int? PriorityNum { get; set; }
+
+    public virtual ICollection<Task> Tasks { get; set; } = new List<Task>();
 }

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SmartFarmManager.DataAccessObject.Models;
@@ -16,13 +17,12 @@ using System.Threading.Tasks;
 
 namespace SmartFarmManager.Service.Services
 {
-    public class AuthenticationService:IAuthenticationService
+    public class AuthenticationService : IAuthenticationService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly JwtSettings _jwtSettings;
         private readonly IMapper _mapper;
-
-        public AuthenticationService(IUnitOfWork unitOfWork,IMapper mapper, IOptions<JwtSettings> jwtSettingsOptions)
+        public AuthenticationService(IUnitOfWork unitOfWork, IMapper mapper, IOptions<JwtSettings> jwtSettingsOptions)
         {
             _unitOfWork = unitOfWork;
             _jwtSettings = jwtSettingsOptions.Value;
@@ -31,21 +31,15 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<LoginResult> Login(string username, string password)
         {
-            // Tìm người dùng bằng email
-            var user = await _unitOfWork.Users.GetUserByUsername(username);
-
+            var user = await _unitOfWork.Users.FindByCondition(x=>x.Username==username,false,x=>x.Role).FirstOrDefaultAsync();
             if (user == null)
-            {             
+            {
                 throw new Exception("Username not found.");
             }
-
-            // Kiểm tra mật khẩu
             if (!user.PasswordHash.Equals(password))
             {
                 throw new Exception("Incorrect password.");
             }
-
-            // Đăng nhập thành công, trả về token
             return new LoginResult
             {
                 Authenticated = true,
@@ -54,8 +48,6 @@ namespace SmartFarmManager.Service.Services
             };
         }
 
-        #region create token
-
         public SecurityToken CreateJwtToken(User user)
         {
             var utcNow = DateTime.UtcNow;
@@ -63,7 +55,7 @@ namespace SmartFarmManager.Service.Services
     {
         new(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
         new(JwtRegisteredClaimNames.Email, user.Email),
-        new(ClaimTypes.Role, user.Roles.Select(x=>x.RoleName).FirstOrDefault()), //
+        new(ClaimTypes.Role, user.Role.RoleName), //
         new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
     };
 
@@ -89,7 +81,7 @@ namespace SmartFarmManager.Service.Services
     {
         new(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
         new(JwtRegisteredClaimNames.Email, user.Email),
-        new(ClaimTypes.Role, user.Roles.Select(r=>r.RoleName).FirstOrDefault()),
+        new(ClaimTypes.Role, user.Role.RoleName),
         new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
     };
 
@@ -107,9 +99,6 @@ namespace SmartFarmManager.Service.Services
 
             return token;
         }
-        #endregion
-
-
 
     }
 }

@@ -5,10 +5,10 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class Role : EntityBase
+public partial class NotificationType : EntityBase
 {
 
-    public string RoleName { get; set; }
+    public string NotiTypeName { get; set; }
 
-    public virtual ICollection<User> Users { get; set; } = new List<User>();
+    public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 }

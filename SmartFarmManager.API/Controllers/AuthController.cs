@@ -6,7 +6,6 @@ using SmartFarmManager.API.Payloads.Requests.Auth;
 using SmartFarmManager.API.Payloads.Responses.Auth;
 using SmartFarmManager.Service.BusinessModels.Auth;
 using SmartFarmManager.Service.Interfaces;
-using SmartFarmManager.Service.Services;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -27,7 +26,6 @@ namespace SmartFarmManager.API.Controllers
 
         // Implement API endpoints for Authentication operations
         // 
-        #region login
         [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
@@ -46,7 +44,7 @@ namespace SmartFarmManager.API.Controllers
             try
             {
                 var handler = new JwtSecurityTokenHandler();
-                var res =  await _authenticationService.Login(loginRequest.Username, loginRequest.Password);
+                var res = await _authenticationService.Login(loginRequest.Username, loginRequest.Password);
                 var result = new LoginResponse
                 {
                     AccessToken = handler.WriteToken(res.Token),
@@ -59,11 +57,9 @@ namespace SmartFarmManager.API.Controllers
             catch (Exception ex)
             {
                 return BadRequest(ApiResult<string>.Fail(ex));
-
             }
 
         }
-        #endregion
 
         [HttpGet("me")]
         [Authorize]
@@ -75,7 +71,7 @@ namespace SmartFarmManager.API.Controllers
                 return Unauthorized();
             }
 
-            var userId = int.Parse(userIdClaim);
+            var userId = Guid.Parse(userIdClaim);
 
             try
             {
