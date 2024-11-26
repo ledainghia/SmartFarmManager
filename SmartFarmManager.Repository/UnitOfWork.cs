@@ -14,9 +14,14 @@ namespace SmartFarmManager.Repository
         private readonly SmartFarmContext _context;
         private IDbContextTransaction _currentTransaction;
 
-        
+        public IUserRepository Users { get;}
 
-       
+        public UnitOfWork(SmartFarmContext context, IUserRepository users)
+        {
+            _context = context;
+            Users = users;
+        }
+
         public void Dispose()
         {
             _currentTransaction?.Dispose();

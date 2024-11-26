@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace SmartFarmManager.Service.Interfaces
 {
-    public interface IUserService
+    public interface IAuthenticationService
     {
-        Task<UserProfileModel> GetUserProfileAsync(Guid userId);
+        Task<LoginResult> Login(string username, string password);
     }
 }

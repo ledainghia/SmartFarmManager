@@ -6,8 +6,9 @@ using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Repository.Repositories;
+using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Mapper;
-
+using SmartFarmManager.Service.Services;
 using SmartFarmManager.Service.Settings;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -126,10 +127,37 @@ namespace SmartFarmManager.API.Extensions
         }
         private static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
         {
-           
-            //add unit ofwork
+
+            services.AddRepositories();
+            services.AddApplicationServices();
+            services.AddConfigurations();
+
+            return services;
+        }
+
+        private static IServiceCollection AddRepositories(this IServiceCollection services)
+        {
+            // Đăng ký các repository
             services.AddScoped<IUnitOfWork, UnitOfWork>();
-            //add settings
+            services.AddScoped<IUserRepository, UserRepository>();
+            
+            
+
+            return services;
+        }
+
+        private static IServiceCollection AddApplicationServices(this IServiceCollection services)
+        {
+            // Đăng ký các service logic
+            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IAuthenticationService, AuthenticationService>();
+
+            return services;
+        }
+
+        private static IServiceCollection AddConfigurations(this IServiceCollection services)
+        {
+            // Đăng ký các configuration (ví dụ: JWT settings, database settings)
             services.AddScoped<JwtSettings>();
 
             return services;

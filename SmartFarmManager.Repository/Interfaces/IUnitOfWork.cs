@@ -9,7 +9,7 @@ namespace SmartFarmManager.Repository.Interfaces
 {
     public interface IUnitOfWork : IDisposable
     {
-       
+        IUserRepository Users { get; }
 
         Task<int> CommitAsync();
         System.Threading.Tasks.Task BeginTransactionAsync();
