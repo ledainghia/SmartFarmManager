@@ -103,7 +103,7 @@ namespace SmartFarmManager.API.Controllers
 
         //change status of task by task id and status id
         [HttpPut("{taskId}/{statusId}")]
-        public async Task<IActionResult> ChangeTaskStatus(int taskId, int statusId)
+        public async Task<IActionResult> ChangeTaskStatus(Guid taskId, Guid statusId)
         {
             try
             {
