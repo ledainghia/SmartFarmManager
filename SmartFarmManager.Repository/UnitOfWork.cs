@@ -17,13 +17,17 @@ namespace SmartFarmManager.Repository
         public IUserRepository Users { get;}
         public ITaskRepository Tasks { get;}
         public ITaskTypeRepository TaskTypes { get;}
+        public IStatusRepository Statuses { get; }
+        public IStatusLogRepository StatusLogs { get; }
 
-        public UnitOfWork(SmartFarmContext context, IUserRepository users, ITaskTypeRepository taskTypes,ITaskRepository tasks)
+        public UnitOfWork(SmartFarmContext context, IUserRepository users, ITaskTypeRepository taskTypes,ITaskRepository tasks, IStatusRepository statuses, IStatusLogRepository statusLogs)
         {
             _context = context;
             Users = users;
             TaskTypes = taskTypes;
             Tasks = tasks;
+            Statuses = statuses;
+            StatusLogs = statusLogs;
         }
 
         public void Dispose()
