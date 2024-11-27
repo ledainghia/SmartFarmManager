@@ -15,11 +15,15 @@ namespace SmartFarmManager.Repository
         private IDbContextTransaction _currentTransaction;
 
         public IUserRepository Users { get;}
+        public ITaskRepository Tasks { get;}
+        public ITaskTypeRepository TaskTypes { get;}
 
-        public UnitOfWork(SmartFarmContext context, IUserRepository users)
+        public UnitOfWork(SmartFarmContext context, IUserRepository users, ITaskTypeRepository taskTypes,ITaskRepository tasks)
         {
             _context = context;
             Users = users;
+            TaskTypes = taskTypes;
+            Tasks = tasks;
         }
 
         public void Dispose()

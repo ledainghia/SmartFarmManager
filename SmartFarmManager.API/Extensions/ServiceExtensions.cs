@@ -140,6 +140,8 @@ namespace SmartFarmManager.API.Extensions
             // Đăng ký các repository
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<ITaskRepository, TaskRepository>();
+            services.AddScoped<ITaskTypeRepository, TaskTypeRepository>();
             
             
 
@@ -151,7 +153,7 @@ namespace SmartFarmManager.API.Extensions
             // Đăng ký các service logic
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IAuthenticationService, AuthenticationService>();
-
+            services.AddScoped<ITaskService, TaskService>();
             return services;
         }
 
