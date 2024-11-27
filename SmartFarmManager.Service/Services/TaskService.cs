@@ -32,6 +32,22 @@ namespace SmartFarmManager.Service.Services
                 throw new ArgumentException("Invalid TaskTypeId");
             }
 
+            var tasksInCage = await _unitOfWork.Tasks
+                    .FindByCondition(t => t.DueDate.HasValue &&
+                                          t.DueDate.Value.Date == DateTime.UtcNow.Date &&
+                                          t.Session == model.Session &&
+                                          t.CageId == model.CageId)
+                    .OrderByDescending(t => t.PriorityNum) // Sắp xếp giảm dần theo PriorityNum
+                    .FirstOrDefaultAsync();
+            var priorityNum = 0;
+            if (tasksInCage == null)
+            {
+                priorityNum += 1;
+            }
+            else
+            {
+                priorityNum = tasksInCage.PriorityNum + 1;
+            }
 
             var task = new DataAccessObject.Models.Task
             {
@@ -40,12 +56,12 @@ namespace SmartFarmManager.Service.Services
                 AssignedToUserId = model.AssignedToUserId,
                 CreatedByUserId = model.CreatedByUserId,
                 TaskName = model.TaskName,
-                PriorityNum = (int)taskType.PriorityNum,
+                PriorityNum = priorityNum,
                 Description = model.Description,
                 DueDate = model.DueDate,
                 Session = model.Session,
                 CreatedAt = DateTime.UtcNow,
-                Status = "Pending" 
+                Status = "Assigned" 
             };
 
             await _unitOfWork.Tasks.CreateAsync(task);
@@ -76,8 +92,7 @@ namespace SmartFarmManager.Service.Services
                         .FindByCondition(t => t.DueDate.HasValue &&
                                   t.DueDate.Value.Date == taskDate.Value.Date &&
                                   t.Session == task.Session &&
-                                  t.CageId == task.CageId &&
-                                  t.AssignedToUserId == task.AssignedToUserId)
+                                  t.CageId == task.CageId)
                         .OrderBy(t => t.PriorityNum)
                         .ToListAsync();
                 // Lấy tất cả task trong cùng ngày nhưng có session khác (cùng ngày, khác session)
@@ -85,8 +100,7 @@ namespace SmartFarmManager.Service.Services
                         .FindByCondition(t => t.DueDate.HasValue &&
                                   t.DueDate.Value.Date == taskDate.Value.Date &&
                                   t.Session == model.Session &&
-                                  t.CageId == task.CageId&&
-                                  t.AssignedToUserId==task.AssignedToUserId)
+                                  t.CageId == task.CageId)
                         .OrderBy(t => t.PriorityNum)
                         .ToListAsync();
 
@@ -129,8 +143,7 @@ namespace SmartFarmManager.Service.Services
                     .FindByCondition(t => t.DueDate.HasValue &&
                                           t.DueDate.Value.Date == taskDate.Value.Date &&
                                           t.Session == task.Session &&
-                                          t.CageId == task.CageId &&
-                                          t.AssignedToUserId == task.AssignedToUserId)
+                                          t.CageId == task.CageId)
                     .OrderBy(t => t.PriorityNum)
                     .ToListAsync();
 
@@ -152,31 +165,20 @@ namespace SmartFarmManager.Service.Services
                 return true;
 
             }
-
-
-
-
-
-
-
         }
 
 
        
-        
-
-    
-
         //change status of task by task id and status id
-        public async Task<bool> ChangeTaskStatusAsync(int taskId, int statusId)
+        public async Task<bool> ChangeTaskStatusAsync(Guid taskId, Guid statusId)
         {
-            var task = await _unitOfWork.Tasks.FindAsync(x => x.Id.Equals(taskId));
+            var task = await _unitOfWork.Tasks.FindAsync(x => x.Id == taskId);
             if (task == null)
             {
                 throw new ArgumentException("Invalid TaskId");
             }
 
-            var status = await _unitOfWork.Statuses.FindAsync(x => x.Id.Equals(statusId));
+            var status = await _unitOfWork.Statuses.FindAsync(x => x.Id == statusId);
             if (status == null)
             {
                 throw new ArgumentException("Invalid StatusId");
@@ -188,7 +190,7 @@ namespace SmartFarmManager.Service.Services
                 UpdatedAt = DateTime.UtcNow
             };
             await _unitOfWork.StatusLogs.CreateAsync(statusLog);
-            if (status.StatusName == "Hoàn thành")
+            if (status.StatusName == "Done")
             {
                 task.CompletedAt = DateTime.UtcNow;
             }
