@@ -56,5 +56,29 @@ namespace SmartFarmManager.API.Controllers
             }
         }
 
+        //change status of task by task id and status id
+        [HttpPut("{taskId}/{statusId}")]
+        public async Task<IActionResult> ChangeTaskStatus(int taskId, int statusId)
+        {
+            try
+            {
+                var result = await _taskService.ChangeTaskStatusAsync(taskId, statusId);
+                if (!result)
+                {
+                    throw new Exception("Error while changing Task status!");
+                }
+
+                return Ok(ApiResult<string>.Succeed("Change Task status successfully!"));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred."));
+            }
+        }
+
     }
 }

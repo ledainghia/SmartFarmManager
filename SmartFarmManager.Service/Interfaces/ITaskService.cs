@@ -10,5 +10,6 @@ namespace SmartFarmManager.Service.Interfaces
     public interface ITaskService
     {
         Task<bool> CreateTaskAsync(CreateTaskModel model);
+        Task<bool> ChangeTaskStatusAsync(int taskId, int statusId);
     }
 }
