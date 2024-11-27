@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SmartFarmManager.Service.Interfaces
 {
-    internal interface IStatusService
+    public interface IStatusService
     {
     }
 }

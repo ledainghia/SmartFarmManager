@@ -142,6 +142,8 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<ITaskRepository, TaskRepository>();
             services.AddScoped<ITaskTypeRepository, TaskTypeRepository>();
+            services.AddScoped<IStatusRepository, StatusRepository>();
+            services.AddScoped<IStatusLogRepository, StatusLogRepository>();
             
             
 
