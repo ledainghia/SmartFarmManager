@@ -1,4 +1,5 @@
-﻿using SmartFarmManager.Repository.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels.Task;
 using SmartFarmManager.Service.Interfaces;
 using System;
@@ -51,5 +52,117 @@ namespace SmartFarmManager.Service.Services
 
             return true;
         }
-    }
+
+        public async Task<bool> UpdateTaskPriorityAsync(Guid taskId, UpdateTaskPriorityModel model)
+        {
+            
+            var task = await _unitOfWork.Tasks.FindAsync(x=>x.Id==taskId);
+            if (task == null)
+            {
+                throw new KeyNotFoundException("Task not found.");
+            }
+
+            if (task.Session != model.Session)
+            {
+                var taskDate = task.DueDate?.Date;
+                if (taskDate == null)
+                {
+                    throw new ArgumentException("Task does not have a valid DueDate.");
+                }
+
+                // Lấy tất cả task trong cùng ngày chung session khác (cùng ngày, chung session)
+                var tasksInOldSession = await _unitOfWork.Tasks
+                        .FindByCondition(t => t.DueDate.HasValue &&
+                                  t.DueDate.Value.Date == taskDate.Value.Date &&
+                                  t.Session == task.Session &&
+                                  t.CageId == task.CageId &&
+                                  t.AssignedToUserId == task.AssignedToUserId)
+                        .OrderBy(t => t.PriorityNum)
+                        .ToListAsync();
+                // Lấy tất cả task trong cùng ngày nhưng có session khác (cùng ngày, khác session)
+                var tasksInNewSession = await _unitOfWork.Tasks
+                        .FindByCondition(t => t.DueDate.HasValue &&
+                                  t.DueDate.Value.Date == taskDate.Value.Date &&
+                                  t.Session == model.Session &&
+                                  t.CageId == task.CageId&&
+                                  t.AssignedToUserId==task.AssignedToUserId)
+                        .OrderBy(t => t.PriorityNum)
+                        .ToListAsync();
+
+                // 1. Cập nhật PriorityNum của các task trong session cũ
+                foreach (var oldTask in tasksInOldSession)
+                {
+                    if (oldTask.PriorityNum > task.PriorityNum)
+                    {
+                        oldTask.PriorityNum -= 1;
+                    }
+                }
+
+                // 2. Cập nhật PriorityNum của các task trong session mới
+                foreach (var newTask in tasksInNewSession)
+                {
+                    if (newTask.PriorityNum >= model.NewPriority)
+                    {
+                        newTask.PriorityNum += 1;
+                    }
+                }
+                task.Session = model.Session;
+                task.PriorityNum = model.NewPriority;
+                await _unitOfWork.Tasks.UpdateAsync(task);
+                await _unitOfWork.CommitAsync();
+                return true;
+
+
+
+            }
+            else
+            {
+                var taskDate = task.DueDate?.Date;
+                if (taskDate == null)
+                {
+                    throw new ArgumentException("Task does not have a valid DueDate.");
+                }
+
+                // Lấy tất cả các task trong cùng ngày và cùng session
+                var tasksInSameSession = await _unitOfWork.Tasks
+                    .FindByCondition(t => t.DueDate.HasValue &&
+                                          t.DueDate.Value.Date == taskDate.Value.Date &&
+                                          t.Session == task.Session &&
+                                          t.CageId == task.CageId &&
+                                          t.AssignedToUserId == task.AssignedToUserId)
+                    .OrderBy(t => t.PriorityNum)
+                    .ToListAsync();
+
+                // Giảm PriorityNum của các task có PriorityNum > PriorityNum hiện tại
+                foreach (var t in tasksInSameSession.Where(t => t.PriorityNum > task.PriorityNum))
+                {
+                    t.PriorityNum -= 1;
+                }
+
+                // Tăng PriorityNum của các task có PriorityNum >= newPriority
+                foreach (var t in tasksInSameSession.Where(t => t.PriorityNum >= model.NewPriority))
+                {
+                    t.PriorityNum += 1;
+                }
+                task.PriorityNum = model.NewPriority;
+
+                await _unitOfWork.Tasks.UpdateAsync(task);    
+                await _unitOfWork.CommitAsync();
+                return true;
+
+            }
+
+
+
+
+
+
+
+        }
+
+
+       
+        }
+
+    
 }

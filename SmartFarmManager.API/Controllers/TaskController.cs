@@ -56,5 +56,50 @@ namespace SmartFarmManager.API.Controllers
             }
         }
 
+        [HttpPost("{taskId}/priority")]
+        public async Task<IActionResult> UpdateTask(Guid taskId, [FromBody] UpdateTaskPriorityRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                // Collect validation errors
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                                               .Select(e => e.ErrorMessage)
+                                               .ToList();
+
+                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
+        {
+            { "Errors", errors.ToArray() }
+        }));
+            }
+
+            try
+            {
+                
+                var updateTaskModel = request.MapToModel();
+
+                // Call the service to update the task
+                var result = await _taskService.UpdateTaskPriorityAsync(taskId, updateTaskModel);
+                if (!result)
+                {
+                    throw new Exception("Error while updating Task!");
+                }
+
+                return Ok(ApiResult<string>.Succeed("Update Task successfully!"));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+            }
+        }
+
+
     }
 }
