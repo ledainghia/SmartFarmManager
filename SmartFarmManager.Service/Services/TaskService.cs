@@ -368,5 +368,46 @@ namespace SmartFarmManager.Service.Services
             };
         }
 
+        public async Task<TaskDetailModel> GetTaskDetailAsync(Guid taskId)
+        {
+            var task = await _unitOfWork.Tasks
+            .FindByCondition(t => t.Id == taskId, false, x => x.AssignedToUser, x => x.TaskType, x => x.StatusLogs,x=>x.StatusLogs.Select(sl=>sl.Status)).FirstOrDefaultAsync();
+            if (task == null)
+            {
+                return null; 
+            }
+
+            // Map Task sang TaskDetailResponse
+            return new TaskDetailModel
+            {
+                Id = task.Id,
+                TaskName = task.TaskName,
+                Description = task.Description,
+                PriorityNum = task.PriorityNum,
+                DueDate = task.DueDate,
+                Status = task.Status,
+                Session = task.Session,
+                CompletedAt = task.CompletedAt,
+                CreatedAt = task.CreatedAt,
+                AssignedToUser = new UserResponseModel
+                {
+                    UserId = task.AssignedToUser.Id,
+                    FullName = task.AssignedToUser.FullName,
+                    Email = task.AssignedToUser.Email,
+                    PhoneNumber = task.AssignedToUser.PhoneNumber
+                },
+                TaskType = task.TaskType == null ? null : new TaskTypeResponseModel
+                {
+                    TaskTypeId = task.TaskType.Id,
+                    TaskTypeName = task.TaskType.TaskTypeName
+                },
+                StatusLogs = task.StatusLogs.Select(sl => new StatusLogResponseModel
+                {
+                    StatusId = sl.StatusId,
+                    StatusName = sl.Status.StatusName, // Tên status từ bảng Status
+                    UpdatedAt = sl.UpdatedAt
+                }).ToList()
+            };
+        }
     }
 }
