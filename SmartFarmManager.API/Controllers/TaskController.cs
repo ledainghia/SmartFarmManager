@@ -165,6 +165,28 @@ namespace SmartFarmManager.API.Controllers
 
             return Ok(task);
         }
+        [HttpGet("{taskId}")]
+        public async Task<IActionResult> GetTaskDetail(Guid taskId)
+        {
+            try
+            {
+                var taskDetail = await _taskService.GetTaskDetailAsync(taskId);
+
+                if (taskDetail == null)
+                {
+                    return NotFound(ApiResult<string>.Fail("Task not found."));
+                }
+
+                return Ok(ApiResult<TaskDetailModel>.Succeed(taskDetail));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred."));
+            }
+        }
+
+
+
 
     }
 }
