@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using SmartFarmManager.Service.BusinessModels.Task;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,7 @@ namespace SmartFarmManager.Service.Mapper
     {
         public ApplicationMapper()
         {
+            CreateMap<TaskModel, Task>().ReverseMap();
         }
     }
 }

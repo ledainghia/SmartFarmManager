@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.Task;
+using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Service.BusinessModels.Task;
 using SmartFarmManager.Service.Interfaces;
 
@@ -102,7 +103,7 @@ namespace SmartFarmManager.API.Controllers
 
 
         //change status of task by task id and status id
-        [HttpPut("{taskId}/{statusId}")]
+        [HttpPut("{taskId}/status/{statusId}")]
         public async Task<IActionResult> ChangeTaskStatus(Guid taskId, Guid statusId)
         {
             try
@@ -123,6 +124,46 @@ namespace SmartFarmManager.API.Controllers
             {
                 return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred."));
             }
+        }
+
+
+        //get tasks filter
+        [HttpGet]
+        public async Task<IActionResult> GetTasks([FromQuery] TaskFilterRequest filter)
+        {
+            try
+            {
+                var result = await _taskService.GetTasksAsync(filter.MapToModel());
+                return Ok(ApiResult<string>.Succeed("Change Task status successfully!"));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred."));
+            }
+        }
+
+        [HttpGet("user-tasks-with-priority")]
+        public async Task<IActionResult> GetUserTasksWithPriority([FromQuery] Guid userId, [FromQuery] Guid cageId, [FromQuery] DateTime? specificDate = null)
+        {
+            var tasks = await _taskService.GetTasksForUserWithStateAsync(userId, cageId, specificDate);
+            return Ok(tasks);
+        }
+
+        [HttpGet("next-task")]
+        public async Task<IActionResult> GetNextTask([FromQuery] Guid userId)
+        {
+            var task = await _taskService.GetNextTaskForUserAsync(userId);
+
+            if (task == null)
+            {
+                return NotFound(new { message = "No next task found for this user." });
+            }
+
+            return Ok(task);
         }
 
     }
