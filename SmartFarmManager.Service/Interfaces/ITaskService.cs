@@ -12,5 +12,10 @@ namespace SmartFarmManager.Service.Interfaces
         Task<bool> CreateTaskAsync(CreateTaskModel model);
         Task<bool> UpdateTaskPriorityAsync(Guid taskId, UpdateTaskPriorityModel model);
         Task<bool> ChangeTaskStatusAsync(Guid taskId, Guid statusId);
+        Task<List<TaskModel>> GetTasksAsync(TaskModel taskModel);
+
+        Task<List<TaskResponse>> GetTasksForUserWithStateAsync(Guid userId, Guid cageId, DateTime? dateTime = null);
+
+        Task<TaskResponse> GetNextTaskForUserAsync(Guid userId);
     }
 }

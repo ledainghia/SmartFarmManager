@@ -8,17 +8,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using AutoMapper;
 
 namespace SmartFarmManager.Service.Services
 {
     public class TaskService : ITaskService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
 
-        public TaskService(IUnitOfWork unitOfWork)
+        public TaskService(IUnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
+
         public async Task<bool> CreateTaskAsync(CreateTaskModel model)
         {
             if (model.DueDate < DateTime.UtcNow)
@@ -200,5 +204,169 @@ namespace SmartFarmManager.Service.Services
 
             return true;
         }
+
+        //get task filter
+        public async Task<List<TaskModel>> GetTasksAsync(TaskModel filter)
+        {
+            var query = _unitOfWork.Tasks.FindAll();
+
+            if (filter.TaskTypeId != Guid.Empty)
+                query = query.Where(t => t.TaskTypeId == filter.TaskTypeId);
+
+            if (filter.CageId != Guid.Empty)
+                query = query.Where(t => t.CageId == filter.CageId);
+
+            if (filter.AssignedToUserId != Guid.Empty)
+                query = query.Where(t => t.AssignedToUserId == filter.AssignedToUserId);
+
+            if (filter.CreatedByUserId != Guid.Empty)
+                query = query.Where(t => t.CreatedByUserId == filter.CreatedByUserId);
+
+            if (!string.IsNullOrEmpty(filter.TaskName))
+                query = query.Where(t => t.TaskName.Contains(filter.TaskName));
+
+            if (filter.PriorityNum.HasValue && filter.PriorityNum.Value != 0)
+                query = query.Where(t => t.PriorityNum == filter.PriorityNum);
+
+            if (!string.IsNullOrEmpty(filter.Description))
+                query = query.Where(t => t.Description.Contains(filter.Description));
+
+            if (filter.DueDate.HasValue)
+                query = query.Where(t => t.DueDate == filter.DueDate);
+
+            if (!string.IsNullOrEmpty(filter.Status))
+                query = query.Where(t => t.Status == filter.Status);
+
+            if (filter.Session.HasValue && filter.Session.Value != 0)
+                query = query.Where(t => t.Session == filter.Session);
+
+            if (filter.CompletedAt.HasValue)
+                query = query.Where(t => t.CompletedAt == filter.CompletedAt);
+
+            if (filter.CreatedAt.HasValue)
+                query = query.Where(t => t.CreatedAt == filter.CreatedAt);
+
+            var listTask = await query.OrderBy(t => t.PriorityNum).ToListAsync();
+            var taskModel = _mapper.Map<List<TaskModel>>(listTask);
+            return taskModel;
+        }
+
+        public async Task<List<TaskResponse>> GetTasksForUserWithStateAsync(Guid userId,Guid cageId, DateTime? specificDate = null)
+        {
+            // Ngày hiện tại và ngày mặc định
+            //chỉ ngày nay với mai?????????????????
+            var today = DateTime.Today;
+            var filterDate = specificDate ?? today;
+
+            // Lấy tất cả task trong ngày chỉ định
+            var allTasks = await _unitOfWork.Tasks.FindAll()
+                .Where(t => t.DueDate.HasValue && t.DueDate.Value.Date == filterDate && t.CageId == cageId)
+                .OrderBy(t => t.PriorityNum)
+                .ToListAsync();
+
+            // Tìm task có độ ưu tiên cao nhất chưa hoàn thành của tất cả user
+            var highestUnfinishedTask = allTasks
+                .Where(t => t.CompletedAt == null)
+                .OrderBy(t => t.PriorityNum)
+                .FirstOrDefault();
+
+            // Lấy danh sách task của user hiện tại
+            var userTasks = allTasks
+                .Where(t => t.AssignedToUserId == userId)
+                .OrderBy(t => t.PriorityNum)
+                .ToList();
+
+            // Danh sách trả về
+            var taskResponses = new List<TaskResponse>();
+
+            // Trường hợp user A
+            if (userId == highestUnfinishedTask?.AssignedToUserId)
+            {
+                foreach (var task in userTasks)
+                {
+                    bool isDisabled = task.PriorityNum > highestUnfinishedTask.PriorityNum;
+                    string reason = isDisabled
+                        ? $"Blocked by Task {highestUnfinishedTask.PriorityNum} của bạn"
+                        : string.Empty;
+
+                    taskResponses.Add(new TaskResponse
+                    {
+                        TaskId = task.Id,
+                        TaskName = task.TaskName,
+                        PriorityNum = task.PriorityNum,
+                        IsDisabled = isDisabled,
+                        Status = task.Status,
+                        DueDate = task.DueDate,
+                        Reason = reason
+                    });
+                }
+            }
+            else
+            {
+                // Trường hợp user B
+                foreach (var task in userTasks)
+                {
+                    bool isDisabled = highestUnfinishedTask != null;
+                    string reason = isDisabled
+                        ? $"Blocked by Task {highestUnfinishedTask.PriorityNum} của Người A"
+                        : string.Empty;
+
+                    taskResponses.Add(new TaskResponse
+                    {
+                        TaskId = task.Id,
+                        TaskName = task.TaskName,
+                        PriorityNum = task.PriorityNum,
+                        IsDisabled = isDisabled,
+                        Status = task.Status,
+                        DueDate = task.DueDate,
+                        Reason = reason
+                    });
+                }
+            }
+
+            // Nếu có task chưa hoàn thành của Người A và user hiện tại không phải Người A
+            if (highestUnfinishedTask != null && userId != highestUnfinishedTask.AssignedToUserId)
+            {
+                taskResponses.Insert(0, new TaskResponse
+                {
+                    TaskId = highestUnfinishedTask.Id,
+                    TaskName = highestUnfinishedTask.TaskName,
+                    PriorityNum = highestUnfinishedTask.PriorityNum,
+                    IsDisabled = false, // Task global hiển thị bình thường
+                    Status = highestUnfinishedTask.Status,
+                    DueDate = highestUnfinishedTask.DueDate,
+                    Reason = "Global task with highest priority"
+                });
+            }
+
+            return taskResponses;
+        }
+
+        public async Task<TaskResponse?> GetNextTaskForUserAsync(Guid userId)
+        {
+            // Lấy task tiếp theo chưa hoàn thành của user
+            var nextTask = await _unitOfWork.Tasks.FindAll()
+                .Where(t => t.AssignedToUserId == userId && t.CompletedAt == null && t.DueDate.Value.Date == DateTime.Now) // Task chưa hoàn thành
+                //.OrderBy(t => t.DueDate) // Ưu tiên theo ngày sớm nhất
+                //.ThenBy(t => t.PriorityNum) // Trong cùng một ngày, ưu tiên theo độ ưu tiên
+                .FirstOrDefaultAsync();
+
+            // Nếu không có task tiếp theo
+            if (nextTask == null)
+                return null;
+
+            // Trả về thông tin task dưới dạng DTO
+            return new TaskResponse
+            {
+                TaskId = nextTask.Id,
+                TaskName = nextTask.TaskName,
+                PriorityNum = nextTask.PriorityNum,
+                IsDisabled = false, // Task tiếp theo luôn khả dụng
+                Status = nextTask.Status,
+                DueDate = nextTask.DueDate,
+                Reason = "Next task for the user"
+            };
+        }
+
     }
 }
