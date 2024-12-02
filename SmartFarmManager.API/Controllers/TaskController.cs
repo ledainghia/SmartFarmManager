@@ -3,12 +3,13 @@ using Microsoft.AspNetCore.Mvc;
 using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.Task;
 using SmartFarmManager.DataAccessObject.Models;
+using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Task;
 using SmartFarmManager.Service.Interfaces;
 
 namespace SmartFarmManager.API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/[controller]s")]
     [ApiController]
     public class TaskController : ControllerBase
     {
@@ -125,26 +126,63 @@ namespace SmartFarmManager.API.Controllers
                 return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred."));
             }
         }
-
-
-        //get tasks filter
         [HttpGet]
-        public async Task<IActionResult> GetTasks([FromQuery] TaskFilterRequest filter)
+        public async Task<IActionResult> GetFilteredTasks([FromQuery] TaskFilterPagingRequest filterRequest)
         {
             try
             {
-                var result = await _taskService.GetTasksAsync(filter.MapToModel());
-                return Ok(ApiResult<string>.Succeed("Change Task status successfully!"));
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ApiResult<string>.Fail(ex.Message));
+                // Map sang model tầng Service
+                var serviceFilter = new TaskFilterModel
+                {
+                    
+                    TaskName = filterRequest.TaskName,
+                    Status = filterRequest.Status,
+                    TaskTypeId = filterRequest.TaskTypeId,
+                    CageId = filterRequest.CageId,
+                    AssignedToUserId = filterRequest.AssignedToUserId,
+                    DueDateFrom = filterRequest.DueDateFrom,
+                    DueDateTo = filterRequest.DueDateTo,
+                    PriorityNum = filterRequest.PriorityNum,
+                    Session = filterRequest.Session,
+                    CompletedAt = filterRequest.CompletedAt,
+                    CreatedAt = filterRequest.CreatedAt,
+                    PageNumber = filterRequest.PageNumber,
+                    PageSize = filterRequest.PageSize,
+                    
+
+                };
+
+                // Gọi tầng Service để xử lý
+                var result = await _taskService.GetFilteredTasksAsync(serviceFilter);
+
+                // Trả về kết quả
+                return Ok(ApiResult<PagedResult<TaskDetailModel>>.Succeed(result));
             }
             catch (Exception ex)
             {
                 return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred."));
             }
         }
+
+
+        ////get tasks filter
+        //[HttpGet]
+        //public async Task<IActionResult> GetTasks([FromQuery] TaskFilterRequest filter)
+        //{
+        //    try
+        //    {
+        //        var result = await _taskService.GetTasksAsync(filter.MapToModel());
+        //        return Ok(ApiResult<string>.Succeed("Change Task status successfully!"));
+        //    }
+        //    catch (ArgumentException ex)
+        //    {
+        //        return BadRequest(ApiResult<string>.Fail(ex.Message));
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred."));
+        //    }
+        //}
 
         [HttpGet("user-tasks-with-priority")]
         public async Task<IActionResult> GetUserTasksWithPriority([FromQuery] Guid userId, [FromQuery] Guid cageId, [FromQuery] DateTime? specificDate = null)

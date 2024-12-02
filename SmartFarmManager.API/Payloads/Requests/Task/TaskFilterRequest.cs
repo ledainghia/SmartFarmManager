@@ -8,9 +8,9 @@ namespace SmartFarmManager.API.Payloads.Requests.Task
         public Guid? CageId { get; set; }
         public Guid? AssignedToUserId { get; set; }
         public Guid? CreatedByUserId { get; set; }
-        public string TaskName { get; set; }
+        public string? TaskName { get; set; }
         public int? PriorityNum { get; set; } 
-        public string Description { get; set; } 
+        public string? Description { get; set; } 
         public DateTime? DueDate { get; set; } = null!;
         public string Status { get; set; } = null!;
         public int? Session { get; set; }

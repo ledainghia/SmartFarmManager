@@ -1,4 +1,5 @@
-﻿using SmartFarmManager.Service.BusinessModels.Task;
+﻿using SmartFarmManager.Service.BusinessModels;
+using SmartFarmManager.Service.BusinessModels.Task;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +15,7 @@ namespace SmartFarmManager.Service.Interfaces
         Task<bool> ChangeTaskStatusAsync(Guid taskId, Guid statusId);
         Task<TaskDetailModel> GetTaskDetailAsync(Guid taskId);
         Task<List<TaskModel>> GetTasksAsync(TaskModel taskModel);
+        Task<PagedResult<TaskDetailModel>> GetFilteredTasksAsync(TaskFilterModel filter);
 
         Task<List<TaskResponse>> GetTasksForUserWithStateAsync(Guid userId, Guid cageId, DateTime? dateTime = null);
 

@@ -13,6 +13,8 @@ namespace SmartFarmManager.Service.Mapper
         public ApplicationMapper()
         {
             CreateMap<TaskModel, Task>().ReverseMap();
+
+           
         }
     }
 }
