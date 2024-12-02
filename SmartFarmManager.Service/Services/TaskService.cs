@@ -9,6 +9,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
+using SmartFarmManager.Repository.Repositories;
+using SmartFarmManager.Service.BusinessModels;
+using SmartFarmManager.Service.Helpers;
 
 namespace SmartFarmManager.Service.Services
 {
@@ -367,6 +370,127 @@ namespace SmartFarmManager.Service.Services
                 Reason = "Next task for the user"
             };
         }
+
+        public async Task<PagedResult<TaskDetailModel>> GetFilteredTasksAsync(TaskFilterModel filter)
+        {
+            // Query từ repository
+            var query = _unitOfWork.Tasks.FindAll(false, x => x.AssignedToUser, x => x.TaskType, x => x.StatusLogs).Include(x=>x.StatusLogs).ThenInclude(x=>x.Status).AsQueryable();
+
+            // Áp dụng bộ lọc
+            if (!string.IsNullOrEmpty(filter.TaskName))
+            {
+                query = query.Where(t => t.TaskName.Contains(filter.TaskName));
+            }
+
+            if (!string.IsNullOrEmpty(filter.Status))
+            {
+                query = query.Where(t => t.Status == filter.Status);
+            }
+
+            if (filter.TaskTypeId.HasValue)
+            {
+                query = query.Where(t => t.TaskTypeId == filter.TaskTypeId.Value);
+            }
+
+            if (filter.CageId.HasValue)
+            {
+                query = query.Where(t => t.CageId == filter.CageId.Value);
+            }
+
+            if (filter.AssignedToUserId.HasValue)
+            {
+                query = query.Where(t => t.AssignedToUserId == filter.AssignedToUserId.Value);
+            }
+
+            if (filter.DueDateFrom.HasValue)
+            {
+                query = query.Where(t => t.DueDate >= filter.DueDateFrom.Value);
+            }
+
+            if (filter.DueDateTo.HasValue)
+            {
+                query = query.Where(t => t.DueDate <= filter.DueDateTo.Value);
+            }
+
+            if (filter.PriorityNum.HasValue)
+            {
+                query = query.Where(t => t.PriorityNum == filter.PriorityNum.Value);
+            }
+
+            if (filter.Session.HasValue)
+            {
+                query = query.Where(t => t.Session == filter.Session.Value);
+            }
+
+            if (filter.CompletedAt.HasValue)
+            {
+                query = query.Where(t => t.CompletedAt.HasValue && t.CompletedAt.Value.Date == filter.CompletedAt.Value.Date);
+            }
+
+            if (filter.CreatedAt.HasValue)
+            {
+                query = query.Where(t => t.CreatedAt.Value.Date == filter.CreatedAt.Value.Date);
+            }
+
+            // Sắp xếp dữ liệu
+            query = query.OrderBy(t => t.CageId)
+                         .ThenBy(t => t.DueDate.Value.Date)
+                         .ThenBy(t => t.Session)
+                         .ThenBy(t => t.PriorityNum);
+
+            // Tổng số phần tử
+            var totalItems = await query.CountAsync();
+
+            // Phân trang và chọn các trường cần thiết
+            var items = await query
+                .Skip((filter.PageNumber - 1) * filter.PageSize)
+                .Take(filter.PageSize)
+                .Select(t => new TaskDetailModel
+                {
+                    Id = t.Id,
+                    TaskName = t.TaskName,
+                    Description = t.Description,
+                    PriorityNum = t.PriorityNum,
+                    DueDate = t.DueDate,
+                    Status = t.Status,
+                    Session = t.Session,
+                    CompletedAt = t.CompletedAt,
+                    CreatedAt = t.CreatedAt,
+                    AssignedToUser = t.AssignedToUser == null ? null : new UserResponseModel
+                    {
+                        UserId = t.AssignedToUser.Id,
+                        FullName = t.AssignedToUser.FullName,
+                        Email = t.AssignedToUser.Email,
+                        PhoneNumber = t.AssignedToUser.PhoneNumber
+                    },
+                    TaskType = t.TaskType == null ? null : new TaskTypeResponseModel
+                    {
+                        TaskTypeId = t.TaskType.Id,
+                        TaskTypeName = t.TaskType.TaskTypeName
+                    },
+                    StatusLogs = t.StatusLogs.Select(s => new StatusLogResponseModel
+                    {
+                        StatusId = s.StatusId,
+                        StatusName = s.Status.StatusName,
+                        UpdatedAt = s.UpdatedAt
+                    }).ToList()
+                })
+                .ToListAsync();
+
+            var result = new PaginatedList<TaskDetailModel>(items, totalItems, filter.PageNumber, filter.PageSize);
+            // Trả về kết quả
+            return new PagedResult<TaskDetailModel>
+            {
+                Items = result.Items,
+                TotalItems = result.TotalCount,
+                PageSize = result.PageSize,
+                CurrentPage = result.CurrentPage,
+                TotalPages = result.TotalPages,
+                HasNextPage = result.HasNextPage,
+                HasPreviousPage = result.HasPreviousPage
+            };
+        }
+
 
         public async Task<TaskDetailModel> GetTaskDetailAsync(Guid taskId)
         {
