@@ -28,34 +28,36 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<bool> CreateTaskAsync(CreateTaskModel model)
         {
+            // Kiểm tra ngày hạn không được nhỏ hơn thời điểm hiện tại
             if (model.DueDate < DateTime.UtcNow)
             {
                 throw new ArgumentException("DueDate must be in the future");
             }
 
-            var taskType = await _unitOfWork.TaskTypes.FindAsync(x=>x.Id==model.TaskTypeId);
+            // Kiểm tra TaskTypeId hợp lệ
+            var taskType = await _unitOfWork.TaskTypes.FindAsync(x => x.Id == model.TaskTypeId);
             if (taskType == null)
             {
                 throw new ArgumentException("Invalid TaskTypeId");
             }
 
-            var tasksInCage = await _unitOfWork.Tasks
-                    .FindByCondition(t => t.DueDate.HasValue &&
-                                          t.DueDate.Value.Date == DateTime.UtcNow.Date &&
-                                          t.Session == model.Session &&
-                                          t.CageId == model.CageId)
-                    .OrderByDescending(t => t.PriorityNum) // Sắp xếp giảm dần theo PriorityNum
-                    .FirstOrDefaultAsync();
-            var priorityNum = 0;
-            if (tasksInCage == null)
+            // Lấy danh sách task cùng ngày, session, cage, và priority
+            var existingTask = await _unitOfWork.Tasks
+                .FindByCondition(t => t.DueDate.HasValue &&
+                                      t.DueDate.Value.Date == model.DueDate.Date &&
+                                      t.Session == model.Session &&
+                                      t.CageId == model.CageId &&
+                                      t.PriorityNum == taskType.PriorityNum &&
+                                      t.CompletedAt==null) // Chỉ kiểm tra task chưa hoàn thành
+                .FirstOrDefaultAsync();
+
+            // Nếu đã tồn tại task trùng PriorityNum thì trả về lỗi
+            if (existingTask != null)
             {
-                priorityNum += 1;
-            }
-            else
-            {
-                priorityNum = tasksInCage.PriorityNum + 1;
+                throw new InvalidOperationException($"A task with priority {taskType.PriorityNum} already exists in cage {model.CageId} on {model.DueDate.Value.Date.ToShortDateString()} during session {model.Session}.");
             }
 
+            // Tạo mới task
             var task = new DataAccessObject.Models.Task
             {
                 TaskTypeId = model.TaskTypeId,
@@ -63,18 +65,19 @@ namespace SmartFarmManager.Service.Services
                 AssignedToUserId = model.AssignedToUserId,
                 CreatedByUserId = model.CreatedByUserId,
                 TaskName = model.TaskName,
-                PriorityNum = priorityNum,
+                PriorityNum =(int)taskType.PriorityNum,
                 Description = model.Description,
                 DueDate = model.DueDate,
                 Session = model.Session,
                 CreatedAt = DateTime.UtcNow,
-                Status = "Assigned" 
+                Status = "Assigned"
             };
 
             await _unitOfWork.Tasks.CreateAsync(task);
             await _unitOfWork.CommitAsync();
 
             return true;
+
         }
 
         public async Task<bool> UpdateTaskPriorityAsync(Guid taskId, UpdateTaskPriorityModel model)
