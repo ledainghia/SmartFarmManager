@@ -348,31 +348,45 @@ namespace SmartFarmManager.Service.Services
             return taskResponses;
         }
 
-        public async Task<TaskResponse?> GetNextTaskForUserAsync(Guid userId)
+        public async Task<List<NextTaskModel>> GetNextTasksForCagesWithStatsAsync(Guid userId)
         {
-            // Lấy task tiếp theo chưa hoàn thành của user
-            var nextTask = await _unitOfWork.Tasks.FindAll()
-                .Where(t => t.AssignedToUserId == userId && t.CompletedAt == null && t.DueDate.Value.Date == DateTime.Now) // Task chưa hoàn thành
-                //.OrderBy(t => t.DueDate) // Ưu tiên theo ngày sớm nhất
-                //.ThenBy(t => t.PriorityNum) // Trong cùng một ngày, ưu tiên theo độ ưu tiên
-                .FirstOrDefaultAsync();
+            // Ngày hôm nay
+            var today = DateTime.Now.Date;
 
-            // Nếu không có task tiếp theo
-            if (nextTask == null)
-                return null;
+            // Lấy tất cả task trong ngày của user
+            var userTasksToday = await _unitOfWork.Tasks.FindAll()
+                .Where(t => t.AssignedToUserId == userId && t.DueDate.HasValue && t.DueDate.Value.Date == today)
+                .ToListAsync();
 
-            // Trả về thông tin task dưới dạng DTO
-            return new TaskResponse
+            // Tính tổng số task và số task đã hoàn thành
+            var totalTasks = userTasksToday.Count;
+            var completedTasks = userTasksToday.Count(t => t.CompletedAt != null);
+
+            // Lấy task tiếp theo của từng CageId
+            var nextTasks = userTasksToday
+                .Where(t => t.CompletedAt == null) // Chỉ lấy task chưa hoàn thành
+                .GroupBy(t => t.CageId) // Nhóm theo CageId
+                .Select(g => g.OrderBy(t => t.PriorityNum).ThenBy(t => t.DueDate).FirstOrDefault()) // Lấy task ưu tiên cao nhất
+                .ToList();
+
+            // Trả về danh sách NextTaskModel
+            var result = nextTasks.Select(nextTask => new NextTaskModel
             {
                 TaskId = nextTask.Id,
                 TaskName = nextTask.TaskName,
+                Cagename = nextTask.Cage?.Name ?? "Unknown Cage", // Nếu Cage có tên
+                AssignName = nextTask.AssignedToUser?.FullName ?? "Unknown User", // Nếu user có tên
                 PriorityNum = nextTask.PriorityNum,
-                IsDisabled = false, // Task tiếp theo luôn khả dụng
                 Status = nextTask.Status,
                 DueDate = nextTask.DueDate,
-                Reason = "Next task for the user"
-            };
+                Total = totalTasks, // Tổng số task của user hôm đó
+                TaskDone = completedTasks // Số task đã hoàn thành
+            }).ToList();
+
+            return result;
         }
+
+
 
         public async Task<PagedResult<TaskDetailModel>> GetFilteredTasksAsync(TaskFilterModel filter)
         {
@@ -536,5 +550,61 @@ namespace SmartFarmManager.Service.Services
                 }).ToList()
             };
         }
+
+
+        public async Task<bool> UpdateTaskPrioritiesAsync(List<TaskPriorityUpdateModel> taskPriorityUpdates)
+        {
+            // Kiểm tra đầu vào không null
+            if (taskPriorityUpdates == null || !taskPriorityUpdates.Any())
+                throw new ArgumentException("The request list cannot be null or empty.");
+
+            // Kiểm tra các điều kiện của request:
+            // 1. Không có priorityNum trùng nhau
+            // 2. Không có priorityNum nào null
+            // 3. Các priorityNum >= 1
+            var distinctPriorities = taskPriorityUpdates.Select(t => t.PriorityNum).Distinct().ToList();
+            if (distinctPriorities.Count != taskPriorityUpdates.Count)
+                throw new ArgumentException("Each priorityNum must be unique in the request.");
+            if (taskPriorityUpdates.Any(t => t.PriorityNum < 1))
+                throw new ArgumentException("PriorityNum must be greater than or equal to 1.");
+            if (taskPriorityUpdates.Any(t => t.PriorityNum == null || t.TaskId == null))
+                throw new ArgumentException("PriorityNum cannot be null.");
+
+            // Lấy danh sách taskId từ request
+            var taskIds = taskPriorityUpdates.Select(t => t.TaskId).ToList();
+
+            // Lấy các task từ database dựa trên danh sách taskId
+            var tasksInDb = await _unitOfWork.Tasks.FindAll()
+                .Where(t => taskIds.Contains(t.Id))
+                .ToListAsync();
+
+            // Kiểm tra nếu số lượng task trong database không khớp với request
+            if (tasksInDb.Count != taskIds.Count)
+                throw new ArgumentException("Some tasks in the request do not exist in the database.");
+
+            // Lấy danh sách priorityNum hiện tại trong database
+            var dbPriorities = tasksInDb.Select(t => t.PriorityNum).OrderBy(p => p).ToList();
+
+            // Lấy danh sách priorityNum từ request
+            var requestPriorities = taskPriorityUpdates.Select(t => t.PriorityNum).OrderBy(p => p).ToList();
+
+            // Kiểm tra nếu danh sách priorityNum không khớp (swap các giá trị)
+            if (!dbPriorities.SequenceEqual(requestPriorities))
+                throw new ArgumentException("The priorityNum values in the request must match the existing values in the database.");
+
+            // Cập nhật priorityNum cho các task
+            foreach (var task in tasksInDb)
+            {
+                var updateRequest = taskPriorityUpdates.First(t => t.TaskId == task.Id);
+                task.PriorityNum = updateRequest.PriorityNum;
+            }
+
+            // Lưu thay đổi vào database
+            await _unitOfWork.Tasks.UpdateListAsync(tasksInDb);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
+
     }
 }
