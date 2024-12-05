@@ -1,0 +1,9 @@
+services:
+  be:
+    build:
+      dockerfile: Dockerfile
+    container_name: backend
+    ports:
+      - '85:80' # Expose ASP.NET Core service
+      - '86:443' # HTTPS port (optional)
+    restart: unless-stopped
