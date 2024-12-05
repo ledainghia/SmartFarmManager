@@ -356,6 +356,8 @@ namespace SmartFarmManager.Service.Services
             // Lấy tất cả task trong ngày của user
             var userTasksToday = await _unitOfWork.Tasks.FindAll()
                 .Where(t => t.AssignedToUserId == userId && t.DueDate.HasValue && t.DueDate.Value.Date == today.Date)
+                .Include(u => u.AssignedToUser)
+                .Include(c => c.Cage)
                 .ToListAsync();
 
             // Nhóm các task theo CageId
