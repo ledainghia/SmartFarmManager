@@ -1,11 +1,12 @@
+version: '3.9'
 services:
-  be:
+  smartfarmmanager:
     build:
+      context: .
       dockerfile: Dockerfile
-    container_name: backend
     ports:
-      - '85:80' # Expose ASP.NET Core service
-      - '86:443' # HTTPS port (optional)
+      - '8088:8080' # Map HTTP từ container (8080) ra host (8088)
+      - '8888:8081' # Map HTTPS từ container (8081) ra host (8888)
     environment:
       - SECRET_KEY=adjkasdbyuaasgcndsjfngljkdsjflgsdfklgnslkdfnslkdnfkjsahdfkjsahjlkfsa
     restart: unless-stopped
