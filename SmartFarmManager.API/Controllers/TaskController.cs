@@ -194,7 +194,7 @@ namespace SmartFarmManager.API.Controllers
         [HttpGet("next-task")]
         public async Task<IActionResult> GetNextTask([FromQuery] Guid userId)
         {
-            var task = await _taskService.GetNextTaskForUserAsync(userId);
+            var task = await _taskService.GetNextTasksForCagesWithStatsAsync(userId);
 
             if (task == null)
             {
@@ -224,7 +224,32 @@ namespace SmartFarmManager.API.Controllers
         }
 
 
+        [HttpPut("update-priorities")]
+        public async Task<IActionResult> UpdateTaskPriorities([FromBody] List<TaskPriorityUpdateRequest> taskPriorityUpdates)
+        {
+            // Kiểm tra tính hợp lệ của request (ở controller)
+            if (taskPriorityUpdates == null || !taskPriorityUpdates.Any())
+                return BadRequest("The request list cannot be null or empty.");
 
+            try
+            {
+                // Map request sang DTO của tầng service
+                var serviceRequests = taskPriorityUpdates.Select(t => new TaskPriorityUpdateModel
+                {
+                    TaskId = t.TaskId,
+                    PriorityNum = t.PriorityNum
+                }).ToList();
+
+                // Gọi service để xử lý logic
+                await _taskService.UpdateTaskPrioritiesAsync(serviceRequests);
+
+                return Ok(new { Message = "Task priorities updated successfully." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
 
     }
 }
