@@ -6,4 +6,6 @@ services:
     ports:
       - '85:80' # Expose ASP.NET Core service
       - '86:443' # HTTPS port (optional)
+    environment:
+      - SECRET_KEY=adjkasdbyuaasgcndsjfngljkdsjflgsdfklgnslkdfnslkdnfkjsahdfkjsahjlkfsa
     restart: unless-stopped
