@@ -355,36 +355,44 @@ namespace SmartFarmManager.Service.Services
 
             // Lấy tất cả task trong ngày của user
             var userTasksToday = await _unitOfWork.Tasks.FindAll()
-                .Where(t => t.AssignedToUserId == userId && t.DueDate.HasValue && t.DueDate.Value.Date == today)
+                .Where(t => t.AssignedToUserId == userId && t.DueDate.HasValue && t.DueDate.Value.Date == today.Date)
                 .ToListAsync();
 
-            // Tính tổng số task và số task đã hoàn thành
-            var totalTasks = userTasksToday.Count;
-            var completedTasks = userTasksToday.Count(t => t.CompletedAt != null);
-
-            // Lấy task tiếp theo của từng CageId
-            var nextTasks = userTasksToday
-                .Where(t => t.CompletedAt == null) // Chỉ lấy task chưa hoàn thành
-                .GroupBy(t => t.CageId) // Nhóm theo CageId
-                .Select(g => g.OrderBy(t => t.PriorityNum).ThenBy(t => t.DueDate).FirstOrDefault()) // Lấy task ưu tiên cao nhất
+            // Nhóm các task theo CageId
+            var groupedTasks = userTasksToday
+                .GroupBy(t => t.CageId)
+                .Select(g => new
+                {
+                    CageId = g.Key,
+                    TotalTasks = g.Count(), // Tổng số task của từng chuồng
+                    CompletedTasks = g.Count(t => t.CompletedAt != null), // Số task đã hoàn thành của từng chuồng
+                    NextTask = g.Where(t => t.CompletedAt == null) // Chỉ lấy task chưa hoàn thành
+                                .OrderBy(t => t.PriorityNum) // Sắp xếp theo mức ưu tiên
+                                .ThenBy(t => t.DueDate) // Sắp xếp thêm theo ngày
+                                .FirstOrDefault() // Lấy task tiếp theo
+                })
                 .ToList();
 
-            // Trả về danh sách NextTaskModel
-            var result = nextTasks.Select(nextTask => new NextTaskModel
-            {
-                TaskId = nextTask.Id,
-                TaskName = nextTask.TaskName,
-                Cagename = nextTask.Cage?.Name ?? "Unknown Cage", // Nếu Cage có tên
-                AssignName = nextTask.AssignedToUser?.FullName ?? "Unknown User", // Nếu user có tên
-                PriorityNum = nextTask.PriorityNum,
-                Status = nextTask.Status,
-                DueDate = nextTask.DueDate,
-                Total = totalTasks, // Tổng số task của user hôm đó
-                TaskDone = completedTasks // Số task đã hoàn thành
-            }).ToList();
+            // Tạo danh sách NextTaskModel
+            var result = groupedTasks
+                .Where(g => g.NextTask != null) // Chỉ lấy nhóm có task tiếp theo
+                .Select(g => new NextTaskModel
+                {
+                    TaskId = g.NextTask.Id,
+                    TaskName = g.NextTask.TaskName,
+                    Cagename = g.NextTask.Cage?.Name ?? "Unknown Cage", // Tên chuồng
+                    AssignName = g.NextTask.AssignedToUser?.FullName ?? "Unknown User", // Tên người được gán
+                    PriorityNum = g.NextTask.PriorityNum,
+                    Status = g.NextTask.Status,
+                    DueDate = g.NextTask.DueDate,
+                    Total = g.TotalTasks, // Tổng số task của chuồng
+                    TaskDone = g.CompletedTasks // Số task đã hoàn thành của chuồng
+                })
+                .ToList();
 
             return result;
         }
+
 
 
 
