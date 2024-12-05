@@ -40,7 +40,7 @@ public partial class Farm : EntityBase
 
     public virtual ICollection<FoodStack> FoodStacks { get; set; } = new List<FoodStack>();
 
-    public virtual ICollection<GrowthStage> GrowthStages { get; set; } = new List<GrowthStage>();
+    public virtual ICollection<Cage> Cages { get; set; } = new List<Cage>();
 
     public virtual ICollection<WaterLog> WaterLogs { get; set; } = new List<WaterLog>();
 }

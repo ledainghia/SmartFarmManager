@@ -182,6 +182,10 @@ public partial class SmartFarmContext : DbContext
                 .IsRequired()
                 .HasMaxLength(50)
                 .HasDefaultValue("");
+            entity.HasOne(c=>c.Farm).WithMany(f=>f.Cages)
+            .HasForeignKey(c=>c.FarmId)
+            .OnDelete(DeleteBehavior.ClientSetNull)
+            .HasConstraintName("FK__Farm__CageI__2321213213");
         });
 
         modelBuilder.Entity<CageStaff>(entity =>
@@ -437,11 +441,6 @@ public partial class SmartFarmContext : DbContext
             entity.Property(e => e.RecommendedWeightPerDay).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.WeightAnimal).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.WeightBasedOnBodyMass).HasColumnType("decimal(5, 2)");
-
-            entity.HasOne(d => d.Farm).WithMany(p => p.GrowthStages)
-                .HasForeignKey(d => d.FarmId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__GrowthSta__FarmI__1BC821DD");
 
             entity.HasOne(d => d.FarmingBatch).WithMany(p => p.GrowthStages)
                 .HasForeignKey(d => d.FarmingBatchId)

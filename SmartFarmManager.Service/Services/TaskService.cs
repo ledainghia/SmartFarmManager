@@ -48,13 +48,13 @@ namespace SmartFarmManager.Service.Services
                                       t.Session == model.Session &&
                                       t.CageId == model.CageId &&
                                       t.PriorityNum == taskType.PriorityNum &&
-                                      t.CompletedAt==null) // Chỉ kiểm tra task chưa hoàn thành
+                                      t.CompletedAt==null) 
                 .FirstOrDefaultAsync();
 
             // Nếu đã tồn tại task trùng PriorityNum thì trả về lỗi
             if (existingTask != null)
             {
-                throw new InvalidOperationException($"A task with priority {taskType.PriorityNum} already exists in cage {model.CageId} on {model.DueDate.Value.Date.ToShortDateString()} during session {model.Session}.");
+                throw new InvalidOperationException($"A task with priority {taskType.PriorityNum} already exists in cage {model.CageId} on {model.DueDate.Date.ToShortDateString()} during session {model.Session}.");
             }
 
             // Tạo mới task

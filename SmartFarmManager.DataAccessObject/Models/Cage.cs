@@ -8,7 +8,7 @@ namespace SmartFarmManager.DataAccessObject.Models;
 public partial class Cage : EntityBase
 {
     public string PenCode { get; set; }
-
+    public Guid FarmId { get; set; }
     public string Name { get; set; }
 
     public double Area { get; set; }
@@ -42,6 +42,7 @@ public partial class Cage : EntityBase
     public virtual ICollection<FarmingBatch> FarmingBatches { get; set; } = new List<FarmingBatch>();
 
     public virtual ICollection<Sensor> Sensors { get; set; } = new List<Sensor>();
+    public virtual Farm Farm { get; set; }
 
     public virtual ICollection<Task> Tasks { get; set; } = new List<Task>();
 }

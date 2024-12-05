@@ -10,7 +10,6 @@ public partial class GrowthStage : EntityBase
 
     public Guid FarmingBatchId { get; set; }
 
-    public Guid FarmId { get; set; }
 
     public string Name { get; set; }
 
@@ -27,8 +26,6 @@ public partial class GrowthStage : EntityBase
     public decimal? WeightBasedOnBodyMass { get; set; }
 
     public virtual ICollection<DailyFoodUsageLog> DailyFoodUsageLogs { get; set; } = new List<DailyFoodUsageLog>();
-
-    public virtual Farm Farm { get; set; }
 
     public virtual FarmingBatch FarmingBatch { get; set; }
 

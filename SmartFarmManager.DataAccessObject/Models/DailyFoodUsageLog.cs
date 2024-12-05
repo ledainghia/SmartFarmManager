@@ -7,7 +7,6 @@ namespace SmartFarmManager.DataAccessObject.Models;
 
 public partial class DailyFoodUsageLog : EntityBase
 {
-
     public Guid StageId { get; set; }
 
     public decimal? RecommendedWeight { get; set; }
