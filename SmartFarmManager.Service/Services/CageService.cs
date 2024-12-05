@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MailKit;
+using Microsoft.EntityFrameworkCore;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Cages;
@@ -23,9 +24,10 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<PagedResult<CageResponseModel>> GetCagesAsync(CageFilterModel request)
         {
-            var query = _unitOfWork.Cages.FindByCondition(c => !c.IsDeleted);
+            // Lấy dữ liệu ban đầu từ UnitOfWork
+            var query = _unitOfWork.Cages.FindAll(false, x => x.Farm).AsQueryable();
 
-            // Apply filters
+            // Áp dụng các bộ lọc
             if (request.FarmId.HasValue)
             {
                 query = query.Where(c => c.FarmId == request.FarmId.Value);
@@ -46,15 +48,17 @@ namespace SmartFarmManager.Service.Services
                 query = query.Where(c => c.BoardStatus == request.BoardStatus.Value);
             }
 
-            // Pagination
+            // Đếm tổng số bản ghi (chạy trên SQL)
             var totalCount = await query.CountAsync();
+
+            // Phân trang và chọn dữ liệu cần thiết (chạy trên SQL)
             var items = await query
                 .Skip((request.PageNumber - 1) * request.PageSize)
                 .Take(request.PageSize)
                 .Select(c => new CageResponseModel
                 {
                     Id = c.Id,
-                    PenCode = c.PenCode,    
+                    PenCode = c.PenCode,
                     FarmId = c.FarmId,
                     Name = c.Name,
                     Area = c.Area,
@@ -68,17 +72,18 @@ namespace SmartFarmManager.Service.Services
                 })
                 .ToListAsync();
 
-            var result = new PaginatedList<CageResponseModel>(items, totalCount, request.PageNumber, request.PageSize);
-            return new PagedResult<CageResponseModel>()
+            // Kết quả trả về dạng phân trang
+            return new PagedResult<CageResponseModel>
             {
-                Items=result.Items,
-                TotalItems=result.TotalCount,
-                CurrentPage=result.CurrentPage,
-                PageSize=result.PageSize,
-                TotalPages=result.TotalPages,
-                HasNextPage=result.HasNextPage,
-                HasPreviousPage=result.HasPreviousPage,
+                Items = items,
+                TotalItems = totalCount,
+                CurrentPage = request.PageNumber,
+                PageSize = request.PageSize,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize),
+                HasNextPage = request.PageNumber < (int)Math.Ceiling(totalCount / (double)request.PageSize),
+                HasPreviousPage = request.PageNumber > 1,
             };
         }
+
     }
 }
