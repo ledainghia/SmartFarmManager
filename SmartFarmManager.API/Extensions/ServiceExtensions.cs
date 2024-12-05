@@ -160,6 +160,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IAuthenticationService, AuthenticationService>();
             services.AddScoped<ITaskService, TaskService>();
             services.AddScoped<ICageService, CageService>();
+            services.AddScoped<IStaffService, StaffService>();
             return services;
         }
 
