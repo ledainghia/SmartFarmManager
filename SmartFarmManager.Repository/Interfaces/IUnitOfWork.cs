@@ -14,7 +14,7 @@ namespace SmartFarmManager.Repository.Interfaces
         ITaskTypeRepository TaskTypes { get; }
         IStatusRepository Statuses { get; }
         IStatusLogRepository StatusLogs { get; }
-
+        ICageRepository Cages { get; }
         
         Task<int> CommitAsync();
         System.Threading.Tasks.Task BeginTransactionAsync();

@@ -146,6 +146,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<ITaskTypeRepository, TaskTypeRepository>();
             services.AddScoped<IStatusRepository, StatusRepository>();
             services.AddScoped<IStatusLogRepository, StatusLogRepository>();
+            services.AddScoped<ICageRepository, CageRepository>();
             
             
 
@@ -158,6 +159,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IAuthenticationService, AuthenticationService>();
             services.AddScoped<ITaskService, TaskService>();
+            services.AddScoped<ICageService, CageService>();
             return services;
         }
 

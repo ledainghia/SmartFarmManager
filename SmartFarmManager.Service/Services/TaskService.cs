@@ -513,7 +513,7 @@ namespace SmartFarmManager.Service.Services
         public async Task<TaskDetailModel> GetTaskDetailAsync(Guid taskId)
         {
             var task = await _unitOfWork.Tasks
-            .FindByCondition(t => t.Id == taskId, false, x => x.AssignedToUser, x => x.TaskType, x => x.StatusLogs,x=>x.StatusLogs.Select(sl=>sl.Status)).FirstOrDefaultAsync();
+            .FindByCondition(t => t.Id == taskId, false, x => x.AssignedToUser, x => x.TaskType, x => x.StatusLogs).Include(x=>x.StatusLogs).ThenInclude(sl=>sl.Status).FirstOrDefaultAsync();
             if (task == null)
             {
                 return null; 
@@ -523,6 +523,7 @@ namespace SmartFarmManager.Service.Services
             return new TaskDetailModel
             {
                 Id = task.Id,
+                CageId=task.CageId,
                 TaskName = task.TaskName,
                 Description = task.Description,
                 PriorityNum = task.PriorityNum,
