@@ -9,6 +9,7 @@ namespace SmartFarmManager.Service.BusinessModels.Task
     public class NextTaskModel
     {
         public Guid TaskId { get; set; }
+        public Guid CageId { get; set; }
         public string TaskName { get; set; }
         public string Cagename { get; set; }
         public string AssignName { get; set; }

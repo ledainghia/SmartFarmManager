@@ -381,6 +381,7 @@ namespace SmartFarmManager.Service.Services
                 .Select(g => new NextTaskModel
                 {
                     TaskId = g.NextTask.Id,
+                    CageId = g.CageId,
                     TaskName = g.NextTask.TaskName,
                     Cagename = g.NextTask.Cage?.Name ?? "Unknown Cage", // Tên chuồng
                     AssignName = g.NextTask.AssignedToUser?.FullName ?? "Unknown User", // Tên người được gán
