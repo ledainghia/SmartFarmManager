@@ -465,6 +465,7 @@ namespace SmartFarmManager.Service.Services
                 .Select(t => new TaskDetailModel
                 {
                     Id = t.Id,
+                    CageId=t.CageId,
                     TaskName = t.TaskName,
                     Description = t.Description,
                     PriorityNum = t.PriorityNum,
