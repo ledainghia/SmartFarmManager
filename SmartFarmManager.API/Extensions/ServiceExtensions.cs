@@ -114,13 +114,15 @@ namespace SmartFarmManager.API.Extensions
         private static IServiceCollection ConfigureDbContext(this IServiceCollection services, IConfiguration configuration)
         {
 
-            var connectionString = configuration.GetConnectionString("DbConnection");
-            //var connectionString = $"Data Source={dbServer};Initial Catalog={dbName};User ID={dbUser};Password={dbPassword};TrustServerCertificate={dbTrustServerCertificate};MultipleActiveResultSets={dbMultipleActiveResultSets}";
+            //var connectionString = configuration.GetConnectionString("DbConnection");
+            ////var connectionString = $"Data Source={dbServer};Initial Catalog={dbName};User ID={dbUser};Password={dbPassword};TrustServerCertificate={dbTrustServerCertificate};MultipleActiveResultSets={dbMultipleActiveResultSets}";
 
-            services.AddDbContext<SmartFarmContext>(opt =>
-            {
-                opt.UseSqlServer(connectionString);
-            });
+            //services.AddDbContext<SmartFarmContext>(opt =>
+            //{
+            //    opt.UseSqlServer(connectionString);
+            //});
+
+            services.AddDbContext<SmartFarmContext>();
 
             
             return services;

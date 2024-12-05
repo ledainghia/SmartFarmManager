@@ -23,13 +23,25 @@ public partial class SmartFarmContext : DbContext
     {
         if (!optionsBuilder.IsConfigured)
         {
-            var builder = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+            var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
 
-            IConfigurationRoot configuration = builder.Build();
+            IConfigurationRoot configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json")
+                .Build();
 
-            optionsBuilder.UseSqlServer("Data Source=HAUNGUYEN\\SQLEXPRESS;Initial Catalog=SmartFarm;Integrated Security=True;Connect Timeout=30;Encrypt=True;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False");
+            string connectionString;
+
+            if (environment == "Development")
+            {
+                connectionString = configuration.GetConnectionString("DefaultConnection");
+            }
+            else // Production
+            {
+                connectionString = configuration.GetConnectionString("ProductConnection");
+            }
+
+            optionsBuilder.UseSqlServer(connectionString);
         }
     }
 
