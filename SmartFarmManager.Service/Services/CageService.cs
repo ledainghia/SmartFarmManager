@@ -85,5 +85,35 @@ namespace SmartFarmManager.Service.Services
             };
         }
 
+        public async Task<CageDetailModel> GetCageByIdAsync(Guid cageId)
+        {
+            // Lấy dữ liệu từ repository
+            var cage = await _unitOfWork.Cages.FindByCondition(x=>x.Id==cageId, false, c => c.Farm).FirstOrDefaultAsync();
+
+            // Xử lý khi không tìm thấy cage
+            if (cage == null || cage.IsDeleted)
+            {
+                throw new KeyNotFoundException("Cage not found.");
+            }
+
+            // Trả về DTO
+            return new CageDetailModel
+            {
+                Id = cage.Id,
+                PenCode = cage.PenCode,
+                FarmId = cage.FarmId,
+                Name = cage.Name,
+                Area = cage.Area,
+                Location = cage.Location,
+                Capacity = cage.Capacity,
+                AnimalType = cage.AnimalType,
+                BoardCode = cage.BoardCode,
+                BoardStatus = cage.BoardStatus,
+                CreatedDate = cage.CreatedDate,
+                CameraUrl = cage.CameraUrl
+            };
+        }
+
+
     }
 }

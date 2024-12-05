@@ -17,8 +17,8 @@ namespace SmartFarmManager.API.Controllers
     public class CageController : ControllerBase
     {
         private readonly ICageService _cageService;
-public CageController(ICageService cageService)
-        {
+        public CageController(ICageService cageService)
+         {
             _cageService = cageService;
         }
         /// <summary>
@@ -42,5 +42,30 @@ public CageController(ICageService cageService)
 
         }
 
+        /// <summary>
+        /// Lấy thông tin chi tiết của một cage theo ID.
+        /// </summary>
+        /// <param name="id">ID của Cage</param>
+        /// <returns>Thông tin chi tiết Cage</returns>
+        [HttpGet("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetCageById(Guid id)
+        {
+            try
+            {
+                var result = await _cageService.GetCageByIdAsync(id);
+                return Ok(ApiResult<CageDetailModel>.Succeed(result));
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(new { Message = "Cage not found" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+            }
         }
+
+    }
 }

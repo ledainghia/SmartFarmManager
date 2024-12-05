@@ -12,5 +12,6 @@ namespace SmartFarmManager.Service.Interfaces
     public interface ICageService
     {
         Task<PagedResult<CageResponseModel>> GetCagesAsync(CageFilterModel request);
+        Task<CageDetailModel> GetCageByIdAsync(Guid cageId);
     }
 }
