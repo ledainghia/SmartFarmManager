@@ -8,7 +8,7 @@ services:
       - ACCEPT_EULA=Y
       - MSSQL_SA_PASSWORD=YourStronggg@Passw0rd
     ports:
-      - '1431:1433'
+      - '5053:1433'
     volumes:
       - sql_data:/var/opt/mssql
     restart: unless-stopped
@@ -22,8 +22,8 @@ services:
       dockerfile: Dockerfile
     container_name: backend
     ports:
-      - '8088:8080' # Map HTTP từ container ra host
-      - '8888:8081' # Map HTTPS từ container ra host
+      - '5051:8080' # Map HTTP từ container ra host
+      - '5052:8081' # Map HTTPS từ container ra host
     environment:
       - 'ConnectionStrings:ProductConnection=Server=database,1433;Database=Farm;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;'
       - SECRET_KEY=adjkasdbyuaasgcndsjfngljkdsjflgsdfklgnslkdfnslkdnfkjsahdfkjsahjlkfsa
