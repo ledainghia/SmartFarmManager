@@ -20,7 +20,7 @@ namespace SmartFarmManager.Repository
         public IStatusRepository Statuses { get; }
         public IStatusLogRepository StatusLogs { get; }
         public ICageRepository Cages { get; }
-        public ICageStaffRepository CagesStaffs { get; }
+        public ICageStaffRepository CageStaffs { get; }
 
         public UnitOfWork(SmartFarmContext context, IUserRepository users, ITaskTypeRepository taskTypes,ITaskRepository tasks, IStatusRepository statuses, IStatusLogRepository statusLogs, ICageRepository cages,ICageStaffRepository cageStaffs)
         {
@@ -31,7 +31,7 @@ namespace SmartFarmManager.Repository
             Statuses = statuses;
             StatusLogs = statusLogs;
             Cages = cages;
-            CagesStaffs= cageStaffs;
+            CageStaffs = cageStaffs;
         }
 
         public void Dispose()

@@ -664,5 +664,103 @@ namespace SmartFarmManager.Service.Services
             return true;
         }
 
+        //Get list task by user
+        public async Task<List<SessionTaskGroupModel>> GetUserTasksAsync(Guid userId)
+        {
+            // 1. Get all cages assigned to the user
+            var userCages = await _unitOfWork.CageStaffs
+                .FindByCondition(cs => cs.StaffFarmId == userId)
+                .Select(cs => cs.CageId)
+                .ToListAsync();
+
+            if (!userCages.Any())
+            {
+                throw new ArgumentException($"No cages assigned to user with ID {userId}.");
+            }
+
+            // 2. Get all tasks for these cages
+            var tasks = await _unitOfWork.Tasks
+                .FindByCondition(t => userCages.Contains(t.CageId)).Include(t=>t.TaskType).Include(t=>t.AssignedToUser).Include(t=>t.StatusLogs).ThenInclude(x=>x.Status)
+                .Select(t => new
+                {
+                    t.Id,
+                    t.CageId,
+                    t.TaskName,
+                    t.Description,
+                    t.PriorityNum,
+                    t.DueDate,
+                    t.Status,
+                    t.CompletedAt,
+                    t.CreatedAt,
+                    t.Session,
+                    AssignedToUser = new
+                    {
+                        t.AssignedToUser.Id,
+                        t.AssignedToUser.FullName,
+                        t.AssignedToUser.Email,
+                        t.AssignedToUser.PhoneNumber
+                    },
+                    TaskType = new
+                    {
+                        t.TaskType.Id,
+                        t.TaskType.TaskTypeName
+                    },
+                    StatusLogs = t.StatusLogs.Select(sl => new
+                    {
+                        sl.StatusId,
+                        sl.Status.StatusName,
+                        sl.UpdatedAt
+                    }).ToList()
+                })
+                .ToListAsync();
+
+            // 3. Group tasks by Session → Cage → Tasks
+            var groupedTasks = tasks
+                .GroupBy(t => t.Session) // Group by session
+                .Select(sessionGroup => new SessionTaskGroupModel
+                {
+                    SessionName = Enum.GetName(typeof(SessionTypeEnum), sessionGroup.Key),
+                    Cages = sessionGroup
+                        .GroupBy(t => t.CageId) // Group by cage within session
+                        .Select(cageGroup => new CageTaskGroupModel
+                        {
+                            CageId = cageGroup.Key,
+                            CageName = $"Cage {cageGroup.Key}", // Replace with actual CageName if available
+                            Tasks = cageGroup.Select(task => new TaskDetailModel
+                            {
+                                Id = task.Id,
+                                TaskName = task.TaskName,
+                                Description = task.Description,
+                                PriorityNum = task.PriorityNum,
+                                DueDate = task.DueDate,
+                                Status = task.Status,
+                                CompletedAt = task.CompletedAt,
+                                CreatedAt = task.CreatedAt,
+                                AssignedToUser = new UserResponseModel
+                                {
+                                    UserId = task.AssignedToUser.Id,
+                                    FullName = task.AssignedToUser.FullName,
+                                    Email = task.AssignedToUser.Email,
+                                    PhoneNumber = task.AssignedToUser.PhoneNumber
+                                },
+                                TaskType = new TaskTypeResponseModel
+                                {
+                                    TaskTypeId = task.TaskType.Id,
+                                    TaskTypeName = task.TaskType.TaskTypeName
+                                },
+                                StatusLogs = task.StatusLogs.Select(log => new StatusLogResponseModel
+                                {
+                                    StatusId = log.StatusId,
+                                    StatusName = log.StatusName,
+                                    UpdatedAt = log.UpdatedAt
+                                }).ToList()
+                            }).ToList()
+                        }).ToList()
+                }).ToList();
+
+            return groupedTasks;
+        }
+
+
     }
 }
