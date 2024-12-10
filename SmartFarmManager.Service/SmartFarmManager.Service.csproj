@@ -18,7 +18,6 @@
 
   <ItemGroup>
     <Folder Include="BusinessModels\QueryParameters\" />
-    <Folder Include="Shared\" />
   </ItemGroup>
 
 </Project>

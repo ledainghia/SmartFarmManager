@@ -1,4 +1,5 @@
-﻿using SmartFarmManager.Service.BusinessModels.Task;
+﻿using SmartFarmManager.API.Validation;
+using SmartFarmManager.Service.BusinessModels.Task;
 using System.ComponentModel.DataAnnotations;
 
 namespace SmartFarmManager.API.Payloads.Requests.Task
@@ -27,7 +28,9 @@ namespace SmartFarmManager.API.Payloads.Requests.Task
 
         [Required]
         public DateTime DueDate { get; set; }
-        public int Session { get; set; }
+        [Required]
+        [SessionValidator]
+        public string  Session { get; set; }
         public  CreateTaskModel MapToModel()
         {
             return new CreateTaskModel

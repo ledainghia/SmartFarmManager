@@ -12,6 +12,7 @@ using AutoMapper;
 using SmartFarmManager.Repository.Repositories;
 using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.Helpers;
+using SmartFarmManager.Service.Shared;
 
 namespace SmartFarmManager.Service.Services
 {
@@ -28,36 +29,81 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<bool> CreateTaskAsync(CreateTaskModel model)
         {
-            // Kiểm tra ngày hạn không được nhỏ hơn thời điểm hiện tại
+            // 1. Validate DueDate
             if (model.DueDate < DateTime.UtcNow)
             {
                 throw new ArgumentException("DueDate must be in the future");
             }
 
-            // Kiểm tra TaskTypeId hợp lệ
+            // 2. Validate TaskTypeId
             var taskType = await _unitOfWork.TaskTypes.FindAsync(x => x.Id == model.TaskTypeId);
             if (taskType == null)
             {
                 throw new ArgumentException("Invalid TaskTypeId");
             }
 
-            // Lấy danh sách task cùng ngày, session, cage, và priority
-            var existingTask = await _unitOfWork.Tasks
-                .FindByCondition(t => t.DueDate.HasValue &&
-                                      t.DueDate.Value.Date == model.DueDate.Date &&
-                                      t.Session == model.Session &&
-                                      t.CageId == model.CageId &&
-                                      t.PriorityNum == taskType.PriorityNum &&
-                                      t.CompletedAt==null) 
-                .FirstOrDefaultAsync();
-
-            // Nếu đã tồn tại task trùng PriorityNum thì trả về lỗi
-            if (existingTask != null)
+            // 3. Validate Session
+            if (!Enum.TryParse<SessionTypeEnum>(model.Session, true, out var sessionEnum))
             {
-                throw new InvalidOperationException($"A task with priority {taskType.PriorityNum} already exists in cage {model.CageId} on {model.DueDate.Date.ToShortDateString()} during session {model.Session}.");
+                throw new ArgumentException("Invalid session value provided.");
             }
 
-            // Tạo mới task
+            int sessionValue = (int)sessionEnum;
+
+            // 4. Check if a task with the same TaskType exists for the same cage, session, and day
+            var taskWithSameTypeExists = await _unitOfWork.Tasks
+                .FindByCondition(t => t.DueDate.HasValue &&
+                                      t.DueDate.Value.Date == model.DueDate.Date &&
+                                      t.Session == sessionValue &&
+                                      t.CageId == model.CageId &&
+                                      t.TaskTypeId == model.TaskTypeId &&
+                                      t.CompletedAt == null)
+                .AnyAsync();
+
+            if (taskWithSameTypeExists)
+            {
+                throw new InvalidOperationException($"A task of type {taskType.TaskTypeName} already exists in cage {model.CageId} on {model.DueDate.Date.ToShortDateString()} during session {model.Session}.");
+            }
+
+            // 5. Ensure AssignedToUserId is valid
+            var assignedUser = await _unitOfWork.Users.FindAsync(x => x.Id == model.AssignedToUserId);
+            if (assignedUser == null || assignedUser.IsActive==null||(bool)assignedUser.IsActive==false)
+            {
+                throw new ArgumentException("Invalid or inactive AssignedToUserId.");
+            }
+
+                // 6. Check if Cage already has an assigned staff
+                var cageStaff = await _unitOfWork.CageStaffs
+                    .FindByCondition(cs => cs.CageId == model.CageId&&cs.StaffFarmId==model.AssignedToUserId)
+                    .FirstOrDefaultAsync();
+
+                if (cageStaff == null || cageStaff.StaffFarmId != model.AssignedToUserId)
+                {
+                    throw new UnauthorizedAccessException($"Cage {model.CageId} is not assigned to the user {model.AssignedToUserId}.");
+                }
+
+            // 7. Ensure CageId is valid and active
+            var cage = await _unitOfWork.Cages.FindAsync(x => x.Id == model.CageId);
+            if (cage == null || cage.IsDeleted)
+            {
+                throw new ArgumentException("Invalid or inactive CageId.");
+            }
+
+            // 8. Prevent duplicate task names within the same session for a cage
+            var duplicateTaskNameExists = await _unitOfWork.Tasks
+                .FindByCondition(t => t.DueDate.HasValue &&
+                                      t.DueDate.Value.Date == model.DueDate.Date &&
+                                      t.Session == sessionValue &&
+                                      t.CageId == model.CageId &&
+                                      t.TaskName == model.TaskName)
+                .AnyAsync();
+
+            if (duplicateTaskNameExists)
+            {
+                throw new InvalidOperationException($"A task with the name '{model.TaskName}' already exists in cage {model.CageId} during session {model.Session}.");
+            }
+
+            // 9. Create and Save Task
             var task = new DataAccessObject.Models.Task
             {
                 TaskTypeId = model.TaskTypeId,
@@ -65,19 +111,18 @@ namespace SmartFarmManager.Service.Services
                 AssignedToUserId = model.AssignedToUserId,
                 CreatedByUserId = model.CreatedByUserId,
                 TaskName = model.TaskName,
-                PriorityNum =(int)taskType.PriorityNum,
+                PriorityNum = (int)taskType.PriorityNum,
                 Description = model.Description,
                 DueDate = model.DueDate,
-                Session = model.Session,
+                Session = sessionValue,
                 CreatedAt = DateTime.UtcNow,
-                Status = "Assigned"
+                Status = TaskStatusEnum.Pending
             };
 
             await _unitOfWork.Tasks.CreateAsync(task);
             await _unitOfWork.CommitAsync();
 
             return true;
-
         }
 
         public async Task<bool> UpdateTaskPriorityAsync(Guid taskId, UpdateTaskPriorityModel model)
