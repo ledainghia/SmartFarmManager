@@ -665,7 +665,7 @@ namespace SmartFarmManager.Service.Services
         }
 
         //Get list task by user
-        public async Task<List<SessionTaskGroupModel>> GetUserTasksAsync(Guid userId)
+        public async Task<List<SessionTaskGroupModel>> GetUserTasksAsync(Guid userId, DateTime? filterDate = null)
         {
             // 1. Get all cages assigned to the user
             var userCages = await _unitOfWork.CageStaffs
@@ -678,9 +678,13 @@ namespace SmartFarmManager.Service.Services
                 throw new ArgumentException($"No cages assigned to user with ID {userId}.");
             }
 
-            // 2. Get all tasks for these cages
-            var tasks = await _unitOfWork.Tasks
-                .FindByCondition(t => userCages.Contains(t.CageId)).Include(t=>t.TaskType).Include(t=>t.AssignedToUser).Include(t=>t.StatusLogs).ThenInclude(x=>x.Status)
+            // 2. Get all tasks for these cages, apply date filter if provided
+            var tasksQuery = _unitOfWork.Tasks
+                .FindByCondition(t => userCages.Contains(t.CageId)&& t.AssignedToUserId==userId)
+                .Include(t => t.TaskType)
+                .Include(t => t.AssignedToUser)
+                .Include(t => t.StatusLogs)
+                .ThenInclude(x => x.Status)
                 .Select(t => new
                 {
                     t.Id,
@@ -711,8 +715,15 @@ namespace SmartFarmManager.Service.Services
                         sl.Status.StatusName,
                         sl.UpdatedAt
                     }).ToList()
-                })
-                .ToListAsync();
+                });
+
+            // Apply date filter if filterDate is provided
+            if (filterDate.HasValue)
+            {
+                tasksQuery = tasksQuery.Where(t => t.DueDate.Value.Date == filterDate.Value.Date);
+            }
+
+            var tasks = await tasksQuery.ToListAsync();
 
             // 3. Group tasks by Session → Cage → Tasks
             var groupedTasks = tasks
@@ -760,6 +771,7 @@ namespace SmartFarmManager.Service.Services
 
             return groupedTasks;
         }
+
 
 
     }

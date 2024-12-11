@@ -20,20 +20,17 @@ namespace SmartFarmManager.API.Controllers
         }
 
         [HttpGet("{userId}/tasks")]
-        public async Task<IActionResult> GetUserTasks(Guid userId)
+        public async Task<IActionResult> GetUserTasks(Guid userId, [FromQuery] DateTime? filterDate)
         {
             try
             {
-                // Gọi service để lấy dữ liệu
-                var tasksGroupedBySession = await _taskService.GetUserTasksAsync(userId);
+                var tasksGroupedBySession = await _taskService.GetUserTasksAsync(userId, filterDate);
 
-                // Nếu không có công việc nào được tìm thấy
                 if (tasksGroupedBySession == null || tasksGroupedBySession.Count == 0)
                 {
                     return NotFound(ApiResult<string>.Fail("No tasks found for the user."));
                 }
 
-                // Trả về danh sách công việc
                 return Ok(ApiResult<List<SessionTaskGroupModel>>.Succeed(tasksGroupedBySession));
             }
             catch (ArgumentException ex)
@@ -42,10 +39,10 @@ namespace SmartFarmManager.API.Controllers
             }
             catch (Exception ex)
             {
-                // Log lỗi (nếu cần)
                 return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred."));
             }
         }
+
 
     }
 }

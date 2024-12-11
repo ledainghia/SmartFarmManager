@@ -19,30 +19,37 @@ public partial class SmartFarmContext : DbContext
     {
     }
 
+    //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    //{
+    //    if (!optionsBuilder.IsConfigured)
+    //    {
+    //        var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+
+    //        IConfigurationRoot configuration = new ConfigurationBuilder()
+    //            .SetBasePath(Directory.GetCurrentDirectory())
+    //            .AddJsonFile("appsettings.json")
+    //            .Build();
+
+    //        string connectionString;
+
+    //        if (environment == "Development")
+    //        {
+    //            connectionString = configuration.GetConnectionString("DefaultConnection");
+    //        }
+    //        else // Production
+    //        {
+    //            connectionString = configuration.GetConnectionString("ProductConnection");
+    //        }
+
+    //        optionsBuilder.UseSqlServer(connectionString);
+    //    }
+    //}
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        if (!optionsBuilder.IsConfigured)
-        {
-            var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+       
 
-            IConfigurationRoot configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json")
-                .Build();
-
-            string connectionString;
-
-            if (environment == "Development")
-            {
-                connectionString = configuration.GetConnectionString("DefaultConnection");
-            }
-            else // Production
-            {
-                connectionString = configuration.GetConnectionString("ProductConnection");
-            }
-
-            optionsBuilder.UseSqlServer(connectionString);
-        }
+            optionsBuilder.UseSqlServer("Server=103.48.193.165,5053;Database=Farm;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;");
+        
     }
 
     public virtual DbSet<AnimalSale> AnimalSales { get; set; }
