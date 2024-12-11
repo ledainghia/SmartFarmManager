@@ -148,8 +148,10 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IStatusLogRepository, StatusLogRepository>();
             services.AddScoped<ICageRepository, CageRepository>();
             services.AddScoped<ICageStaffRepository, CageStaffRepository>();
-            
-            
+            services.AddScoped<IMedicalSymptomRepository, MedicalSymptomRepository>();
+            services.AddScoped<IMedicationRepository, MedicationRepository>();
+            services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
+
 
             return services;
         }
@@ -162,6 +164,9 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<ITaskService, TaskService>();
             services.AddScoped<ICageService, CageService>();
             services.AddScoped<IStaffService, StaffService>();
+            services.AddScoped<IMedicationService, MedicationService>();
+            services.AddScoped<IMedicalSymptomService, MedicalSymptomService>();
+            services.AddScoped<IPrescriptionService, PrescriptionService>();
             return services;
         }
 
