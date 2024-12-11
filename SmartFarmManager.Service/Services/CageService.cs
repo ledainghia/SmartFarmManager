@@ -115,5 +115,38 @@ namespace SmartFarmManager.Service.Services
         }
 
 
+        public async Task<List<CageResponseModel>> GetUserCagesAsync(Guid userId)
+        {
+            // Lấy danh sách cages mà user thuộc
+            var userCages = await _unitOfWork.CageStaffs
+                .FindByCondition(cs => cs.StaffFarmId == userId && !cs.Cage.IsDeleted)
+                .Include(cs => cs.Cage)
+                .Select(cs => new CageResponseModel
+                {
+                    Id = cs.Cage.Id,
+                    PenCode = cs.Cage.PenCode,
+                    FarmId = cs.Cage.FarmId,
+                    Name = cs.Cage.Name,
+                    Area = cs.Cage.Area,
+                    Location = cs.Cage.Location,
+                    Capacity = cs.Cage.Capacity,
+                    AnimalType = cs.Cage.AnimalType,
+                    BoardCode = cs.Cage.BoardCode,
+                    BoardStatus = cs.Cage.BoardStatus,
+                    CreatedDate = cs.Cage.CreatedDate,
+                    CameraUrl = cs.Cage.CameraUrl
+                })
+                .ToListAsync();
+
+            // Kiểm tra nếu không có cage nào
+            if (!userCages.Any())
+            {
+                throw new ArgumentException($"No cages found for user with ID {userId}.");
+            }
+
+            return userCages;
+        }
+
+
     }
 }

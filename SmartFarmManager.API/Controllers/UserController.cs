@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Org.BouncyCastle.Security;
 using SmartFarmManager.API.Common;
+using SmartFarmManager.Service.BusinessModels.Cages;
 using SmartFarmManager.Service.BusinessModels.Task;
 using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Services;
@@ -13,10 +14,12 @@ namespace SmartFarmManager.API.Controllers
     public class UserController : ControllerBase
     {
         private readonly ITaskService _taskService;
+        private readonly ICageService _cageService;
 
-        public UserController(ITaskService taskService)
+        public UserController(ITaskService taskService, ICageService cageService)
         {
             _taskService = taskService;
+            _cageService = cageService;
         }
 
         [HttpGet("{userId}/tasks")]
@@ -42,6 +45,28 @@ namespace SmartFarmManager.API.Controllers
                 return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred."));
             }
         }
+
+        [HttpGet("{userId}/cages")]
+        public async Task<IActionResult> GetUserCages(Guid userId)
+        {
+            try
+            {
+                // Gọi service để lấy danh sách cages
+                var userCages = await _cageService.GetUserCagesAsync(userId);
+
+                return Ok(ApiResult<List<CageResponseModel>>.Succeed(userCages));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                
+                return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred."));
+            }
+        }
+
 
 
     }

@@ -722,6 +722,10 @@ namespace SmartFarmManager.Service.Services
             {
                 tasksQuery = tasksQuery.Where(t => t.DueDate.Value.Date == filterDate.Value.Date);
             }
+            else
+            {
+                tasksQuery = tasksQuery.Where(t => t.DueDate.Value.Date == DateTime.Today);
+            }
 
             var tasks = await tasksQuery.ToListAsync();
 
