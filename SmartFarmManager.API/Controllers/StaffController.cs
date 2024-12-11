@@ -32,7 +32,7 @@ namespace SmartFarmManager.API.Controllers
                 return NotFound(ApiResult<object>.Fail("No staff found for the given CageId."));
             }
 
-            return Ok(ApiResult<IEnumerable<StaffPendingTasksModel>>.Succeed(result));
+            return Ok(ApiResult<List<StaffPendingTasksModel>>.Succeed(result));
         }
 
     }

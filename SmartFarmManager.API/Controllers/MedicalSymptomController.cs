@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.MedicalSymptom;
 using SmartFarmManager.API.Payloads.Responses.MedicalSymptom;
 using SmartFarmManager.API.Payloads.Responses.Picture;
@@ -27,7 +28,7 @@ namespace SmartFarmManager.API.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return BadRequest(ApiResult<object>.Fail("Invalid request data."));
             }
 
             var medicalSymptomModel = new MedicalSymptomModel
@@ -45,7 +46,7 @@ namespace SmartFarmManager.API.Controllers
             };
 
             var id = await _medicalSymptomService.CreateMedicalSymptomAsync(medicalSymptomModel);
-            return CreatedAtAction(nameof(GetMedicalSymptomById), new { id }, new { id });
+            return CreatedAtAction(nameof(GetMedicalSymptomById), new { id }, ApiResult<object>.Succeed(new { id }));
         }
 
         // GET: api/medical-symptoms/{id}
@@ -56,7 +57,7 @@ namespace SmartFarmManager.API.Controllers
 
             if (medicalSymptom == null)
             {
-                return NotFound();
+                return NotFound(ApiResult<object>.Fail($"MedicalSymptom with ID {id} not found."));
             }
 
             var response = new MedicalSymptomResponse
@@ -77,22 +78,20 @@ namespace SmartFarmManager.API.Controllers
                 }).ToList()
             };
 
-            return Ok(response);
+            return Ok(ApiResult<MedicalSymptomResponse>.Succeed(response));
         }
 
         // GET: api/medical-symptoms
         [HttpGet]
         public async Task<IActionResult> GetMedicalSymptoms([FromQuery] string? status)
         {
-            // Gọi service để lấy danh sách medical symptoms
             var medicalSymptoms = await _medicalSymptomService.GetMedicalSymptomsAsync(status);
 
             if (medicalSymptoms == null || !medicalSymptoms.Any())
             {
-                return NotFound("No medical symptoms found.");
+                return NotFound(ApiResult<object>.Fail("No medical symptoms found."));
             }
 
-            // Chuyển đổi kết quả từ model service sang response model
             var response = medicalSymptoms.Select(ms => new MedicalSymptomResponse
             {
                 Id = ms.Id,
@@ -111,9 +110,8 @@ namespace SmartFarmManager.API.Controllers
                 }).ToList()
             });
 
-            return Ok(response);
+            return Ok(ApiResult<IEnumerable<MedicalSymptomResponse>>.Succeed(response));
         }
-
 
         // PUT: api/medical-symptoms/{id}
         [HttpPut("{id:guid}")]
@@ -121,7 +119,7 @@ namespace SmartFarmManager.API.Controllers
         {
             if (request == null)
             {
-                return BadRequest("Invalid data.");
+                return BadRequest(ApiResult<object>.Fail("Invalid request data."));
             }
 
             var updatedModel = new MedicalSymptomModel
@@ -137,10 +135,10 @@ namespace SmartFarmManager.API.Controllers
 
             if (!result)
             {
-                return NotFound($"MedicalSymptom with ID {id} not found.");
+                return NotFound(ApiResult<object>.Fail($"MedicalSymptom with ID {id} not found."));
             }
 
-            return NoContent();
+            return Ok(ApiResult<object>.Succeed("MedicalSymptom updated successfully."));
         }
 
     }
