@@ -776,6 +776,138 @@ namespace SmartFarmManager.Service.Services
             return groupedTasks;
         }
 
+        public async Task<bool> UpdateTaskAsync(TaskDetailUpdateModel model)
+        {
+            // 1. Kiểm tra TaskId có tồn tại hay không
+            var task = await _unitOfWork.Tasks.FindByCondition(t => t.Id == model.TaskId).FirstOrDefaultAsync();
+            if (task == null)
+            {
+                throw new ArgumentException($"Task with ID {model.TaskId} does not exist.");
+            }
+
+            // 2. Chỉ cho phép cập nhật các task có trạng thái Pending
+            if (!string.Equals(task.Status, TaskStatusEnum.Pending, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Only tasks with status 'Pending' can be updated.");
+            }
+
+            // 3. Kiểm tra TaskTypeId có giá trị hay không
+            Guid? taskTypeIdToCheck = model.TaskTypeId ?? task.TaskTypeId;
+
+            if (taskTypeIdToCheck.HasValue)
+            {
+                // 3.1 Kiểm tra TaskTypeId có tồn tại không
+                var taskType = await _unitOfWork.TaskTypes.FindAsync(x => x.Id == taskTypeIdToCheck);
+                if (taskType == null)
+                {
+                    throw new ArgumentException("Invalid TaskTypeId.");
+                }
+            }
+
+            // 4. Kiểm tra DueDate có giá trị hay không
+            var newDueDate = model.DueDate ?? task.DueDate;
+
+            if (newDueDate.HasValue)
+            {
+                // 4.1 Kiểm tra ngày hợp lệ (chỉ cho phép hôm nay hoặc ngày mai)
+                var currentDate = DateTime.UtcNow.Date;
+                if (newDueDate.Value.Date < currentDate || newDueDate.Value.Date > currentDate.AddDays(1))
+                {
+                    throw new InvalidOperationException("You can only update tasks scheduled for today or tomorrow.");
+                }
+            }
+            else
+            {
+                throw new ArgumentException("DueDate is required.");
+            }
+
+            // 5. Kiểm tra Session có giá trị hay không
+            int newSession = model.Session != null
+                ? (int)Enum.Parse<SessionTypeEnum>(model.Session, true)
+                : task.Session;
+
+            if (newSession < 0 || !Enum.IsDefined(typeof(SessionTypeEnum), newSession))
+            {
+                throw new ArgumentException("Invalid session value provided.");
+            }
+
+            // 6. Kiểm tra trong ngày và session có task nào cùng TaskTypeId hay không
+            if (taskTypeIdToCheck.HasValue)
+            {
+                var duplicateTaskExists = await _unitOfWork.Tasks
+                    .FindByCondition(t => t.DueDate.HasValue &&
+                                          t.DueDate.Value.Date == newDueDate.Value.Date &&
+                                          t.Session == newSession &&
+                                          t.CageId == task.CageId &&
+                                          t.TaskTypeId == taskTypeIdToCheck &&
+                                          t.Id != task.Id)
+                    .AnyAsync();
+
+                if (duplicateTaskExists)
+                {
+                    throw new InvalidOperationException($"A task of type {taskTypeIdToCheck} already exists in cage {task.CageId} on {newDueDate.Value.Date.ToShortDateString()} during session {newSession}.");
+                }
+            }
+
+            // 7. Cập nhật các trường còn lại
+            task.DueDate = newDueDate;
+            task.Session = newSession;
+
+            if (!string.IsNullOrEmpty(model.TaskName))
+            {
+                // Kiểm tra trùng tên trong cùng ngày và session
+                var duplicateTaskNameExists = await _unitOfWork.Tasks
+                    .FindByCondition(t => t.DueDate.HasValue &&
+                                          t.DueDate.Value.Date == task.DueDate.Value.Date &&
+                                          t.Session == task.Session &&
+                                          t.CageId == task.CageId &&
+                                          t.TaskName == model.TaskName &&
+                                          t.Id != task.Id)
+                    .AnyAsync();
+
+                if (duplicateTaskNameExists)
+                {
+                    throw new InvalidOperationException($"A task with the name '{model.TaskName}' already exists in cage {task.CageId} during session {task.Session}.");
+                }
+
+                task.TaskName = model.TaskName;
+            }
+
+            if (!string.IsNullOrEmpty(model.Description))
+            {
+                task.Description = model.Description;
+            }
+
+            if (model.AssignedToUserId.HasValue)
+            {
+                // Kiểm tra AssignedToUserId hợp lệ
+                var assignedUser = await _unitOfWork.Users.FindAsync(x => x.Id == model.AssignedToUserId);
+                if (assignedUser == null || assignedUser.IsActive == null || (bool)assignedUser.IsActive == false)
+                {
+                    throw new ArgumentException("Invalid or inactive AssignedToUserId.");
+                }
+
+                // Kiểm tra xem user có được gán vào cage không
+                var cageStaff = await _unitOfWork.CageStaffs
+                    .FindByCondition(cs => cs.CageId == task.CageId && cs.StaffFarmId == model.AssignedToUserId)
+                    .FirstOrDefaultAsync();
+
+                if (cageStaff == null)
+                {
+                    throw new UnauthorizedAccessException($"Cage {task.CageId} is not assigned to the user {model.AssignedToUserId}.");
+                }
+
+                task.AssignedToUserId = model.AssignedToUserId.Value;
+            }
+
+            // 8. Lưu thay đổi
+            await _unitOfWork.Tasks.UpdateAsync(task);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
+
+
 
 
     }
