@@ -114,5 +114,40 @@ namespace SmartFarmManager.Repository.Repositories
         {
             return await _dbContext.Set<T>().AnyAsync(predicate);
         }
+
+        public async Task<(List<T> Items, int TotalCount)> GetPagedAsync(
+    Expression<Func<T, bool>>? filter = null,
+    Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
+    int page = 1,
+    int pageSize = 10,
+    params Expression<Func<T, object>>[] includeProperties)
+        {
+            IQueryable<T> query = _dbContext.Set<T>();
+
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
+
+            foreach (var includeProperty in includeProperties)
+            {
+                query = query.Include(includeProperty);
+            }
+
+            var totalCount = await query.CountAsync();
+
+            if (orderBy != null)
+            {
+                query = orderBy(query);
+            }
+
+            var items = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (items, totalCount);
+        }
+
     }
 }

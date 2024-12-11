@@ -35,6 +35,11 @@ namespace SmartFarmManager.Repository.Interfaces
         Task<T?> FindAsync(Expression<Func<T, bool>> predicate);
         Task<List<T>> FindAllAsync(Expression<Func<T, bool>> predicate);
         Task<bool> AnyAsync(Expression<Func<T, bool>> predicate);
-
+        Task<(List<T> Items, int TotalCount)> GetPagedAsync(
+        Expression<Func<T, bool>>? filter = null,
+        Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
+        int page = 1,
+        int pageSize = 10,
+        params Expression<Func<T, object>>[] includeProperties);
     }
 }

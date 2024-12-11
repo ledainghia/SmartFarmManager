@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using SmartFarmManager.DataAccessObject.Models;
+using SmartFarmManager.Service.BusinessModels.Medication;
 using SmartFarmManager.Service.BusinessModels.Task;
 using System;
 using System.Collections.Generic;
@@ -12,7 +14,9 @@ namespace SmartFarmManager.Service.Mapper
     {
         public ApplicationMapper()
         {
-            CreateMap<TaskModel, Task>().ReverseMap();
+            CreateMap<MedicationModel, Medication>().ReverseMap();
+            CreateMap<TaskModel, DataAccessObject.Models.Task>().ReverseMap();
+
 
            
         }
