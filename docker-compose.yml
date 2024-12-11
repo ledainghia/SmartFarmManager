@@ -23,7 +23,6 @@ services:
     container_name: backend
     ports:
       - '5051:8080' # Map HTTP từ container ra host
-      - '5052:8081' # Map HTTPS từ container ra host
     environment:
       - 'ConnectionStrings:ProductConnection=Server=database,1433;Database=Farm;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;'
       - SECRET_KEY=adjkasdbyuaasgcndsjfngljkdsjflgsdfklgnslkdfnslkdnfkjsahdfkjsahjlkfsa
