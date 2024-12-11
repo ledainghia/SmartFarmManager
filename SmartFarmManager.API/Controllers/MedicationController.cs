@@ -3,7 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.Medication;
 using SmartFarmManager.DataAccessObject.Models;
+using SmartFarmManager.Service.BusinessModels.Medication;
+using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.Interfaces;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace SmartFarmManager.API.Controllers
 {
@@ -35,18 +38,24 @@ namespace SmartFarmManager.API.Controllers
             }
 
             if (medication == null) return BadRequest("Invalid medication data.");
-
+            var medicationExist = await _medicationService.GetMedicationByName(medication.Name);
+            if (medicationExist != null)
+            {
+                return BadRequest(ApiResult<object>.Fail($"The medicine's name {medicationExist.Name} already exists."));
+            }
             var createdMedication = await _medicationService.CreateMedicationAsync(medication.MapToModel());
 
             return CreatedAtAction(nameof(GetMedications), null, createdMedication);
         }
 
         // GET: api/medications
-        [HttpGet()]
-        public async Task<IActionResult> GetMedications()
+        [HttpGet]
+        public async Task<IActionResult> GetMedications([FromQuery] string? name, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var medications = await _medicationService.GetAllMedicationsAsync();
-            return Ok(medications);
+            var pagedMedications = await _medicationService.GetPagedMedicationsAsync(name, minPrice, maxPrice, page, pageSize);
+
+            return Ok(ApiResult<PagedResult<MedicationModel>>.Succeed(pagedMedications));
         }
+
     }
 }

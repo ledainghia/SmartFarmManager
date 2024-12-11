@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
+using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Medication;
 using SmartFarmManager.Service.Interfaces;
 using System;
@@ -23,13 +24,12 @@ namespace SmartFarmManager.Service.Services
             _mapper = mapper;
         }
 
-        public async Task<MedicationModel> CreateMedicationAsync(MedicationModel medicationModel)
+        public async Task<MedicationModel?> CreateMedicationAsync(MedicationModel medicationModel)
         {
             if (medicationModel == null)
             {
                 throw new ArgumentNullException(nameof(medicationModel), "Medication model cannot be null.");
             }
-
             var medication = new Medication
             {
                 Name = medicationModel.Name,
@@ -54,12 +54,51 @@ namespace SmartFarmManager.Service.Services
             };
         }
 
+        public async Task<MedicationModel?> GetMedicationByName(string medicationName)
+        {
+            var medication = await _unitOfWork.Medication.FindByCondition(m => m.Name.Equals(medicationName)).FirstOrDefaultAsync();
+            return _mapper.Map<MedicationModel?>(medication);
+        }
+
 
         public async Task<IEnumerable<MedicationModel>> GetAllMedicationsAsync()
         {
             var medication = await _unitOfWork.Medication.FindAll().ToListAsync();
             return _mapper.Map<List<MedicationModel>>(medication);
         }
+
+        public async Task<PagedResult<MedicationModel>> GetPagedMedicationsAsync(string? name, decimal? minPrice, decimal? maxPrice, int page, int pageSize)
+        {
+            var (items, totalCount) = await _unitOfWork.Medication.GetPagedAsync(
+                filter: m =>
+                    (string.IsNullOrEmpty(name) || m.Name.Contains(name)) &&
+                    (!minPrice.HasValue || m.Price >= minPrice) &&
+                    (!maxPrice.HasValue || m.Price <= maxPrice),
+                orderBy: q => q.OrderBy(m => m.Name),
+                page: page,
+                pageSize: pageSize
+            );
+
+            return new PagedResult<MedicationModel>
+            {
+                Items = items.Select(m => new MedicationModel
+                {
+                    Id = m.Id,
+                    Name = m.Name,
+                    UsageInstructions = m.UsageInstructions,
+                    Price = m.Price,
+                    DoseQuantity = m.DoseQuantity,
+                    PricePerDose = m.PricePerDose
+                }),
+                TotalItems = totalCount,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+                CurrentPage = page,
+                PageSize = pageSize,
+                HasNextPage = page < (int)Math.Ceiling(totalCount / (double)pageSize),
+                HasPreviousPage = page > 1
+            };
+        }
+
     }
 
 }
