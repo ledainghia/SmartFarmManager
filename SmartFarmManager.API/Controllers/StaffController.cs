@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SmartFarmManager.API.Common;
+using SmartFarmManager.Service.BusinessModels.Staff;
 using SmartFarmManager.Service.Interfaces;
 
 namespace SmartFarmManager.API.Controllers
@@ -18,8 +20,20 @@ namespace SmartFarmManager.API.Controllers
         [HttpGet("pending-tasks")]
         public async Task<IActionResult> GetStaffSortedByPendingTasksAsync([FromQuery] Guid cageId)
         {
+            if (cageId == Guid.Empty)
+            {
+                return BadRequest(ApiResult<object>.Fail("CageId is required."));
+            }
+
             var result = await _staffService.GetStaffSortedByPendingTasksAsync(cageId);
-            return Ok(result);
+
+            if (result == null || !result.Any())
+            {
+                return NotFound(ApiResult<object>.Fail("No staff found for the given CageId."));
+            }
+
+            return Ok(ApiResult<IEnumerable<StaffPendingTasksModel>>.Succeed(result));
         }
+
     }
 }
