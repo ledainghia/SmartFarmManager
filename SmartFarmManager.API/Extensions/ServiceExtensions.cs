@@ -168,6 +168,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IMedicationService, MedicationService>();
             services.AddScoped<IMedicalSymptomService, MedicalSymptomService>();
             services.AddScoped<IPrescriptionService, PrescriptionService>();
+            services.AddScoped<ITaskTypeService, TaskTypeService>();
             return services;
         }
 
