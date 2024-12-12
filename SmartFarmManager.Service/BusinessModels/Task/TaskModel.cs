@@ -38,6 +38,6 @@ namespace SmartFarmManager.Service.BusinessModels.Task
 
         public virtual ICollection<StatusLog> StatusLogs { get; set; } = new List<StatusLog>();
 
-        public virtual TaskType TaskType { get; set; }
+        //public virtual TaskType TaskType { get; set; }
     }
 }
