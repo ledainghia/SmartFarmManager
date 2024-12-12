@@ -23,11 +23,12 @@ namespace SmartFarmManager.API.Controllers
         }
 
         [HttpGet("{userId}/tasks")]
-        public async Task<IActionResult> GetUserTasks(Guid userId, [FromQuery] DateTime? filterDate)
+        public async Task<IActionResult> GetUserTasks(Guid userId, [FromQuery] DateTime? filterDate, [FromQuery] Guid? cageId)
         {
             try
             {
-                var tasksGroupedBySession = await _taskService.GetUserTasksAsync(userId, filterDate);
+                // Gọi service với tham số cageId
+                var tasksGroupedBySession = await _taskService.GetUserTasksAsync(userId, filterDate, cageId);
 
                 if (tasksGroupedBySession == null || tasksGroupedBySession.Count == 0)
                 {
@@ -45,6 +46,7 @@ namespace SmartFarmManager.API.Controllers
                 return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred."));
             }
         }
+
 
         [HttpGet("{userId}/cages")]
         public async Task<IActionResult> GetUserCages(Guid userId)

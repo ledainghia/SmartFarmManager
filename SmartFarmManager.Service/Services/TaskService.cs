@@ -665,7 +665,7 @@ namespace SmartFarmManager.Service.Services
         }
 
         //Get list task by user
-        public async Task<List<SessionTaskGroupModel>> GetUserTasksAsync(Guid userId, DateTime? filterDate = null)
+        public async Task<List<SessionTaskGroupModel>> GetUserTasksAsync(Guid userId, DateTime? filterDate = null, Guid? cageId = null)
         {
             // 1. Get all cages assigned to the user
             var userCages = await _unitOfWork.CageStaffs
@@ -678,12 +678,23 @@ namespace SmartFarmManager.Service.Services
                 throw new ArgumentException($"No cages assigned to user with ID {userId}.");
             }
 
-            // 2. Get all tasks for these cages, apply date filter if provided
+            // 2. Nếu có cageId, chỉ lấy cage đó
+            if (cageId.HasValue)
+            {
+                if (!userCages.Contains(cageId.Value))
+                {
+                    throw new ArgumentException($"The specified CageId {cageId} is not assigned to the user.");
+                }
+
+                userCages = new List<Guid> { cageId.Value };
+            }
+
+            // 3. Get all tasks for these cages, apply date filter if provided
             var tasksQuery = _unitOfWork.Tasks
-                .FindByCondition(t => userCages.Contains(t.CageId)&& t.AssignedToUserId==userId)
+                .FindByCondition(t => userCages.Contains(t.CageId) && t.AssignedToUserId == userId)
                 .Include(t => t.TaskType)
-                .Include(t=>t.Cage)
                 .Include(t => t.AssignedToUser)
+                .Include(t => t.Cage)
                 .Include(t => t.StatusLogs)
                 .ThenInclude(x => x.Status)
                 .Select(t => new
@@ -698,7 +709,7 @@ namespace SmartFarmManager.Service.Services
                     t.CompletedAt,
                     t.CreatedAt,
                     t.Session,
-                    CageName = t.Cage.Name,
+                    CageName = t.Cage.Name, // Use CageName from database
                     AssignedToUser = new
                     {
                         t.AssignedToUser.Id,
@@ -731,10 +742,10 @@ namespace SmartFarmManager.Service.Services
 
             var tasks = await tasksQuery.ToListAsync();
 
-            // 3. Group tasks by Session → Cage → Tasks
+            // 4. Group tasks by Session → Cage → Tasks
             var groupedTasks = tasks
                 .GroupBy(t => t.Session) // Group by session
-                .OrderBy(sessionGroup => sessionGroup.Key)
+                .OrderBy(sessionGroup => sessionGroup.Key) // Sort by session key (Morning → Afternoon → Evening)
                 .Select(sessionGroup => new SessionTaskGroupModel
                 {
                     SessionName = Enum.GetName(typeof(SessionTypeEnum), sessionGroup.Key),
@@ -743,7 +754,7 @@ namespace SmartFarmManager.Service.Services
                         .Select(cageGroup => new CageTaskGroupModel
                         {
                             CageId = cageGroup.Key.CageId,
-                            CageName = cageGroup.Key.CageName,
+                            CageName = cageGroup.Key.CageName, 
                             Tasks = cageGroup.Select(task => new TaskDetailModel
                             {
                                 Id = task.Id,
@@ -778,6 +789,7 @@ namespace SmartFarmManager.Service.Services
 
             return groupedTasks;
         }
+
 
         public async Task<bool> UpdateTaskAsync(TaskDetailUpdateModel model)
         {
