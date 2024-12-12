@@ -682,6 +682,7 @@ namespace SmartFarmManager.Service.Services
             var tasksQuery = _unitOfWork.Tasks
                 .FindByCondition(t => userCages.Contains(t.CageId)&& t.AssignedToUserId==userId)
                 .Include(t => t.TaskType)
+                .Include(t=>t.Cage)
                 .Include(t => t.AssignedToUser)
                 .Include(t => t.StatusLogs)
                 .ThenInclude(x => x.Status)
@@ -697,6 +698,7 @@ namespace SmartFarmManager.Service.Services
                     t.CompletedAt,
                     t.CreatedAt,
                     t.Session,
+                    CageName = t.Cage.Name,
                     AssignedToUser = new
                     {
                         t.AssignedToUser.Id,
@@ -732,15 +734,16 @@ namespace SmartFarmManager.Service.Services
             // 3. Group tasks by Session → Cage → Tasks
             var groupedTasks = tasks
                 .GroupBy(t => t.Session) // Group by session
+                .OrderBy(sessionGroup => sessionGroup.Key)
                 .Select(sessionGroup => new SessionTaskGroupModel
                 {
                     SessionName = Enum.GetName(typeof(SessionTypeEnum), sessionGroup.Key),
                     Cages = sessionGroup
-                        .GroupBy(t => t.CageId) // Group by cage within session
+                        .GroupBy(t => new { t.CageId, t.CageName }) // Group by cage within session
                         .Select(cageGroup => new CageTaskGroupModel
                         {
-                            CageId = cageGroup.Key,
-                            CageName = $"Cage {cageGroup.Key}", // Replace with actual CageName if available
+                            CageId = cageGroup.Key.CageId,
+                            CageName = cageGroup.Key.CageName,
                             Tasks = cageGroup.Select(task => new TaskDetailModel
                             {
                                 Id = task.Id,
