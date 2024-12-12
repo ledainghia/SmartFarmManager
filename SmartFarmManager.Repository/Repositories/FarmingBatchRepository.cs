@@ -13,6 +13,5 @@ namespace SmartFarmManager.Repository.Repositories
         public FarmingBatchRepository(SmartFarmContext dbContext) : base(dbContext)
     {
     }
-    {
     }
 }
