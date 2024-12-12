@@ -19,6 +19,7 @@ namespace SmartFarmManager.Repository.Interfaces
         IMedicalSymptomRepository MedicalSymptom { get; }
         IPrescriptionRepository Prescription { get; }
         IMedicationRepository Medication { get; }
+        IFarmingBatchRepository FarmingBatch { get; }
 
         Task<int> CommitAsync();
         System.Threading.Tasks.Task BeginTransactionAsync();

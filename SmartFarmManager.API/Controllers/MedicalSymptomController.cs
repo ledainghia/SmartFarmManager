@@ -140,7 +140,24 @@ namespace SmartFarmManager.API.Controllers
 
             return Ok(ApiResult<object>.Succeed("MedicalSymptom updated successfully."));
         }
+        // GET: api/medical-symptoms/by-staff-and-batch
+        [HttpGet("by-staff-and-batch")]
+        public async Task<IActionResult> GetMedicalSymptomsByStaffAndBatch([FromQuery] Guid staffId, [FromQuery] Guid farmBatchId)
+        {
+            if (staffId == Guid.Empty || farmBatchId == Guid.Empty)
+            {
+                return BadRequest(ApiResult<object>.Fail("Staff ID and Farm Batch ID are required."));
+            }
 
+            var result = await _medicalSymptomService.GetMedicalSymptomsByStaffAndBatchAsync(staffId, farmBatchId);
+
+            if (result == null || !result.Any())
+            {
+                return NotFound(ApiResult<object>.Fail("No medical symptoms found for the given Staff ID and Farm Batch ID."));
+            }
+
+            return Ok(ApiResult<IEnumerable<MedicalSymptomModel>>.Succeed(result));
+        }
     }
 }
 

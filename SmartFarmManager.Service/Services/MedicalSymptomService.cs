@@ -115,5 +115,43 @@ namespace SmartFarmManager.Service.Services
                 }).ToList()
             };
         }
+        public async Task<IEnumerable<MedicalSymptomModel>> GetMedicalSymptomsByStaffAndBatchAsync(Guid staffId, Guid farmBatchId)
+        {
+            // Lấy danh sách CageStaff theo Staff ID
+            var cageStaffs = await _unitOfWork.CageStaffs
+                .FindByCondition(cs => cs.StaffFarmId == staffId, trackChanges: false, cs => cs.Cage)
+                .ToListAsync();
+
+            if (!cageStaffs.Any())
+            {
+                return Enumerable.Empty<MedicalSymptomModel>();
+            }
+
+            // Lấy danh sách Cage IDs từ CageStaff
+            var cageIds = cageStaffs.Select(cs => cs.CageId).Distinct();
+
+            // Kiểm tra xem FarmBatchId có thuộc Cage của Staff không
+            var farmingBatch = await _unitOfWork.FarmingBatch
+                .FindByCondition(fb => cageIds.Contains(fb.CageId) && fb.Id == farmBatchId, trackChanges: false, fb => fb.MedicalSymptoms)
+                .FirstOrDefaultAsync();
+
+            if (farmingBatch == null)
+            {
+                return Enumerable.Empty<MedicalSymptomModel>();
+            }
+
+            // Lấy danh sách Medical Symptoms từ Farming Batch
+            return farmingBatch.MedicalSymptoms.Select(ms => new MedicalSymptomModel
+            {
+                Id = ms.Id,
+                FarmingBatchId = ms.FarmingBatchId,
+                Symptoms = ms.Symptoms,
+                Diagnosis = ms.Diagnosis,
+                Treatment = ms.Treatment,
+                Status = ms.Status,
+                AffectedQuantity = ms.AffectedQuantity,
+                Notes = ms.Notes
+            });
+        }
     }
 }
