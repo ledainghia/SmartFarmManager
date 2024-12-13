@@ -48,7 +48,7 @@ public partial class SmartFarmContext : DbContext
     //{
 
 
-    //        optionsBuilder.UseSqlServer("Server=103.48.193.165,5053;Database=Farm;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;");
+    //    optionsBuilder.UseSqlServer("Server=103.48.193.165,5053;Database=farm2;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;");
 
     //}
 
@@ -150,6 +150,50 @@ public partial class SmartFarmContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+
+        // TaskDaily
+        modelBuilder.Entity<TaskDaily>(entity =>
+        {
+            entity.ToTable("TaskDaily");
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.TaskName)
+                  .HasMaxLength(50)
+                  .IsRequired();
+
+            entity.Property(e => e.Description)
+                  .HasMaxLength(255);
+
+            entity.Property(e => e.Session)
+                  .IsRequired();
+
+            entity.HasOne(e => e.GrowthStage)
+                  .WithMany()
+                  .HasForeignKey(e => e.GrowthStageId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // TaskDailyTemplate
+        modelBuilder.Entity<TaskDailyTemplate>(entity =>
+        {
+            entity.ToTable("TaskDailyTemplate");
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.TaskName)
+                  .HasMaxLength(50)
+                  .IsRequired();
+
+            entity.Property(e => e.Description)
+                  .HasMaxLength(255);
+
+            entity.Property(e => e.Session)
+                  .IsRequired();
+
+            entity.HasOne(e => e.GrowthStageTemplate)
+                  .WithMany()
+                  .HasForeignKey(e => e.GrowthStageTemplateId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
         modelBuilder.Entity<AnimalSale>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__AnimalSa__1EE3C3FF9307295C");
@@ -465,6 +509,10 @@ public partial class SmartFarmContext : DbContext
                 .HasForeignKey(d => d.FarmingBatchId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__GrowthSta__Farmi__1AD3FDA4");
+            entity.HasMany(gs => gs.TaskDailies)
+                .WithOne(td => td.GrowthStage)
+                .HasForeignKey(td => td.GrowthStageId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<GrowthStageTemplate>(entity =>
@@ -480,6 +528,11 @@ public partial class SmartFarmContext : DbContext
                 .HasForeignKey(d => d.TemplateId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__GrowthSta__Templ__59063A47");
+            entity.HasMany(gst => gst.TaskDailyTemplates)
+        .WithOne(tdt => tdt.GrowthStageTemplate)
+        .HasForeignKey(tdt => tdt.GrowthStageTemplateId)
+        .OnDelete(DeleteBehavior.Cascade);
+
         });
 
         modelBuilder.Entity<HealthLog>(entity =>
