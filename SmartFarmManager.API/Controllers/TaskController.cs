@@ -54,7 +54,7 @@ namespace SmartFarmManager.API.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred."));
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
             }
         }
 
