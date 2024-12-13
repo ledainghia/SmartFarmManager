@@ -447,7 +447,7 @@ namespace SmartFarmManager.Service.Services
         public async Task<PagedResult<TaskDetailModel>> GetFilteredTasksAsync(TaskFilterModel filter)
         {
             // Query từ repository
-            var query = _unitOfWork.Tasks.FindAll(false, x => x.AssignedToUser, x => x.TaskType, x => x.StatusLogs).Include(x=>x.StatusLogs).ThenInclude(x=>x.Status).AsQueryable();
+            var query = _unitOfWork.Tasks.FindAll(false, x => x.AssignedToUser, x => x.TaskType, x => x.StatusLogs).Include(x=>x.Cage).Include(x=>x.StatusLogs).ThenInclude(x=>x.Status).AsQueryable();
 
             // Áp dụng bộ lọc
             if (!string.IsNullOrEmpty(filter.TaskName))
@@ -522,6 +522,7 @@ namespace SmartFarmManager.Service.Services
                 {
                     Id = t.Id,
                     CageId=t.CageId,
+                    CageName = t.Cage.Name,
                     TaskName = t.TaskName,
                     Description = t.Description,
                     PriorityNum = t.PriorityNum,
