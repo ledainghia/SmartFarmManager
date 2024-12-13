@@ -17,6 +17,8 @@ public partial class FarmingBatch : EntityBase
     public string Species { get; set; }
 
     public DateTime? StartDate { get; set; }
+    public DateTime? CompleteAt { get; set; }
+    public string Status { get; set; }
 
     public int CleaningFrequency { get; set; }
 

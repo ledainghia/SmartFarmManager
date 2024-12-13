@@ -15,6 +15,9 @@ public partial class Prescription : EntityBase
     public string CaseType { get; set; }
 
     public string Notes { get; set; }
+    public int QuantityAnimal { get; set; }
+
+    public string Status { get; set; } 
 
     public decimal? Price { get; set; }
 

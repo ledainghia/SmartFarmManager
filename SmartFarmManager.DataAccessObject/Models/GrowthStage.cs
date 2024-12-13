@@ -26,7 +26,7 @@ public partial class GrowthStage : EntityBase
     public decimal? WeightBasedOnBodyMass { get; set; }
 
     public virtual ICollection<DailyFoodUsageLog> DailyFoodUsageLogs { get; set; } = new List<DailyFoodUsageLog>();
-
+    public ICollection<TaskDaily> TaskDailies { get; set; } = new List<TaskDaily>();
     public virtual FarmingBatch FarmingBatch { get; set; }
 
     public virtual ICollection<VaccineSchedule> VaccineSchedules { get; set; } = new List<VaccineSchedule>();

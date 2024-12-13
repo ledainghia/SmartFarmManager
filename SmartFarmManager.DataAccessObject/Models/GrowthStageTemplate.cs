@@ -21,6 +21,7 @@ public partial class GrowthStageTemplate : EntityBase
     public string Notes { get; set; }
 
     public virtual ICollection<FoodTemplate> FoodTemplates { get; set; } = new List<FoodTemplate>();
+    public ICollection<TaskDailyTemplate> TaskDailyTemplates { get; set; } = new List<TaskDailyTemplate>();
 
     public virtual AnimalTemplate Template { get; set; }
 }
