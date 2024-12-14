@@ -1,5 +1,6 @@
 ﻿using MailKit;
 using Microsoft.EntityFrameworkCore;
+using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Cages;
@@ -147,6 +148,70 @@ namespace SmartFarmManager.Service.Services
             return userCages;
         }
 
+        public async Task<Guid> CreateCageAsync(CageModel model)
+        {
+            var cage = new Cage
+            {
+                FarmId = model.FarmId,
+                Name = model.Name,
+                Area = model.Area,
+                Capacity = model.Capacity,
+                Location = model.Location,
+                AnimalType = model.AnimalType,
+                CreatedDate = DateTime.UtcNow
+            };
 
+            var id = await _unitOfWork.Cages.CreateAsync(cage);
+            await _unitOfWork.CommitAsync();
+            return id;
+        }
+
+
+        public async Task<IEnumerable<CageModel>> GetAllCagesAsync(string? search)
+        {
+            var cages = await _unitOfWork.Cages.FindAllAsync(c => string.IsNullOrEmpty(search) || c.Name.Contains(search));
+
+            return cages.Select(c => new CageModel
+            {
+                Id = c.Id,
+                FarmId = c.FarmId,
+                Name = c.Name,
+                Area = c.Area,
+                Capacity = c.Capacity,
+                Location = c.Location,
+                AnimalType = c.AnimalType
+            });
+        }
+
+        public async Task<bool> UpdateCageAsync(Guid id, CageModel model)
+        {
+            var cage = await _unitOfWork.Cages.GetByIdAsync(id);
+            if (cage == null) return false;
+
+            cage.FarmId = model.FarmId;
+            cage.Name = model.Name;
+            cage.Area = model.Area;
+            cage.Capacity = model.Capacity;
+            cage.Location = model.Location;
+            cage.AnimalType = model.AnimalType;
+            cage.ModifiedDate = DateTime.UtcNow;
+
+            await _unitOfWork.Cages.UpdateAsync(cage);
+            await _unitOfWork.CommitAsync();
+            return true;
+        }
+
+        public async Task<bool> DeleteCageAsync(Guid id)
+        {
+            var cage = await _unitOfWork.Cages.GetByIdAsync(id);
+            if (cage == null) return false;
+
+            cage.IsDeleted = true;
+            cage.DeletedDate = DateTime.UtcNow;
+
+            await _unitOfWork.Cages.UpdateAsync(cage);
+            await _unitOfWork.CommitAsync();
+            return true;
+        }
     }
 }

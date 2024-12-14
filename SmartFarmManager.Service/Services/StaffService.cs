@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels.Staff;
 using SmartFarmManager.Service.Interfaces;
+using Sprache;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -57,7 +59,42 @@ namespace SmartFarmManager.Service.Services
 
             return result;
         }
+        public async Task<(bool Success, string Message)> AssignStaffToCageAsync(Guid userId, Guid cageId)
+        {
+            // Check if user exists and is Staff Farm
+            var user = await _unitOfWork.Users.FindByCondition(u => u.Id == userId && u.Role.RoleName == "Staff Farm").FirstOrDefaultAsync();
+            if (user == null)
+            {
+                return (false, "User is not a valid Staff Farm.");
+            }
 
+            // Check if cage exists
+            var cage = await _unitOfWork.Cages.GetByIdAsync(cageId);
+            if (cage == null)
+            {
+                return (false, "Cage not found.");
+            }
+
+            // Check if cage is already assigned
+            var isAssigned = await _unitOfWork.CageStaffs.FindByCondition(cs => cs.CageId == cageId).AnyAsync();
+            if (isAssigned)
+            {
+                return (false, "Cage is already assigned to a staff.");
+            }
+
+            // Assign staff to the cage
+            var cageStaff = new CageStaff
+            {
+                CageId = cageId,
+                StaffFarmId = userId,
+                AssignedDate = DateTime.UtcNow
+            };
+
+            await _unitOfWork.CageStaffs.CreateAsync(cageStaff);
+            await _unitOfWork.CommitAsync();
+
+            return (true, "Success");
+        }
 
     }
 }

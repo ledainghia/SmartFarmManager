@@ -154,6 +154,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
             services.AddScoped<IFarmingBatchRepository, FarmingBatchRepository>();
             services.AddScoped<IRoleRepository, RoleRepository>();
+            services.AddScoped<IFarmRepository, FarmRepository>();
 
 
             return services;
@@ -173,7 +174,8 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IMedicalSymptomService, MedicalSymptomService>();
             services.AddScoped<IPrescriptionService, PrescriptionService>();
             services.AddScoped<ITaskTypeService, TaskTypeService>();
-            services.AddScoped<IRoleService, RoleService>();    
+            services.AddScoped<IRoleService, RoleService>(); 
+            services.AddScoped<IFarmService, FarmService>();
             return services;
         }
 

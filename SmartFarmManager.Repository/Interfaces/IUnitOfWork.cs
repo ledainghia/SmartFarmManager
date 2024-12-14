@@ -21,6 +21,7 @@ namespace SmartFarmManager.Repository.Interfaces
         IMedicationRepository Medication { get; }
         IFarmingBatchRepository FarmingBatch { get; }
         IRoleRepository Roles { get; }
+        IFarmRepository Farms { get; }
 
         Task<int> CommitAsync();
         System.Threading.Tasks.Task BeginTransactionAsync();
