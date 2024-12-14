@@ -216,6 +216,43 @@ namespace SmartFarmManager.API.Controllers
                 return BadRequest(ApiResult<string>.Fail(ex.Message));
             }
         }
+        [HttpPost("refresh")]
+        [AllowAnonymous]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                                               .Select(e => e.ErrorMessage)
+                                               .ToList();
+                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
+        {
+            { "Errors", errors.ToArray() }
+        }));
+            }
+
+            try
+            {
+                var result = await _authenticationService.RefreshTokenAsync(request.RefreshToken);
+                if (result == null)
+                {
+                    return Unauthorized(ApiResult<string>.Fail("Invalid or expired refresh token."));
+                }
+                var handler = new JwtSecurityTokenHandler();
+                var response = new RefreshTokenResponse
+                {
+                    AccessToken = handler.WriteToken(result.AccessToken),
+                    RefreshToken = result.RefreshToken
+                };
+
+                return Ok(ApiResult<RefreshTokenResponse>.Succeed(response));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+        }
+
 
     }
 }
