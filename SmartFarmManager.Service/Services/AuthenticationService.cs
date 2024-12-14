@@ -23,11 +23,14 @@ namespace SmartFarmManager.Service.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly JwtSettings _jwtSettings;
         private readonly IMapper _mapper;
-        public AuthenticationService(IUnitOfWork unitOfWork, IMapper mapper, IOptions<JwtSettings> jwtSettingsOptions)
+        private readonly JwtSecurityTokenHandler _tokenHandler;
+
+        public AuthenticationService(IUnitOfWork unitOfWork, IOptions<JwtSettings> jwtSettings, IMapper mapper, JwtSecurityTokenHandler tokenHandler)
         {
             _unitOfWork = unitOfWork;
-            _jwtSettings = jwtSettingsOptions.Value;
+            _jwtSettings = jwtSettings.Value;
             _mapper = mapper;
+            _tokenHandler = tokenHandler;
         }
 
         public async Task<LoginResult> Login(string username, string password)
@@ -101,6 +104,61 @@ namespace SmartFarmManager.Service.Services
             var token = handler.CreateToken(tokenDescriptor);
 
             return token;
+        }
+        public async Task<TokenResult> RefreshTokenAsync(string refreshToken)
+        {
+            // Validate Refresh Token
+            var principal = GetPrincipalFromExpiredToken(refreshToken);
+            if (principal == null)
+            {
+                return null;
+            }
+
+            var userId = Guid.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            // Check if user exists
+            var user = await _unitOfWork.Users.FindByCondition(u => u.Id == userId,false, x => x.Role).FirstOrDefaultAsync();
+            if (user == null)
+            {
+                return null;
+            }
+
+            // Generate new Access Token
+            var newAccessToken = CreateJwtToken(user);
+            return new TokenResult
+            {
+                AccessToken = newAccessToken,
+                RefreshToken = refreshToken // Keep the same refresh token
+            };
+        }
+
+        private ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
+        {
+            var key = Encoding.ASCII.GetBytes(_jwtSettings.Key);
+
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateAudience = false,
+                ValidateIssuer = false,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateLifetime = true // Ignore expiration for validation
+            };
+
+            try
+            {
+                var principal = _tokenHandler.ValidateToken(token, tokenValidationParameters, out var securityToken);
+                if (securityToken is JwtSecurityToken jwtSecurityToken &&
+                    jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    return principal;
+                }
+            }
+            catch
+            {
+                return null;
+            }
+
+            return null;
         }
 
     }

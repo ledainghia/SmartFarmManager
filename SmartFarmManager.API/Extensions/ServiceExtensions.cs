@@ -10,6 +10,7 @@ using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Mapper;
 using SmartFarmManager.Service.Services;
 using SmartFarmManager.Service.Settings;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Xml.Linq;
@@ -161,6 +162,8 @@ namespace SmartFarmManager.API.Extensions
         private static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
             // Đăng ký các service logic
+            
+
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IAuthenticationService, AuthenticationService>();
             services.AddScoped<ITaskService, TaskService>();
@@ -178,7 +181,7 @@ namespace SmartFarmManager.API.Extensions
         {
             // Đăng ký các configuration (ví dụ: JWT settings, database settings)
             services.AddScoped<JwtSettings>();
-
+            services.AddSingleton<JwtSecurityTokenHandler>();
             return services;
         }
 
