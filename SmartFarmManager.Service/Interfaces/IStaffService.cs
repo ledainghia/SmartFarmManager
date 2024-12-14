@@ -10,5 +10,6 @@ namespace SmartFarmManager.Service.Interfaces
     public interface IStaffService
     {
         Task<List<StaffPendingTasksModel>> GetStaffSortedByPendingTasksAsync(Guid? cageId = null);
+        Task<(bool Success, string Message)> AssignStaffToCageAsync(Guid userId, Guid cageId);
     }
 }

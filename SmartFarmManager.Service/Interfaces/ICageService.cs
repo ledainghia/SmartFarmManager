@@ -14,5 +14,9 @@ namespace SmartFarmManager.Service.Interfaces
         Task<PagedResult<CageResponseModel>> GetCagesAsync(CageFilterModel request);
         Task<CageDetailModel> GetCageByIdAsync(Guid cageId);
         Task<List<CageResponseModel>> GetUserCagesAsync(Guid userId);
+        Task<Guid> CreateCageAsync(CageModel model);
+        Task<IEnumerable<CageModel>> GetAllCagesAsync(string? search);
+        Task<bool> UpdateCageAsync(Guid id, CageModel model);
+        Task<bool> DeleteCageAsync(Guid id);
     }
 }
