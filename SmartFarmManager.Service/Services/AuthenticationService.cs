@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels.Auth;
+using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Settings;
 using System;
@@ -36,7 +37,7 @@ namespace SmartFarmManager.Service.Services
             {
                 throw new Exception("Username not found.");
             }
-            if (!user.PasswordHash.Equals(password))
+            if (!user.PasswordHash.Equals(SecurityUtil.Hash(password)))
             {
                 throw new Exception("Incorrect password.");
             }
@@ -56,7 +57,8 @@ namespace SmartFarmManager.Service.Services
         new(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
         new(JwtRegisteredClaimNames.Email, user.Email),
         new(ClaimTypes.Role, user.Role.RoleName), //
-        new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        new(ClaimTypes.Name, user.FullName),
     };
 
             var key = Encoding.ASCII.GetBytes(_jwtSettings.Key);
@@ -82,7 +84,8 @@ namespace SmartFarmManager.Service.Services
         new(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
         new(JwtRegisteredClaimNames.Email, user.Email),
         new(ClaimTypes.Role, user.Role.RoleName),
-        new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        new(ClaimTypes.Name, user.FullName),
     };
 
             var key = Encoding.ASCII.GetBytes(_jwtSettings.Key);
