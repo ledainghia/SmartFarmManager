@@ -71,6 +71,23 @@ namespace SmartFarmManager.API.Extensions
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true
                     };
+                    // Để SignalR có thể lấy token từ query string
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var accessToken = context.Request.Query["access_token"];
+                            var path = context.HttpContext.Request.Path;
+
+                            // Nếu đây là yêu cầu cho SignalR Hub
+                            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/notification"))
+                            {
+                                context.Token = accessToken;
+                            }
+
+                            return System.Threading.Tasks.Task.CompletedTask;
+                        }
+                    };
                 }).AddCookie();
 
             services.AddSwaggerGen(option =>
@@ -104,7 +121,7 @@ namespace SmartFarmManager.API.Extensions
                option.AddPolicy("CORS", builder =>
                    builder.AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin()));
             services.AddInfrastructureServices();
-
+            services.AddSignalR();
 
 
             services.ConfigureDbContext(configuration);
@@ -176,6 +193,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<ITaskTypeService, TaskTypeService>();
             services.AddScoped<IRoleService, RoleService>(); 
             services.AddScoped<IFarmService, FarmService>();
+            services.AddScoped<NotificationService>();
             return services;
         }
 
