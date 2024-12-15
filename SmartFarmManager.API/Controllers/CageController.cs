@@ -73,41 +73,58 @@ namespace SmartFarmManager.API.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                var errors = ModelState.Values
+                                        .SelectMany(v => v.Errors)
+                                        .Select(e => e.ErrorMessage)
+                                        .ToList();
+                return BadRequest(ApiResult<List<string>>.Error(errors));
             }
 
-            var cageId = await _cageService.CreateCageAsync(new CageModel
+            try
             {
-                FarmId = request.FarmId,
-                Name = request.Name,
-                Area = request.Area,
-                Capacity = request.Capacity,
-                Location = request.Location,
-                AnimalType = request.AnimalType
-            });
+                var cageId = await _cageService.CreateCageAsync(new CageModel
+                {
+                    FarmId = request.FarmId,
+                    Name = request.Name,
+                    Area = request.Area,
+                    Capacity = request.Capacity,
+                    Location = request.Location,
+                    AnimalType = request.AnimalType
+                });
 
-            return CreatedAtAction(nameof(GetCageById), new { id = cageId }, new { id = cageId });
+                var response = ApiResult<object>.Succeed(new { Id = cageId });
+
+                return CreatedAtAction(nameof(GetCageById), new { id = cageId }, response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail($"An error occurred: {ex.Message}"));
+            }
         }
-
-        
 
         [HttpGet("all")]
         public async Task<IActionResult> GetAllCages([FromQuery] string? search)
         {
-            var cageModels = await _cageService.GetAllCagesAsync(search);
-
-            var responses = cageModels.Select(c => new CageResponse
+            try
             {
-                Id = c.Id,
-                //FarmId = c.FarmId,
-                Name = c.Name,
-                Area = c.Area,
-                Capacity = c.Capacity,
-                Location = c.Location,
-                AnimalType = c.AnimalType
-            });
+                var cageModels = await _cageService.GetAllCagesAsync(search);
 
-            return Ok(responses);
+                var responses = cageModels.Select(c => new CageResponse
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    Area = c.Area,
+                    Capacity = c.Capacity,
+                    Location = c.Location,
+                    AnimalType = c.AnimalType
+                });
+
+                return Ok(ApiResult<IEnumerable<CageResponse>>.Succeed(responses));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail($"An error occurred: {ex.Message}"));
+            }
         }
 
         [HttpPut("{id:guid}")]
@@ -115,37 +132,55 @@ namespace SmartFarmManager.API.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                var errors = ModelState.Values
+                                        .SelectMany(v => v.Errors)
+                                        .Select(e => e.ErrorMessage)
+                                        .ToList();
+                return BadRequest(ApiResult<List<string>>.Error(errors));
             }
 
-            var updated = await _cageService.UpdateCageAsync(id, new CageModel
+            try
             {
-                FarmId = request.FarmId,
-                Name = request.Name,
-                Area = request.Area,
-                Capacity = request.Capacity,
-                Location = request.Location,
-                AnimalType = request.AnimalType
-            });
+                var updated = await _cageService.UpdateCageAsync(id, new CageModel
+                {
+                    FarmId = request.FarmId,
+                    Name = request.Name,
+                    Area = request.Area,
+                    Capacity = request.Capacity,
+                    Location = request.Location,
+                    AnimalType = request.AnimalType
+                });
 
-            if (!updated)
-            {
-                return NotFound("Cage not found.");
+                if (!updated)
+                {
+                    return NotFound(ApiResult<string>.Fail("Cage not found."));
+                }
+
+                return Ok(ApiResult<string>.Succeed("Cage successfully updated."));
             }
-
-            return NoContent();
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail($"An error occurred: {ex.Message}"));
+            }
         }
 
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> DeleteCage(Guid id)
         {
-            var deleted = await _cageService.DeleteCageAsync(id);
-            if (!deleted)
+            try
             {
-                return NotFound("Cage not found.");
-            }
+                var deleted = await _cageService.DeleteCageAsync(id);
+                if (!deleted)
+                {
+                    return NotFound(ApiResult<string>.Fail("Cage not found."));
+                }
 
-            return NoContent();
+                return Ok(ApiResult<string>.Succeed("Cage successfully deleted."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail($"An error occurred: {ex.Message}"));
+            }
         }
     }
 }
