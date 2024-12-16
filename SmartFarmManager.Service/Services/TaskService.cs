@@ -20,11 +20,13 @@ namespace SmartFarmManager.Service.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly NotificationService _notificationService;
 
-        public TaskService(IUnitOfWork unitOfWork, IMapper mapper)
+        public TaskService(IUnitOfWork unitOfWork, IMapper mapper, NotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _notificationService = notificationService;
         }
 
         public async Task<bool> CreateTaskAsync(CreateTaskModel model)
@@ -121,7 +123,8 @@ namespace SmartFarmManager.Service.Services
 
             await _unitOfWork.Tasks.CreateAsync(task);
             await _unitOfWork.CommitAsync();
-
+            var message = $"Task '{task.TaskName}' đã được tạo và giao cho bạn.";
+            await _notificationService.SendNotificationToUser(task.AssignedToUserId.ToString(), message);
             return true;
         }
 
