@@ -1,4 +1,6 @@
 ﻿using SmartFarmManager.Service.BusinessModels.Auth;
+using SmartFarmManager.Service.BusinessModels.Farm;
+using SmartFarmManager.Service.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +16,7 @@ namespace SmartFarmManager.Service.Interfaces
         Task<UserModel> GetUserByIdAsync(Guid userId);
         Task<Guid> CreateUserAsync(CreateUserModel userModel);
         Task<UserDetailsModel> GetUserDetailsAsync(Guid userId);
+        Task<PaginatedList<FarmModel>> GetFarmsByAdminStaffIdAsync(Guid userId, int pageIndex, int pageSize);
 
     }
 }

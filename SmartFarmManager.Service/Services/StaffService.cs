@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
+using SmartFarmManager.Service.BusinessModels.Auth;
 using SmartFarmManager.Service.BusinessModels.Staff;
+using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using Sprache;
 using System;
@@ -94,6 +96,34 @@ namespace SmartFarmManager.Service.Services
             await _unitOfWork.CommitAsync();
 
             return (true, "Success");
+        }
+        public async Task<PaginatedList<UserModel>> GetStaffFarmsByFarmIdAsync(Guid farmId, int pageIndex, int pageSize)
+        {
+            var cageIds = await _unitOfWork.Cages.FindByCondition(c => c.FarmId == farmId)
+                                                 .Select(c => c.Id)
+                                                 .ToListAsync();
+
+            var usersQuery = _unitOfWork.CageStaffs
+                                        .FindByCondition(cs => cageIds.Contains(cs.CageId))
+                                        .Select(cs => cs.StaffFarm);
+
+            var totalCount = await usersQuery.CountAsync();
+            var users = await usersQuery.Skip((pageIndex - 1) * pageSize)
+                                        .Take(pageSize)
+                                        .ToListAsync();
+            // Ánh xạ User thành UserModel
+            var userModels = users.Select(u => new UserModel
+            {
+                Id = u.Id,
+                Username = u.Username,
+                FullName = u.FullName,
+                Email = u.Email,
+                PhoneNumber = u.PhoneNumber,
+                Address = u.Address,
+                Role = u.Role.RoleName,
+                IsActive = u.IsActive ?? false
+            }).ToList();
+            return new PaginatedList<UserModel>(userModels, totalCount, pageIndex, pageSize);
         }
 
     }

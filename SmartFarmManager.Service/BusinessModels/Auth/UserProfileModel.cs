@@ -8,7 +8,6 @@ namespace SmartFarmManager.Service.BusinessModels.Auth
 {
     public class UserProfileModel : UserModel
     {
-        public string Address { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 

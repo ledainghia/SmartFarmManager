@@ -27,8 +27,9 @@ namespace SmartFarmManager.Repository
         public IFarmingBatchRepository FarmingBatch { get; }
         public IRoleRepository Roles { get; }
         public IFarmRepository Farms { get; }
+        public IFarmAdminRepository FarmsAdmins { get; }
 
-        public UnitOfWork(SmartFarmContext context, IUserRepository users, ITaskTypeRepository taskTypes,ITaskRepository tasks, IStatusRepository statuses, IStatusLogRepository statusLogs, ICageRepository cages,ICageStaffRepository cageStaffs, IMedicationRepository medications, IMedicalSymptomRepository medicalSymptoms, IPrescriptionRepository prescriptions, IFarmingBatchRepository farmingBatchs, IRoleRepository roles, IFarmRepository farms)
+        public UnitOfWork(SmartFarmContext context, IUserRepository users, ITaskTypeRepository taskTypes,ITaskRepository tasks, IStatusRepository statuses, IStatusLogRepository statusLogs, ICageRepository cages,ICageStaffRepository cageStaffs, IMedicationRepository medications, IMedicalSymptomRepository medicalSymptoms, IPrescriptionRepository prescriptions, IFarmingBatchRepository farmingBatchs, IRoleRepository roles, IFarmRepository farms, IFarmAdminRepository farmAdmins)
         {
             _context = context;
             Users = users;
@@ -44,6 +45,7 @@ namespace SmartFarmManager.Repository
             FarmingBatch = farmingBatchs;
             Roles = roles;
             Farms = farms;
+            FarmsAdmins = farmAdmins;
         }
 
         public void Dispose()
