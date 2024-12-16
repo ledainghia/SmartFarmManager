@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Org.BouncyCastle.Security;
 using SmartFarmManager.API.Common;
+using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Cages;
 using SmartFarmManager.Service.BusinessModels.Farm;
 using SmartFarmManager.Service.BusinessModels.Task;
@@ -86,7 +87,7 @@ namespace SmartFarmManager.API.Controllers
                     return NotFound(ApiResult<string>.Fail("No farms found for the given UserId."));
                 }
 
-                return Ok(ApiResult<PaginatedList<FarmModel>>.Succeed(paginatedFarms));
+                return Ok(ApiResult<PagedResult<FarmModel>>.Succeed(paginatedFarms));
             }
             catch (Exception ex)
             {

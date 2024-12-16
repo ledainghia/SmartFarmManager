@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
+using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Auth;
 using SmartFarmManager.Service.BusinessModels.Farm;
 using SmartFarmManager.Service.Helpers;
@@ -165,7 +166,7 @@ namespace SmartFarmManager.Service.Services
             return userDetails;
         }
 
-        public async Task<PaginatedList<FarmModel>> GetFarmsByAdminStaffIdAsync(Guid userId, int pageIndex, int pageSize)
+        public async Task<PagedResult<FarmModel>> GetFarmsByAdminStaffIdAsync(Guid userId, int pageIndex, int pageSize)
         {
             var farmIds = await _unitOfWork.FarmsAdmins
                                            .FindByCondition(fa => fa.AdminId == userId)
@@ -188,7 +189,17 @@ namespace SmartFarmManager.Service.Services
                 PhoneNumber = f.PhoneNumber,
                 Email = f.Email
             }).ToList();
-            return new PaginatedList<FarmModel>(farmModels, totalCount, pageIndex, pageSize);
+            var result= new PaginatedList<FarmModel>(farmModels, totalCount, pageIndex, pageSize);
+            return new PagedResult<FarmModel>()
+            {
+                TotalItems = result.TotalCount,
+                TotalPages = result.TotalPages,
+                CurrentPage = result.CurrentPage,
+                HasNextPage = result.HasNextPage,
+                HasPreviousPage = result.HasPreviousPage,
+                Items = result.Items,
+                PageSize = result.PageSize,
+            };
         }
 
     }
