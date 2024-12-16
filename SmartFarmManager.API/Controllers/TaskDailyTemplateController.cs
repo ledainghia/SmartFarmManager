@@ -156,7 +156,7 @@ namespace SmartFarmManager.API.Controllers
                 var result = await _taskDailyTemplateService.GetTaskDailyTemplatesAsync(filterModel);
 
                 // Trả về kết quả
-                return Ok(ApiResult<PagedResult<TaskDailyTemplateResponse>>.Succeed(result));
+                return Ok(ApiResult<PagedResult<TaskDailyTemplateItemModel>>.Succeed(result));
             }
             catch (Exception ex)
             {
