@@ -10,7 +10,7 @@ namespace SmartFarmManager.API.Payloads.Requests.FoodTemplate
         public string? FoodName { get; set; }
 
         public decimal? RecommendedWeightPerDay { get; set; }
-        [SessionValidator]
+        [ValidSessionType]
         public int? Session { get; set; }
         public decimal? WeightBasedOnBodyMass { get; set; }
 

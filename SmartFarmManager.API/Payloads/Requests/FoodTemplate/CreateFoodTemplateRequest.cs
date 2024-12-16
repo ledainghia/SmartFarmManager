@@ -14,7 +14,7 @@ namespace SmartFarmManager.API.Payloads.Requests.FoodTemplate
         public string FoodName { get; set; } // Tên của thực phẩm
 
         public decimal? RecommendedWeightPerDay { get; set; } // Trọng lượng khuyến nghị mỗi ngày
-        [SessionValidator]
+        [ValidSessionType]
         public int Session { get; set; } // Buổi (Sáng/Chiều/Tối)
         public decimal? WeightBasedOnBodyMass { get; set; } // Trọng lượng dựa trên khối lượng cơ thể
 
