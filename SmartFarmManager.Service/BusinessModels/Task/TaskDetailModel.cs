@@ -8,17 +8,58 @@ namespace SmartFarmManager.Service.BusinessModels.Task
 {
     public class TaskDetailModel
     {
-        public int Id { get; set; }
-        public string TaskName { get; set; } = null!;
-        public string? Description { get; set; }
-        public DateTime DueDate { get; set; }
-        public string TaskType { get; set; } = null!;
-        public int? FarmId { get; set; }
-        public int? AssignedToUserId { get; set; }
-        public string Status { get; set; } = null!;
-        public DateTime? CompleteAt { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime? ModifiedAt { get; set; }
-        public List<TaskHistoryModel> TaskHistories { get; set; } = new List<TaskHistoryModel>();
+        public Guid Id { get; set; }
+        public Guid CageId { get; set; }
+        public string CageName { get; set; }
+        public string TaskName { get; set; }
+        public string Description { get; set; }
+        public int PriorityNum { get; set; }
+        public DateTime? DueDate { get; set; }
+        public string Status { get; set; }
+        public int Session { get; set; }
+        public DateTime? CompletedAt { get; set; }
+        public DateTime? CreatedAt { get; set; }
+
+        public UserResponseModel AssignedToUser { get; set; }
+
+        // Liên kết với TaskType
+        public TaskTypeResponseModel TaskType { get; set; }
+
+        // Liên kết với StatusLogs
+        public List<StatusLogResponseModel> StatusLogs { get; set; }
+    }
+
+    public class UserResponseModel
+    {
+        public Guid UserId { get; set; }
+        public string FullName { get; set; }
+        public string Email { get; set; }
+        public string PhoneNumber { get; set; }
+    }
+
+    public class TaskTypeResponseModel
+    {
+        public Guid TaskTypeId { get; set; }
+        public string TaskTypeName { get; set; }
+    }
+
+    public class StatusLogResponseModel
+    {
+        public Guid StatusId { get; set; }
+        public string StatusName { get; set; } // Map từ bảng `Status`
+        public DateTime? UpdatedAt { get; set; }
+    }
+    public class SessionTaskGroupModel
+    {
+        public string SessionName { get; set; } // VD: "Session 1"
+        public List<CageTaskGroupModel> Cages { get; set; }
+    }
+
+    // Model nhóm theo Cage
+    public class CageTaskGroupModel
+    {
+        public Guid CageId { get; set; }
+        public string CageName { get; set; } // Tên cage (nếu cần)
+        public List<TaskDetailModel> Tasks { get; set; }
     }
 }

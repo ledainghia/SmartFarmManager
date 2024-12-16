@@ -2,13 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.Task;
-using SmartFarmManager.API.Payloads.Responses.Task;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Service.BusinessModels;
-using SmartFarmManager.Service.BusinessModels.QueryParameters;
 using SmartFarmManager.Service.BusinessModels.Task;
 using SmartFarmManager.Service.Interfaces;
-using System.Security.Claims;
 
 namespace SmartFarmManager.API.Controllers
 {
@@ -16,186 +13,243 @@ namespace SmartFarmManager.API.Controllers
     [ApiController]
     public class TaskController : ControllerBase
     {
-        private readonly ITaskService _taskService;
+        public readonly ITaskService _taskService;
 
         public TaskController(ITaskService taskService)
         {
             _taskService = taskService;
         }
 
-        // Implement API endpoints for Task operations here
-
-        #region api create task
         [HttpPost]
-    public async Task<IActionResult> CreateTask([FromBody] CreateTaskRequest createTaskRequest)
+        public async Task<IActionResult> CreateTask([FromBody] CreateTaskRequest request)
         {
             if (!ModelState.IsValid)
             {
+                // Collect validation errors
                 var errors = ModelState.Values.SelectMany(v => v.Errors)
                                                .Select(e => e.ErrorMessage)
                                                .ToList();
+
                 return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
-            {
-                { "Errors", errors.ToArray() }
-            }));
-            }
-
-            try
-            {
-                // Lấy ID người dùng từ token
-                var createdByIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-                if (createdByIdClaim == null)
-                {
-                    return Unauthorized();
-                }
-
-                var createdById = int.Parse(createdByIdClaim.Value);
-
-                // Mapping từ CreateTaskRequest sang CreateTaskModel
-                var createTaskModel = new CreateTaskModel
-                {
-                    TaskName = createTaskRequest.TaskName,
-                    Description = createTaskRequest.Description,
-                    DueDate = createTaskRequest.DueDate,
-                    TaskType = createTaskRequest.TaskType,
-                    FarmId = createTaskRequest.FarmId,
-                    AssignedToUserId = createTaskRequest.AssignedToUserId,
-                    CreatedBy = createdById
-                };
-
-                var newTask = await _taskService.CreateTaskAsync(createTaskModel);
-                return CreatedAtAction(nameof(GetTaskById), new { id = newTask.Id }, ApiResult<DataAccessObject.Models.Task>.Succeed(newTask));
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ApiResult<string>.Fail(ex.Message));
-            }
-        }
-        #endregion
-        #region api get task detail
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetTaskById(int id)
         {
-            // Implementation to get task by ID
+            { "Errors", errors.ToArray() }
+        }));
+            }
+
             try
             {
-                var taskDetailModel = await _taskService.GetTaskDetailAsync(id);
-                if (taskDetailModel == null)
+                var taskModel = request.MapToModel();
+                var result = await _taskService.CreateTaskAsync(taskModel);
+                if (!result)
                 {
-                    return NotFound();
+                    throw new Exception("Error while saving Task!");
                 }
+               
 
-                // Mapping từ TaskDetailModel sang TaskDetailResponse
-                var taskDetailResponse = new TaskDetailResponse
-                {
-                    Task = taskDetailModel
-                };
-
-                return Ok(ApiResult<TaskDetailResponse>.Succeed(taskDetailResponse));
+                return Ok(ApiResult<string>.Succeed("Create Task successfully!"));
             }
-            catch (Exception ex)
+            catch (ArgumentException ex)
             {
                 return BadRequest(ApiResult<string>.Fail(ex.Message));
             }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+            }
         }
-        #endregion
-        #region api get all tasks
+
+        [HttpPost("{taskId}/priority")]
+        public async Task<IActionResult> UpdateTask(Guid taskId, [FromBody] UpdateTaskPriorityRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                // Collect validation errors
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                                               .Select(e => e.ErrorMessage)
+                                               .ToList();
+
+                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
+        {
+            { "Errors", errors.ToArray() }
+        }));
+            }
+
+            try
+            {
+                
+                var updateTaskModel = request.MapToModel();
+
+                // Call the service to update the task
+                var result = await _taskService.UpdateTaskPriorityAsync(taskId, updateTaskModel);
+                if (!result)
+                {
+                    throw new Exception("Error while updating Task!");
+                }
+
+                return Ok(ApiResult<string>.Succeed("Update Task successfully!"));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+            }
+        }
+
+
+        //change status of task by task id and status id
+        [HttpPut("{taskId}/status/{statusId}")]
+        public async Task<IActionResult> ChangeTaskStatus(Guid taskId, Guid statusId)
+        {
+            try
+            {
+                var result = await _taskService.ChangeTaskStatusAsync(taskId, statusId);
+                if (!result)
+                {
+                    throw new Exception("Error while changing Task status!");
+                }
+
+                return Ok(ApiResult<string>.Succeed("Change Task status successfully!"));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+            }
+        }
         [HttpGet]
-        public async Task<IActionResult> GetAllTasks([FromQuery] TasksQuery query)
+        public async Task<IActionResult> GetFilteredTasks([FromQuery] TaskFilterPagingRequest filterRequest)
         {
             try
             {
-                var paginatedTasks = await _taskService.GetAllTasksAsync(query);
-                return Ok(ApiResult<PagedResult<TaskDetailModel>>.Succeed(paginatedTasks));
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ApiResult<string>.Fail(ex.Message));
-            }
-        }
-        #endregion
-
-        #region api update task
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateTask(int id, [FromBody] UpdateTaskRequest updateTaskRequest)
-        {
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values.SelectMany(v => v.Errors)
-                                               .Select(e => e.ErrorMessage)
-                                               .ToList();
-                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
-            {
-                { "Errors", errors.ToArray() }
-            }));
-            }
-
-            try
-            {
-                // Lấy ID người dùng từ token
-                var modifiedByIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-                if (modifiedByIdClaim == null)
+                // Map sang model tầng Service
+                var serviceFilter = new TaskFilterModel
                 {
-                    return Unauthorized();
-                }
+                    
+                    TaskName = filterRequest.TaskName,
+                    Status = filterRequest.Status,
+                    TaskTypeId = filterRequest.TaskTypeId,
+                    CageId = filterRequest.CageId,
+                    AssignedToUserId = filterRequest.AssignedToUserId,
+                    DueDateFrom = filterRequest.DueDateFrom,
+                    DueDateTo = filterRequest.DueDateTo,
+                    PriorityNum = filterRequest.PriorityNum,
+                    Session = filterRequest.Session,
+                    CompletedAt = filterRequest.CompletedAt,
+                    CreatedAt = filterRequest.CreatedAt,
+                    PageNumber = filterRequest.PageNumber,
+                    PageSize = filterRequest.PageSize,
+                    
 
-                var modifiedById = int.Parse(modifiedByIdClaim.Value);
-
-                // Mapping từ UpdateTaskRequest sang UpdateTaskModel
-                var updateTaskModel = new UpdateTaskModel
-                {
-                    TaskName = updateTaskRequest.TaskName,
-                    Description = updateTaskRequest.Description,
-                    DueDate = updateTaskRequest.DueDate,
-                    TaskType = updateTaskRequest.TaskType,
-                    FarmId = updateTaskRequest.FarmId,
-                    AssignedToUserId = updateTaskRequest.AssignedToUserId,
-                    Status = updateTaskRequest.Status,
-                    ModifiedBy = modifiedById
                 };
 
-                 await _taskService.UpdateTaskAsync(id, updateTaskModel);
-                return Ok(ApiResult<string>.Succeed("Update successfully!"));
+                // Gọi tầng Service để xử lý
+                var result = await _taskService.GetFilteredTasksAsync(serviceFilter);
+
+                // Trả về kết quả
+                return Ok(ApiResult<PagedResult<TaskDetailModel>>.Succeed(result));
             }
             catch (Exception ex)
             {
-                return BadRequest(ApiResult<string>.Fail(ex.Message));
+                return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred."));
             }
         }
-        #endregion
-        #region api update status task
-        [HttpPut("{id}/status")]
-        public async Task<IActionResult> UpdateTaskStatus(int id, [FromBody] UpdateTaskStatusRequest updateTaskStatusRequest)
+
+
+        ////get tasks filter
+        //[HttpGet]
+        //public async Task<IActionResult> GetTasks([FromQuery] TaskFilterRequest filter)
+        //{
+        //    try
+        //    {
+        //        var result = await _taskService.GetTasksAsync(filter.MapToModel());
+        //        return Ok(ApiResult<string>.Succeed("Change Task status successfully!"));
+        //    }
+        //    catch (ArgumentException ex)
+        //    {
+        //        return BadRequest(ApiResult<string>.Fail(ex.Message));
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred."));
+        //    }
+        //}
+
+        [HttpGet("user-tasks-with-priority")]
+        public async Task<IActionResult> GetUserTasksWithPriority([FromQuery] Guid userId, [FromQuery] Guid cageId, [FromQuery] DateTime? specificDate = null)
         {
-            if (!ModelState.IsValid)
+            var tasks = await _taskService.GetTasksForUserWithStateAsync(userId, cageId, specificDate);
+            return Ok(tasks);
+        }
+
+        [HttpGet("next-task")]
+        public async Task<IActionResult> GetNextTask([FromQuery] Guid userId)
+        {
+            var task = await _taskService.GetNextTasksForCagesWithStatsAsync(userId);
+
+            if (task == null)
             {
-                var errors = ModelState.Values.SelectMany(v => v.Errors)
-                                               .Select(e => e.ErrorMessage)
-                                               .ToList();
-                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
-            {
-                { "Errors", errors.ToArray() }
-            }));
+                return NotFound(new { message = "No next task found for this user." });
             }
+
+            return Ok(task);
+        }
+        [HttpGet("{taskId}")]
+        public async Task<IActionResult> GetTaskDetail(Guid taskId)
+        {
+            try
+            {
+                var taskDetail = await _taskService.GetTaskDetailAsync(taskId);
+
+                if (taskDetail == null)
+                {
+                    return NotFound(ApiResult<string>.Fail("Task not found."));
+                }
+
+                return Ok(ApiResult<TaskDetailModel>.Succeed(taskDetail));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred."));
+            }
+        }
+
+
+        [HttpPut("update-priorities")]
+        public async Task<IActionResult> UpdateTaskPriorities([FromBody] List<TaskPriorityUpdateRequest> taskPriorityUpdates)
+        {
+            // Kiểm tra tính hợp lệ của request (ở controller)
+            if (taskPriorityUpdates == null || !taskPriorityUpdates.Any())
+                return BadRequest("The request list cannot be null or empty.");
 
             try
             {
-                // Lấy ID người dùng từ token
-                var modifiedByIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-                if (modifiedByIdClaim == null)
+                // Map request sang DTO của tầng service
+                var serviceRequests = taskPriorityUpdates.Select(t => new TaskPriorityUpdateModel
                 {
-                    return Unauthorized();
-                }
+                    TaskId = t.TaskId,
+                    PriorityNum = t.PriorityNum
+                }).ToList();
 
-                var modifiedById = int.Parse(modifiedByIdClaim.Value);
-                await _taskService.UpdateTaskStatusAsync(id, updateTaskStatusRequest.Status, modifiedById);
-                return Ok(ApiResult<string>.Succeed("Update status successfully!"));
+                // Gọi service để xử lý logic
+                await _taskService.UpdateTaskPrioritiesAsync(serviceRequests);
+
+                return Ok(new { Message = "Task priorities updated successfully." });
             }
-            catch (Exception ex)
+            catch (ArgumentException ex)
             {
-                return BadRequest(ApiResult<string>.Fail(ex.Message));
+                return BadRequest(new { Error = ex.Message });
             }
         }
-        #endregion
+
     }
 }

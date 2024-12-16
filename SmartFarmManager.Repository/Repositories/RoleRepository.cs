@@ -10,7 +10,7 @@ namespace SmartFarmManager.Repository.Repositories
 {
     public class RoleRepository : RepositoryBaseAsync<Role>, IRoleRepository
     {
-        public RoleRepository(FarmsContext dbContext) : base(dbContext)
+        public RoleRepository(SmartFarmContext dbContext) : base(dbContext)
         {
         }
     }

@@ -15,14 +15,14 @@ namespace SmartFarmManager.Repository.Interfaces
         IQueryable<T> FindAll(bool trackChanges, params Expression<Func<T, object>>[] includeProperties);
         IQueryable<T> FindByCondition(Expression<Func<T, bool>> expression, bool trackChanges = false);
         IQueryable<T> FindByCondition(Expression<Func<T, bool>> expression, bool trackChanges = false, params Expression<Func<T, object>>[] includeProperties);
-        Task<T?> GetByIdAsync(int id);
-        Task<T?> GetByIdAsync(int id, params Expression<Func<T, object>>[] includeProperties);
+        Task<T?> GetByIdAsync(Guid id);
+        Task<T?> GetByIdAsync(Guid id, params Expression<Func<T, object>>[] includeProperties);
 
     }
     public interface IRepositoryBaseAsync<T> : IRepositoryQueryBase<T> where T : EntityBase
     {
-        Task<int> CreateAsync(T entity);
-        Task<IList<int>> CreateListAsync(IEnumerable<T> entities);
+        Task<Guid> CreateAsync(T entity);
+        Task<IList<Guid>> CreateListAsync(IEnumerable<T> entities);
         System.Threading.Tasks.Task UpdateAsync(T entity);
         System.Threading.Tasks.Task UpdateListAsync(IEnumerable<T> entities);
 
@@ -35,6 +35,11 @@ namespace SmartFarmManager.Repository.Interfaces
         Task<T?> FindAsync(Expression<Func<T, bool>> predicate);
         Task<List<T>> FindAllAsync(Expression<Func<T, bool>> predicate);
         Task<bool> AnyAsync(Expression<Func<T, bool>> predicate);
-
+        Task<(List<T> Items, int TotalCount)> GetPagedAsync(
+        Expression<Func<T, bool>>? filter = null,
+        Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
+        int page = 1,
+        int pageSize = 10,
+        params Expression<Func<T, object>>[] includeProperties);
     }
 }

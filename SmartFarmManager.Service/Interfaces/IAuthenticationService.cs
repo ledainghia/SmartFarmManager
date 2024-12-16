@@ -10,5 +10,7 @@ namespace SmartFarmManager.Service.Interfaces
     public interface IAuthenticationService
     {
         Task<LoginResult> Login(string username, string password);
+        Task<TokenResult> RefreshTokenAsync(string refreshToken);
+
     }
 }

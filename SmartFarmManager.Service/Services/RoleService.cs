@@ -1,4 +1,6 @@
-﻿using SmartFarmManager.Repository.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+using SmartFarmManager.Repository.Interfaces;
+using SmartFarmManager.Service.BusinessModels.Role;
 using SmartFarmManager.Service.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -17,6 +19,15 @@ namespace SmartFarmManager.Service.Services
             _unitOfWork = unitOfWork;
         }
 
-        // Implement methods for Role operations here
+        public async Task<IEnumerable<RoleModel>> GetRolesAsync()
+        {
+            var roles = await _unitOfWork.Roles.FindAll().ToListAsync();
+            return roles.Select(role => new RoleModel
+            {
+                Id = role.Id,
+                RoleName = role.RoleName
+            });
+        }
     }
+
 }

@@ -1,5 +1,5 @@
-﻿using SmartFarmManager.Repository.Interfaces;
-using SmartFarmManager.Service.Interfaces;
+﻿using Microsoft.AspNetCore.SignalR;
+using SmartFarmManager.Service.Settings;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,15 +8,30 @@ using System.Threading.Tasks;
 
 namespace SmartFarmManager.Service.Services
 {
-    public class NotificationService : INotificationService
+    public class NotificationService
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IHubContext<NotificationHub> _hubContext;
 
-        public NotificationService(IUnitOfWork unitOfWork)
+        public NotificationService(IHubContext<NotificationHub> hubContext)
         {
-            _unitOfWork = unitOfWork;
+            _hubContext = hubContext;
         }
 
-        // Implement methods for Notification operations here
+        public async Task SendNotificationToUser(string userId, string message)
+        {
+            var connectionIds = NotificationHub.GetConnectionIds(userId);
+            if (connectionIds != null && connectionIds.Any())
+            {
+                foreach (var connectionId in connectionIds)
+                {
+                    await _hubContext.Clients.Client(connectionId).SendAsync("ReceiveNotification", message);
+                    Console.WriteLine($"Đã gửi thông báo tới UserId: {userId}, ConnectionId: {connectionId}, Message: {message}");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"Không tìm thấy ConnectionId cho UserId: {userId}");
+            }
+        }
     }
 }

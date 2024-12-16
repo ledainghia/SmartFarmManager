@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using SmartFarmManager.Service.Interfaces;
+using SmartFarmManager.Service.Services;
 
 namespace SmartFarmManager.API.Controllers
 {
@@ -8,13 +8,26 @@ namespace SmartFarmManager.API.Controllers
     [ApiController]
     public class NotificationController : ControllerBase
     {
-        private readonly INotificationService _notificationService;
+        private readonly NotificationService _notificationService;
 
-        public NotificationController(INotificationService notificationService)
+        public NotificationController(NotificationService notificationService)
         {
             _notificationService = notificationService;
         }
 
-        // Implement API endpoints for Notification operations here
+        [HttpGet("send-test-notification/{userId}")]
+        public async Task<IActionResult> SendTestNotification(string userId)
+        {
+            try
+            {
+                string testMessage = "Đây là thông báo test từ SignalR!";
+                await _notificationService.SendNotificationToUser(userId, testMessage);
+                return Ok(new { Success = true, Message = $"Thông báo đã gửi tới userId: {userId}" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Success = false, Error = ex.Message });
+            }
+        }
     }
 }

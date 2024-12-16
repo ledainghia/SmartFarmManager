@@ -10,7 +10,7 @@ namespace SmartFarmManager.Repository.Repositories
 {
     public class FarmRepository : RepositoryBaseAsync<Farm>, IFarmRepository
     {
-        public FarmRepository(FarmsContext dbContext) : base(dbContext)
+        public FarmRepository(SmartFarmContext dbContext) : base(dbContext)
         {
         }
     }

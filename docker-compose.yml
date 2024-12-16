@@ -1,0 +1,35 @@
+version: '3.9'
+services:
+  database:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserverfarm
+    hostname: database
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=YourStronggg@Passw0rd
+    ports:
+      - '5053:1433'
+    volumes:
+      - sql_data:/var/opt/mssql
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+
+  backend:
+    build:
+      dockerfile: Dockerfile
+    container_name: backend
+    ports:
+      - '5051:8080' # Map HTTP từ container ra host
+    environment:
+      - 'ConnectionStrings:ProductConnection=Server=database,1433;Database=Farm;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;'
+      - SECRET_KEY=adjkasdbyuaasgcndsjfngljkdsjflgsdfklgnslkdfnslkdnfkjsahdfkjsahjlkfsa
+      - ASPNETCORE_ENVIRONMENT=Production
+    depends_on:
+      - database
+    restart: unless-stopped
+
+volumes:
+  sql_data:

@@ -10,6 +10,7 @@ using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Mapper;
 using SmartFarmManager.Service.Services;
 using SmartFarmManager.Service.Settings;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Xml.Linq;
@@ -70,6 +71,23 @@ namespace SmartFarmManager.API.Extensions
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true
                     };
+                    // Để SignalR có thể lấy token từ query string
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var accessToken = context.Request.Query["access_token"];
+                            var path = context.HttpContext.Request.Path;
+
+                            // Nếu đây là yêu cầu cho SignalR Hub
+                            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/notification"))
+                            {
+                                context.Token = accessToken;
+                            }
+
+                            return System.Threading.Tasks.Task.CompletedTask;
+                        }
+                    };
                 }).AddCookie();
 
             services.AddSwaggerGen(option =>
@@ -103,7 +121,7 @@ namespace SmartFarmManager.API.Extensions
                option.AddPolicy("CORS", builder =>
                    builder.AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin()));
             services.AddInfrastructureServices();
-
+            services.AddSignalR();
 
 
             services.ConfigureDbContext(configuration);
@@ -114,71 +132,86 @@ namespace SmartFarmManager.API.Extensions
         private static IServiceCollection ConfigureDbContext(this IServiceCollection services, IConfiguration configuration)
         {
 
-            var connectionString = configuration.GetConnectionString("DefaultConnectionString");
-            //var connectionString = $"Data Source={dbServer};Initial Catalog={dbName};User ID={dbUser};Password={dbPassword};TrustServerCertificate={dbTrustServerCertificate};MultipleActiveResultSets={dbMultipleActiveResultSets}";
+            //var connectionString = configuration.GetConnectionString("DbConnection");
+            ////var connectionString = $"Data Source={dbServer};Initial Catalog={dbName};User ID={dbUser};Password={dbPassword};TrustServerCertificate={dbTrustServerCertificate};MultipleActiveResultSets={dbMultipleActiveResultSets}";
 
-            services.AddDbContext<FarmsContext>(opt =>
-            {
-                opt.UseSqlServer(connectionString);
-            });
+            //services.AddDbContext<SmartFarmContext>(opt =>
+            //{
+            //    opt.UseSqlServer(connectionString);
+            //});
+
+            services.AddDbContext<SmartFarmContext>();
 
             
             return services;
         }
         private static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
         {
-            // Add repositories
-            services.AddScoped<IUserRepository, UserRepository>();
-            services.AddScoped<IAlertRepository, AlertRepository>();
-            services.AddScoped<IAlertTypeRepository, AlertTypeRepository>();
-            services.AddScoped<IAlertUserRepository, AlertUserRepository>();
-            services.AddScoped<ICameraSurveillanceRepository, CameraSurveillanceRepository>();
-            services.AddScoped<IDeviceReadingRepository, DeviceReadingRepository>();
-            services.AddScoped<IFarmRepository, FarmRepository>();
-            services.AddScoped<IFarmStaffAssignmentRepository, FarmStaffAssignmentRepository>();
-            services.AddScoped<IInventoryRepository, InventoryRepository>();
-            services.AddScoped<IInventoryTransactionRepository, InventoryTransactionRepository>();
-            services.AddScoped<IIoTDeviceRepository, IoTDeviceRepository>();
-            services.AddScoped<ILivestockRepository, LivestockRepository>();
-            services.AddScoped<ILivestockExpenseRepository, LivestockExpenseRepository>();
-            services.AddScoped<ILivestockSaleRepository, LivestockSaleRepository>();
-            services.AddScoped<INotificationRepository, NotificationRepository>();
-            services.AddScoped<IPermissionRepository, PermissionRepository>();
-            services.AddScoped<IRevenueAndProfitReportRepository, RevenueAndProfitReportRepository>();
-            services.AddScoped<IRoleRepository, RoleRepository>();
-            services.AddScoped<ITaskRepository, TaskRepository>();
-            services.AddScoped<ITaskHistoryRepository, TaskHistoryRepository>();
-            services.AddScoped<IUserPermissionRepository, UserPermissionRepository>();
 
-            // Add services
-            services.AddScoped<IUserService, UserService>();
-            services.AddScoped<IAlertService, AlertService>();
-            services.AddScoped<IAlertTypeService, AlertTypeService>();
-            services.AddScoped<IAlertUserService, AlertUserService>();
-            services.AddScoped<ICameraSurveillanceService, CameraSurveillanceService>();
-            services.AddScoped<IDeviceReadingService, DeviceReadingService>();
-            services.AddScoped<IFarmService, FarmService>();
-            services.AddScoped<IFarmStaffAssignmentService, FarmStaffAssignmentService>();
-            services.AddScoped<IInventoryService, InventoryService>();
-            services.AddScoped<IInventoryTransactionService, InventoryTransactionService>();
-            services.AddScoped<IIoTDeviceService, IoTDeviceService>();
-            services.AddScoped<ILivestockService, LivestockService>();
-            services.AddScoped<ILivestockExpenseService, LivestockExpenseService>();
-            services.AddScoped<ILivestockSaleService, LivestockSaleService>();
-            services.AddScoped<INotificationService, NotificationService>();
-            services.AddScoped<IPermissionService, PermissionService>();
-            services.AddScoped<IRevenueAndProfitReportService, RevenueAndProfitReportService>();
-            services.AddScoped<IRoleService, RoleService>();
-            services.AddScoped<ITaskService, TaskService>();
-            services.AddScoped<ITaskHistoryService, TaskHistoryService>();
-            services.AddScoped<IUserPermissionService, UserPermissionService>();
-            services.AddScoped<IAuthenticationService, AuthenticationService>();
+            services.AddRepositories();
+            services.AddApplicationServices();
+            services.AddConfigurations();
 
-            //add unit ofwork
+            return services;
+        }
+
+        private static IServiceCollection AddRepositories(this IServiceCollection services)
+        {
+            // Đăng ký các repository
             services.AddScoped<IUnitOfWork, UnitOfWork>();
-            //add settings
-            services.AddScoped<JwtSettings>();
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<ITaskRepository, TaskRepository>();
+            services.AddScoped<ITaskTypeRepository, TaskTypeRepository>();
+            services.AddScoped<IStatusRepository, StatusRepository>();
+            services.AddScoped<IStatusLogRepository, StatusLogRepository>();
+            services.AddScoped<ICageRepository, CageRepository>();
+            services.AddScoped<ICageStaffRepository, CageStaffRepository>();
+            services.AddScoped<IMedicalSymptomRepository, MedicalSymptomRepository>();
+            services.AddScoped<IMedicationRepository, MedicationRepository>();
+            services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
+            services.AddScoped<IFarmingBatchRepository, FarmingBatchRepository>();
+            services.AddScoped<IRoleRepository, RoleRepository>();
+            services.AddScoped<IFarmRepository, FarmRepository>();
+            services.AddScoped<IFarmAdminRepository, FarmAdminRepository>();
+            services.AddScoped<IAnimalTemplateRepository, AnimalTemplateRepository>();
+            services.AddScoped<IGrowthStageTemplateRepository, GrowthStageTemplateRepository>();
+            services.AddScoped<ITaskDailyTemplateRepository, TaskDailyTemplateRepository>();
+            services.AddScoped<IFoodTemplateRepository, FoodTemplateRepository>();
+            services.AddScoped<IVaccineTemplateRepository, VaccineTemplateRepository>();
 
+
+            return services;
+        }
+
+        private static IServiceCollection AddApplicationServices(this IServiceCollection services)
+        {
+            // Đăng ký các service logic
+            
+
+            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IAuthenticationService, AuthenticationService>();
+            services.AddScoped<ITaskService, TaskService>();
+            services.AddScoped<ICageService, CageService>();
+            services.AddScoped<IStaffService, StaffService>();
+            services.AddScoped<IMedicationService, MedicationService>();
+            services.AddScoped<IMedicalSymptomService, MedicalSymptomService>();
+            services.AddScoped<IPrescriptionService, PrescriptionService>();
+            services.AddScoped<ITaskTypeService, TaskTypeService>();
+            services.AddScoped<IRoleService, RoleService>(); 
+            services.AddScoped<IFarmService, FarmService>();
+            services.AddScoped<NotificationService>();
+            services.AddScoped<IAnimalTemplateService, AnimalTemplateService>();
+            services.AddScoped<IGrowthStageTemplateService,GrowthStageTemplateService>();
+            services.AddScoped<ITaskDailyTemplateService, TaskDailyTemplateService>();
+            services.AddScoped<IFoodTemplateService, FoodTemplateService>();    
+            return services;
+        }
+
+        private static IServiceCollection AddConfigurations(this IServiceCollection services)
+        {
+            // Đăng ký các configuration (ví dụ: JWT settings, database settings)
+            services.AddScoped<JwtSettings>();
+            services.AddSingleton<JwtSecurityTokenHandler>();
             return services;
         }
 

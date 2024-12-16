@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels.Auth;
+using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Settings;
 using System;
@@ -16,36 +18,32 @@ using System.Threading.Tasks;
 
 namespace SmartFarmManager.Service.Services
 {
-    public class AuthenticationService:IAuthenticationService
+    public class AuthenticationService : IAuthenticationService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly JwtSettings _jwtSettings;
         private readonly IMapper _mapper;
+        private readonly JwtSecurityTokenHandler _tokenHandler;
 
-        public AuthenticationService(IUnitOfWork unitOfWork,IMapper mapper, IOptions<JwtSettings> jwtSettingsOptions)
+        public AuthenticationService(IUnitOfWork unitOfWork, IOptions<JwtSettings> jwtSettings, IMapper mapper, JwtSecurityTokenHandler tokenHandler)
         {
             _unitOfWork = unitOfWork;
-            _jwtSettings = jwtSettingsOptions.Value;
+            _jwtSettings = jwtSettings.Value;
             _mapper = mapper;
+            _tokenHandler = tokenHandler;
         }
 
         public async Task<LoginResult> Login(string username, string password)
         {
-            // Tìm người dùng bằng email
-            var user = await _unitOfWork.Users.GetUserByUsername(username);
-
+            var user = await _unitOfWork.Users.FindByCondition(x=>x.Username==username,false,x=>x.Role).FirstOrDefaultAsync();
             if (user == null)
-            {             
+            {
                 throw new Exception("Username not found.");
             }
-
-            // Kiểm tra mật khẩu
-            if (!user.PasswordHash.Equals(password))
+            if (!user.PasswordHash.Equals(SecurityUtil.Hash(password)))
             {
                 throw new Exception("Incorrect password.");
             }
-
-            // Đăng nhập thành công, trả về token
             return new LoginResult
             {
                 Authenticated = true,
@@ -54,8 +52,6 @@ namespace SmartFarmManager.Service.Services
             };
         }
 
-        #region create token
-
         public SecurityToken CreateJwtToken(User user)
         {
             var utcNow = DateTime.UtcNow;
@@ -63,8 +59,9 @@ namespace SmartFarmManager.Service.Services
     {
         new(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
         new(JwtRegisteredClaimNames.Email, user.Email),
-        new(ClaimTypes.Role, user.Roles.Select(x=>x.RoleName).FirstOrDefault()), //
-        new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        new(ClaimTypes.Role, user.Role.RoleName), //
+        new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        new(ClaimTypes.Name, user.FullName),
     };
 
             var key = Encoding.ASCII.GetBytes(_jwtSettings.Key);
@@ -89,8 +86,9 @@ namespace SmartFarmManager.Service.Services
     {
         new(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
         new(JwtRegisteredClaimNames.Email, user.Email),
-        new(ClaimTypes.Role, user.Roles.Select(r=>r.RoleName).FirstOrDefault()),
-        new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        new(ClaimTypes.Role, user.Role.RoleName),
+        new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        new(ClaimTypes.Name, user.FullName),
     };
 
             var key = Encoding.ASCII.GetBytes(_jwtSettings.Key);
@@ -107,9 +105,61 @@ namespace SmartFarmManager.Service.Services
 
             return token;
         }
-        #endregion
+        public async Task<TokenResult> RefreshTokenAsync(string refreshToken)
+        {
+            // Validate Refresh Token
+            var principal = GetPrincipalFromExpiredToken(refreshToken);
+            if (principal == null)
+            {
+                return null;
+            }
 
+            var userId = Guid.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            // Check if user exists
+            var user = await _unitOfWork.Users.FindByCondition(u => u.Id == userId,false, x => x.Role).FirstOrDefaultAsync();
+            if (user == null)
+            {
+                return null;
+            }
 
+            // Generate new Access Token
+            var newAccessToken = CreateJwtToken(user);
+            return new TokenResult
+            {
+                AccessToken = newAccessToken,
+                RefreshToken = refreshToken // Keep the same refresh token
+            };
+        }
+
+        private ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
+        {
+            var key = Encoding.ASCII.GetBytes(_jwtSettings.Key);
+
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateAudience = false,
+                ValidateIssuer = false,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateLifetime = true // Ignore expiration for validation
+            };
+
+            try
+            {
+                var principal = _tokenHandler.ValidateToken(token, tokenValidationParameters, out var securityToken);
+                if (securityToken is JwtSecurityToken jwtSecurityToken &&
+                    jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    return principal;
+                }
+            }
+            catch
+            {
+                return null;
+            }
+
+            return null;
+        }
 
     }
 }

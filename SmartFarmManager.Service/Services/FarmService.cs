@@ -1,5 +1,6 @@
-﻿using SmartFarmManager.Repository.Interfaces;
-using SmartFarmManager.Service.BusinessModels.User;
+﻿using SmartFarmManager.DataAccessObject.Models;
+using SmartFarmManager.Repository.Interfaces;
+using SmartFarmManager.Service.BusinessModels.Farm;
 using SmartFarmManager.Service.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -17,37 +18,84 @@ namespace SmartFarmManager.Service.Services
         {
             _unitOfWork = unitOfWork;
         }
-        // Implement methods for Farm operations here
 
-        public async Task<List<UserResponseModel>> GetUsersByFarmIdAsync(int farmId)
+        public async Task<Guid> CreateFarmAsync(FarmModel model)
         {
-            var farm = await _unitOfWork.Farms.GetByIdAsync(farmId);
-            if (farm == null)
+            var farm = new Farm
             {
-                throw new ArgumentException("Farm not found.");
-            }
+                Name = model.Name,
+                Address = model.Address,
+                Area = model.Area,
+                PhoneNumber = model.PhoneNumber,
+                Email = model.Email,
+                CreatedDate = DateTime.UtcNow
+            };
 
-            // Lấy danh sách người dùng đã được gán cho nông trại
-            var farmStaffAssignmentsExist = await _unitOfWork.FarmStaffAssignments.GetByFarmIdAsync(farmId);
-            var users = farmStaffAssignmentsExist.Select(fsa => fsa.FarmStaff);
-            
-
-
-            // Chuyển đổi sang UserResponse
-            var userResponses = users.Select(user => new UserResponseModel
-            {
-                Id = user.Id,
-                Username = user.Username,
-                FullName = user.FullName,
-                Email = user.Email,
-                IsActive = user.IsActive
-            }).ToList();
-
-            return userResponses;
+            var id = await _unitOfWork.Farms.CreateAsync(farm);
+            await _unitOfWork.CommitAsync();
+            return id;
         }
 
-        
+        public async Task<FarmModel> GetFarmByIdAsync(Guid id)
+        {
+            var farm = await _unitOfWork.Farms.GetByIdAsync(id);
+            if (farm == null) return null;
 
+            return new FarmModel
+            {
+                Id = farm.Id,
+                Name = farm.Name,
+                Address = farm.Address,
+                Area = farm.Area,
+                PhoneNumber = farm.PhoneNumber,
+                Email = farm.Email
+            };
+        }
 
+        public async Task<IEnumerable<FarmModel>> GetAllFarmsAsync(string? search)
+        {
+            var farms = await _unitOfWork.Farms.FindAllAsync(f => string.IsNullOrEmpty(search) || f.Name.Contains(search));
+
+            return farms.Select(f => new FarmModel
+            {
+                Id = f.Id,
+                Name = f.Name,
+                Address = f.Address,
+                Area = f.Area,
+                PhoneNumber = f.PhoneNumber,
+                Email = f.Email
+            });
+        }
+
+        public async Task<bool> UpdateFarmAsync(Guid id, FarmModel model)
+        {
+            var farm = await _unitOfWork.Farms.GetByIdAsync(id);
+            if (farm == null) return false;
+
+            farm.Name = model.Name;
+            farm.Address = model.Address;
+            farm.Area = model.Area;
+            farm.PhoneNumber = model.PhoneNumber;
+            farm.Email = model.Email;
+            farm.ModifiedDate = DateTime.UtcNow;
+
+            await _unitOfWork.Farms.UpdateAsync(farm);
+            await _unitOfWork.CommitAsync();
+            return true;
+        }
+
+        public async Task<bool> DeleteFarmAsync(Guid id)
+        {
+            var farm = await _unitOfWork.Farms.GetByIdAsync(id);
+            if (farm == null) return false;
+
+            farm.IsDeleted = true;
+            farm.DeletedDate = DateTime.UtcNow;
+
+            await _unitOfWork.Farms.UpdateAsync(farm);
+            await _unitOfWork.CommitAsync();
+            return true;
+        }
     }
+
 }

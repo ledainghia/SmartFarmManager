@@ -1,4 +1,6 @@
-﻿namespace SmartFarmManager.API.Extensions
+﻿using SmartFarmManager.Service.Settings;
+
+namespace SmartFarmManager.API.Extensions
 {
     public static class ApplicationExtensions
     {
@@ -15,6 +17,7 @@
             });
 
 
+            app.MapHub<NotificationHub>("/hubs/notification");
 
             app.UseCors("CORS");
 

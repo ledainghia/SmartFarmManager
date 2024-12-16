@@ -11,77 +11,70 @@ namespace SmartFarmManager.Repository
 {
     public class UnitOfWork : IUnitOfWork
     {
-        private readonly FarmsContext _context;
+        private readonly SmartFarmContext _context;
         private IDbContextTransaction _currentTransaction;
 
-        public IUserRepository Users { get; }
-        public IAlertRepository Alerts { get; }
-        public IAlertTypeRepository AlertTypes { get; }
-        public IAlertUserRepository AlertUsers { get; }
-        public ICameraSurveillanceRepository CameraSurveillances { get; }
-        public IDeviceReadingRepository DeviceReadings { get; }
-        public IFarmRepository Farms { get; }
-        public IFarmStaffAssignmentRepository FarmStaffAssignments { get; }
-        public IInventoryRepository Inventories { get; }
-        public IInventoryTransactionRepository InventoryTransactions { get; }
-        public IIoTDeviceRepository IoTDevices { get; }
-        public ILivestockRepository Livestocks { get; }
-        public ILivestockExpenseRepository LivestockExpenses { get; }
-        public ILivestockSaleRepository LivestockSales { get; }
-        public INotificationRepository Notifications { get; }
-        public IPermissionRepository Permissions { get; }
-        public IRevenueAndProfitReportRepository RevenueAndProfitReports { get; }
+        public IUserRepository Users { get;}
+        public ITaskRepository Tasks { get;}
+        public ITaskTypeRepository TaskTypes { get;}
+        public IStatusRepository Statuses { get; }
+        public IStatusLogRepository StatusLogs { get; }
+        public ICageRepository Cages { get; }
+        public ICageStaffRepository CageStaffs { get; }
+        public IMedicalSymptomRepository MedicalSymptom { get; }
+        public IPrescriptionRepository Prescription { get; }
+        public IMedicationRepository Medication { get; }
+        public IFarmingBatchRepository FarmingBatch { get; }
         public IRoleRepository Roles { get; }
-        public ITaskRepository Tasks { get; }
-        public ITaskHistoryRepository TaskHistories { get; }
-        public IUserPermissionRepository UserPermissions { get; }
+        public IFarmRepository Farms { get; }
+        public IFarmAdminRepository FarmsAdmins { get; }
+        public IAnimalTemplateRepository AnimalTemplates { get; }
+        public IGrowthStageTemplateRepository GrowthStageTemplates { get; }
+        public ITaskDailyTemplateRepository TaskDailyTemplates { get; }
+        public IFoodTemplateRepository FoodTemplates { get; }
+        public IVaccineTemplateRepository VaccineTemplates { get; }
 
-        public UnitOfWork(
-            FarmsContext context,
-            IUserRepository users,
-            IAlertRepository alerts,
-            IAlertTypeRepository alertTypes,
-            IAlertUserRepository alertUsers,
-            ICameraSurveillanceRepository cameraSurveillances,
-            IDeviceReadingRepository deviceReadings,
-            IFarmRepository farms,
-            IFarmStaffAssignmentRepository farmStaffAssignments,
-            IInventoryRepository inventories,
-            IInventoryTransactionRepository inventoryTransactions,
-            IIoTDeviceRepository ioTDevices,
-            ILivestockRepository livestocks,
-            ILivestockExpenseRepository livestockExpenses,
-            ILivestockSaleRepository livestockSales,
-            INotificationRepository notifications,
-            IPermissionRepository permissions,
-            IRevenueAndProfitReportRepository revenueAndProfitReports,
-            IRoleRepository roles,
+
+        public UnitOfWork(SmartFarmContext context, IUserRepository users,
+            ITaskTypeRepository taskTypes,
             ITaskRepository tasks,
-            ITaskHistoryRepository taskHistories,
-            IUserPermissionRepository userPermissions)
+            IStatusRepository statuses,
+            IStatusLogRepository statusLogs,
+            ICageRepository cages,
+            ICageStaffRepository cageStaffs,
+            IMedicationRepository medications,
+            IMedicalSymptomRepository medicalSymptoms,
+            IPrescriptionRepository prescriptions,
+            IFarmingBatchRepository farmingBatchs,
+            IRoleRepository roles, 
+            IFarmRepository farms, 
+            IFarmAdminRepository farmAdmins,
+            IAnimalTemplateRepository animalTemplates,
+            IGrowthStageTemplateRepository growthStageTemplates,
+            ITaskDailyTemplateRepository taskDailyTemplates,
+            IFoodTemplateRepository foodTemplates,
+            IVaccineTemplateRepository vaccineTemplates)
         {
             _context = context;
             Users = users;
-            Alerts = alerts;
-            AlertTypes = alertTypes;
-            AlertUsers = alertUsers;
-            CameraSurveillances = cameraSurveillances;
-            DeviceReadings = deviceReadings;
-            Farms = farms;
-            FarmStaffAssignments = farmStaffAssignments;
-            Inventories = inventories;
-            InventoryTransactions = inventoryTransactions;
-            IoTDevices = ioTDevices;
-            Livestocks = livestocks;
-            LivestockExpenses = livestockExpenses;
-            LivestockSales = livestockSales;
-            Notifications = notifications;
-            Permissions = permissions;
-            RevenueAndProfitReports = revenueAndProfitReports;
-            Roles = roles;
+            TaskTypes = taskTypes;
             Tasks = tasks;
-            TaskHistories = taskHistories;
-            UserPermissions = userPermissions;
+            Statuses = statuses;
+            StatusLogs = statusLogs;
+            Cages = cages;
+            CageStaffs = cageStaffs;
+            Medication = medications;
+            MedicalSymptom = medicalSymptoms;
+            Prescription = prescriptions;
+            FarmingBatch = farmingBatchs;
+            Roles = roles;
+            Farms = farms;
+            FarmsAdmins = farmAdmins;
+            AnimalTemplates = animalTemplates;
+            GrowthStageTemplates = growthStageTemplates;
+            TaskDailyTemplates = taskDailyTemplates;
+            FoodTemplates = foodTemplates;
+            VaccineTemplates= vaccineTemplates;
         }
 
         public void Dispose()
@@ -138,7 +131,7 @@ namespace SmartFarmManager.Repository
             }
         }
 
-        public FarmsContext GetDbContext()
+        public SmartFarmContext GetDbContext()
         {
             return _context;
         }

@@ -10,30 +10,24 @@ namespace SmartFarmManager.Repository.Interfaces
     public interface IUnitOfWork : IDisposable
     {
         IUserRepository Users { get; }
-
-        // Add other repository properties as needed
-        IAlertRepository Alerts { get; }
-        IAlertTypeRepository AlertTypes { get; }
-        IAlertUserRepository AlertUsers { get; }
-        ICameraSurveillanceRepository CameraSurveillances { get; }
-        IDeviceReadingRepository DeviceReadings { get; }
-        IFarmRepository Farms { get; }
-        IFarmStaffAssignmentRepository FarmStaffAssignments { get; }
-        IInventoryRepository Inventories { get; }
-        IInventoryTransactionRepository InventoryTransactions { get; }
-        IIoTDeviceRepository IoTDevices { get; }
-        ILivestockRepository Livestocks { get; }
-        ILivestockExpenseRepository LivestockExpenses { get; }
-        ILivestockSaleRepository LivestockSales { get; }
-        INotificationRepository Notifications { get; }
-        IPermissionRepository Permissions { get; }
-        IRevenueAndProfitReportRepository RevenueAndProfitReports { get; }
-        IRoleRepository Roles { get; }
         ITaskRepository Tasks { get; }
-        ITaskHistoryRepository TaskHistories { get; }
-        IUserPermissionRepository UserPermissions { get; }
-
-        FarmsContext GetDbContext();
+        ITaskTypeRepository TaskTypes { get; }
+        IStatusRepository Statuses { get; }
+        IStatusLogRepository StatusLogs { get; }
+        ICageRepository Cages { get; }
+        ICageStaffRepository CageStaffs { get; }
+        IMedicalSymptomRepository MedicalSymptom { get; }
+        IPrescriptionRepository Prescription { get; }
+        IMedicationRepository Medication { get; }
+        IFarmingBatchRepository FarmingBatch { get; }
+        IRoleRepository Roles { get; }
+        IFarmRepository Farms { get; }
+        IFarmAdminRepository FarmsAdmins { get; }
+        ITaskDailyTemplateRepository TaskDailyTemplates { get; }
+        IGrowthStageTemplateRepository GrowthStageTemplates { get; }
+        IAnimalTemplateRepository AnimalTemplates { get; }
+        IFoodTemplateRepository FoodTemplates { get; }
+        IVaccineTemplateRepository VaccineTemplates { get; }
 
         Task<int> CommitAsync();
         System.Threading.Tasks.Task BeginTransactionAsync();

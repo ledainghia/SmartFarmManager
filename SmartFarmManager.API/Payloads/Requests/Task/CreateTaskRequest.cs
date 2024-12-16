@@ -1,24 +1,49 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using SmartFarmManager.API.Validation;
+using SmartFarmManager.Service.BusinessModels.Task;
+using System.ComponentModel.DataAnnotations;
 
 namespace SmartFarmManager.API.Payloads.Requests.Task
 {
     public class CreateTaskRequest
     {
-        [Required(ErrorMessage = "TaskName is required.")]
-        [StringLength(100, ErrorMessage = "TaskName can't be longer than 100 characters.")]
-        public string TaskName { get; set; } = null!;
-   
-        public string? Description { get; set; }
+        [Required]
+        public Guid? TaskTypeId { get; set; }
 
-        [Required(ErrorMessage = "DueDate is required.")]
+        [Required]
+        public Guid CageId { get; set; }
+
+        [Required]
+        public Guid AssignedToUserId { get; set; }
+
+        [Required]
+        public Guid CreatedByUserId { get; set; }
+
+        [Required]
+        [MaxLength(200)]
+        public string TaskName { get; set; }
+
+
+        [MaxLength(500)]
+        public string Description { get; set; }
+
+        [Required]
         public DateTime DueDate { get; set; }
-
-        [Required(ErrorMessage = "TaskType is required.")]
-        [RegularExpression(@"^System|Farm$", ErrorMessage = "TaskType must be either 'System' or 'Farm'.")]
-        public string TaskType { get; set; } = null!;
-
-        public int? FarmId { get; set; } 
-
-        public int? AssignedToUserId { get; set; }
+        [Required]
+        [SessionValidator]
+        public string  Session { get; set; }
+        public  CreateTaskModel MapToModel()
+        {
+            return new CreateTaskModel
+            {
+                TaskTypeId = this.TaskTypeId,
+                CageId = this.CageId,
+                AssignedToUserId = this.AssignedToUserId,
+                CreatedByUserId = this.CreatedByUserId,
+                TaskName = this.TaskName,
+                Description =this.Description,
+                DueDate = this.DueDate,
+                Session = this.Session
+            };
+        }
     }
 }
