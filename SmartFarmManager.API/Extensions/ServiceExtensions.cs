@@ -175,6 +175,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IFarmAdminRepository, FarmAdminRepository>();
             services.AddScoped<IAnimalTemplateRepository, AnimalTemplateRepository>();
             services.AddScoped<IGrowthStageTemplateRepository, GrowthStageTemplateRepository>();
+            services.AddScoped<ITaskDailyTemplateRepository, TaskDailyTemplateRepository>();
 
 
             return services;
@@ -199,6 +200,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<NotificationService>();
             services.AddScoped<IAnimalTemplateService, AnimalTemplateService>();
             services.AddScoped<IGrowthStageTemplateService,GrowthStageTemplateService>();
+            services.AddScoped<ITaskDailyTemplateService, TaskDailyTemplateService>();
             return services;
         }
 
