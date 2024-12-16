@@ -1,14 +1,18 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.Farm;
 using SmartFarmManager.API.Payloads.Responses.Auth;
 using SmartFarmManager.API.Payloads.Responses.Farm;
+using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Auth;
 using SmartFarmManager.Service.BusinessModels.Farm;
+using SmartFarmManager.Service.BusinessModels.FoodTemplate;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Services;
+using Sprache;
 
 namespace SmartFarmManager.API.Controllers
 {
@@ -181,7 +185,7 @@ namespace SmartFarmManager.API.Controllers
                     return NotFound(ApiResult<string>.Fail("No users found for the given FarmId."));
                 }
 
-                return Ok(ApiResult<PaginatedList<UserModel>>.Succeed(paginatedUsers));
+                 return Ok(ApiResult<PagedResult<UserModel>>.Succeed(paginatedUsers));
             }
             catch (Exception ex)
             {
