@@ -105,6 +105,7 @@ namespace SmartFarmManager.Service.Services
 
             var usersQuery = _unitOfWork.CageStaffs
                                         .FindByCondition(cs => cageIds.Contains(cs.CageId))
+                                        .Include(cs => cs.StaffFarm.Role)
                                         .Select(cs => cs.StaffFarm);
 
             var totalCount = await usersQuery.CountAsync();
