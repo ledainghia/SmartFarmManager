@@ -106,8 +106,14 @@ namespace SmartFarmManager.Service.Services
 
             var usersQuery = _unitOfWork.CageStaffs
                                         .FindByCondition(cs => cageIds.Contains(cs.CageId))
-                                        .Include(cs => cs.StaffFarm.Role)
-                                        .Select(cs => cs.StaffFarm);
+                                        .Include(cs => cs.StaffFarm.Role) // Include Role của StaffFarm
+                                .Include(cs => cs.Cage)           // Include Cage
+                                .Select(cs => new
+                                {
+                                    StaffFarm = cs.StaffFarm,
+                                    CageId = cs.CageId,
+                                    CageName = cs.Cage.Name
+                                });
 
             var totalCount = await usersQuery.CountAsync();
             var users = await usersQuery.Skip((pageIndex - 1) * pageSize)
@@ -116,14 +122,16 @@ namespace SmartFarmManager.Service.Services
             // Ánh xạ User thành UserModel
             var userModels = users.Select(u => new UserModel
             {
-                Id = u.Id,
-                Username = u.Username,
-                FullName = u.FullName,
-                Email = u.Email,
-                PhoneNumber = u.PhoneNumber,
-                Address = u.Address,
-                Role = u.Role.RoleName,
-                IsActive = u.IsActive ?? false
+                Id = u.StaffFarm.Id,
+                Username = u.StaffFarm.Username,
+                FullName = u.StaffFarm.FullName,
+                Email = u.StaffFarm.Email,
+                PhoneNumber = u.StaffFarm.PhoneNumber,
+                Address = u.StaffFarm.Address,
+                Role = u.StaffFarm.Role != null ? u.StaffFarm.Role.RoleName : "No Role", // Xử lý null
+                IsActive = u.StaffFarm.IsActive ?? false,
+                CageId = u.CageId,
+                CageName = u.CageName
             }).ToList();
             var result= new PaginatedList<UserModel>(userModels, totalCount, pageIndex, pageSize);
             return new PagedResult<UserModel>()
