@@ -26,6 +26,7 @@ namespace SmartFarmManager.Repository.Interfaces
         ITaskDailyTemplateRepository TaskDailyTemplates { get; }
         IGrowthStageTemplateRepository GrowthStageTemplates { get; }
         IAnimalTemplateRepository AnimalTemplates { get; }
+        IFoodTemplateRepository FoodTemplates { get; }
 
         Task<int> CommitAsync();
         System.Threading.Tasks.Task BeginTransactionAsync();
