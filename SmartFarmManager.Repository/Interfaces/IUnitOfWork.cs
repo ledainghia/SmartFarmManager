@@ -23,6 +23,7 @@ namespace SmartFarmManager.Repository.Interfaces
         IRoleRepository Roles { get; }
         IFarmRepository Farms { get; }
         IFarmAdminRepository FarmsAdmins { get; }
+        IAnimalTemplateRepository AnimalTemplates { get; }
 
         Task<int> CommitAsync();
         System.Threading.Tasks.Task BeginTransactionAsync();

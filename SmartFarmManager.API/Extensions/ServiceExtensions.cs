@@ -173,6 +173,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IRoleRepository, RoleRepository>();
             services.AddScoped<IFarmRepository, FarmRepository>();
             services.AddScoped<IFarmAdminRepository, FarmAdminRepository>();
+            services.AddScoped<IAnimalTemplateRepository, AnimalTemplateRepository>();
 
 
             return services;
@@ -195,6 +196,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IRoleService, RoleService>(); 
             services.AddScoped<IFarmService, FarmService>();
             services.AddScoped<NotificationService>();
+            services.AddScoped<IAnimalTemplateService, AnimalTemplateService>();
             return services;
         }
 
