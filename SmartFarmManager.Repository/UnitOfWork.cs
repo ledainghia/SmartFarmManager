@@ -29,6 +29,7 @@ namespace SmartFarmManager.Repository
         public IFarmRepository Farms { get; }
         public IFarmAdminRepository FarmsAdmins { get; }
         public IAnimalTemplateRepository AnimalTemplates { get; }
+        public IGrowthStageTemplateRepository GrowthStageTemplates { get; }
 
         public UnitOfWork(SmartFarmContext context, IUserRepository users,
             ITaskTypeRepository taskTypes,
@@ -44,7 +45,8 @@ namespace SmartFarmManager.Repository
             IRoleRepository roles, 
             IFarmRepository farms, 
             IFarmAdminRepository farmAdmins,
-            IAnimalTemplateRepository animalTemplates)
+            IAnimalTemplateRepository animalTemplates,
+            IGrowthStageTemplateRepository growthStageTemplates)
         {
             _context = context;
             Users = users;
@@ -62,6 +64,7 @@ namespace SmartFarmManager.Repository
             Farms = farms;
             FarmsAdmins = farmAdmins;
             AnimalTemplates = animalTemplates;
+            GrowthStageTemplates = growthStageTemplates;
         }
 
         public void Dispose()

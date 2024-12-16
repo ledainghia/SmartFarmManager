@@ -27,17 +27,8 @@ namespace SmartFarmManager.Service.BusinessModels.AnimalTemplate
         public int? AgeStart { get; set; }
         public int? AgeEnd { get; set; }
         public string Notes { get; set; }
-        public List<FoodTemplateResponse> FoodTemplates { get; set; }
     }
 
-    public class FoodTemplateResponse
-    {
-        public Guid Id { get; set; }
-        public string FoodName { get; set; }
-        public decimal? RecommendedWeightPerDay { get; set; }
-        public int Session { get; set; }
-        public decimal? WeightBasedOnBodyMass { get; set; }
-    }
 
     public class VaccineTemplateResponse
     {

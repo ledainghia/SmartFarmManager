@@ -233,7 +233,6 @@ namespace SmartFarmManager.Service.Services
             var animalTemplate = await _unitOfWork.AnimalTemplates
                 .FindByCondition(x => x.Id == id)
                 .Include(x => x.GrowthStageTemplates)
-                .ThenInclude(g => g.FoodTemplates) // Nếu cần thêm thông tin FoodTemplates
                 .Include(x => x.VaccineTemplates)
                 .FirstOrDefaultAsync();
 
@@ -260,14 +259,6 @@ namespace SmartFarmManager.Service.Services
                     AgeStart = g.AgeStart,
                     AgeEnd = g.AgeEnd,
                     Notes = g.Notes,
-                    FoodTemplates = g.FoodTemplates.Select(f => new FoodTemplateResponse
-                    {
-                        Id = f.Id,
-                        FoodName = f.FoodName,
-                        RecommendedWeightPerDay = f.RecommendedWeightPerDay,
-                        Session = f.Session,
-                        WeightBasedOnBodyMass = f.WeightBasedOnBodyMass
-                    }).ToList()
                 }).ToList(),
                 VaccineTemplates = animalTemplate.VaccineTemplates.Select(v => new VaccineTemplateResponse
                 {
