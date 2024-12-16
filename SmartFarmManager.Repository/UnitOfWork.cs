@@ -32,6 +32,8 @@ namespace SmartFarmManager.Repository
         public IGrowthStageTemplateRepository GrowthStageTemplates { get; }
         public ITaskDailyTemplateRepository TaskDailyTemplates { get; }
         public IFoodTemplateRepository FoodTemplates { get; }
+        public IVaccineTemplateRepository VaccineTemplates { get; }
+
 
         public UnitOfWork(SmartFarmContext context, IUserRepository users,
             ITaskTypeRepository taskTypes,
@@ -50,7 +52,8 @@ namespace SmartFarmManager.Repository
             IAnimalTemplateRepository animalTemplates,
             IGrowthStageTemplateRepository growthStageTemplates,
             ITaskDailyTemplateRepository taskDailyTemplates,
-            IFoodTemplateRepository foodTemplates)
+            IFoodTemplateRepository foodTemplates,
+            IVaccineTemplateRepository vaccineTemplates)
         {
             _context = context;
             Users = users;
@@ -71,6 +74,7 @@ namespace SmartFarmManager.Repository
             GrowthStageTemplates = growthStageTemplates;
             TaskDailyTemplates = taskDailyTemplates;
             FoodTemplates = foodTemplates;
+            VaccineTemplates= vaccineTemplates;
         }
 
         public void Dispose()
