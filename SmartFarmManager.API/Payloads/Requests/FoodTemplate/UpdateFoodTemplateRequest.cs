@@ -1,4 +1,5 @@
 ﻿using SmartFarmManager.API.Validation;
+using SmartFarmManager.Service.BusinessModels.FoodTemplate;
 using System.ComponentModel.DataAnnotations;
 
 namespace SmartFarmManager.API.Payloads.Requests.FoodTemplate
