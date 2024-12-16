@@ -23,6 +23,7 @@ namespace SmartFarmManager.Repository.Interfaces
         IRoleRepository Roles { get; }
         IFarmRepository Farms { get; }
         IFarmAdminRepository FarmsAdmins { get; }
+        ITaskDailyTemplateRepository TaskDailyTemplates { get; }
         IGrowthStageTemplateRepository GrowthStageTemplates { get; }
         IAnimalTemplateRepository AnimalTemplates { get; }
 
