@@ -172,6 +172,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IFarmingBatchRepository, FarmingBatchRepository>();
             services.AddScoped<IRoleRepository, RoleRepository>();
             services.AddScoped<IFarmRepository, FarmRepository>();
+            services.AddScoped<IFarmAdminRepository, FarmAdminRepository>();
 
 
             return services;

@@ -2,6 +2,7 @@
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels.Auth;
+using SmartFarmManager.Service.BusinessModels.Farm;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using System;
@@ -110,6 +111,7 @@ namespace SmartFarmManager.Service.Services
                 FullName = u.FullName,
                 Email = u.Email,
                 PhoneNumber = u.PhoneNumber,
+                Address = u.Address,
                 Role = u.Role.RoleName,
                 IsActive = u.IsActive ?? false
             });
@@ -127,6 +129,7 @@ namespace SmartFarmManager.Service.Services
                 FullName = user.FullName,
                 Email = user.Email,
                 PhoneNumber = user.PhoneNumber,
+                Address = user.Address,
                 Role = user.Role.RoleName,
                 IsActive = user.IsActive ?? false
             };
@@ -161,5 +164,32 @@ namespace SmartFarmManager.Service.Services
 
             return userDetails;
         }
+
+        public async Task<PaginatedList<FarmModel>> GetFarmsByAdminStaffIdAsync(Guid userId, int pageIndex, int pageSize)
+        {
+            var farmIds = await _unitOfWork.FarmsAdmins
+                                           .FindByCondition(fa => fa.AdminId == userId)
+                                           .Select(fa => fa.FarmId)
+                                           .ToListAsync();
+
+            var farmsQuery = _unitOfWork.Farms.FindByCondition(f => farmIds.Contains(f.Id));
+
+            var totalCount = await farmsQuery.CountAsync();
+            var farms = await farmsQuery.Skip((pageIndex - 1) * pageSize)
+                                        .Take(pageSize)
+                                        .ToListAsync();
+            // Ánh xạ Farm thành FarmModel
+            var farmModels = farms.Select(f => new FarmModel
+            {
+                Id = f.Id,
+                Name = f.Name,
+                Address = f.Address,
+                Area = f.Area,
+                PhoneNumber = f.PhoneNumber,
+                Email = f.Email
+            }).ToList();
+            return new PaginatedList<FarmModel>(farmModels, totalCount, pageIndex, pageSize);
+        }
+
     }
 }

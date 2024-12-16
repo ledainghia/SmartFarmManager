@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Org.BouncyCastle.Security;
 using SmartFarmManager.API.Common;
 using SmartFarmManager.Service.BusinessModels.Cages;
+using SmartFarmManager.Service.BusinessModels.Farm;
 using SmartFarmManager.Service.BusinessModels.Task;
+using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Services;
 
@@ -15,11 +17,13 @@ namespace SmartFarmManager.API.Controllers
     {
         private readonly ITaskService _taskService;
         private readonly ICageService _cageService;
+        private readonly IUserService _userService;
 
-        public UserController(ITaskService taskService, ICageService cageService)
+        public UserController(ITaskService taskService, ICageService cageService, IUserService userService)
         {
             _taskService = taskService;
             _cageService = cageService;
+            _userService = userService;
         }
 
         [HttpGet("{userId}/tasks")]
@@ -70,6 +74,25 @@ namespace SmartFarmManager.API.Controllers
         }
 
 
+        [HttpGet("{userId:guid}/farms")]
+        public async Task<IActionResult> GetFarmsByUserId(Guid userId, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                var paginatedFarms = await _userService.GetFarmsByAdminStaffIdAsync(userId, pageIndex, pageSize);
+
+                if (paginatedFarms == null || !paginatedFarms.Items.Any())
+                {
+                    return NotFound(ApiResult<string>.Fail("No farms found for the given UserId."));
+                }
+
+                return Ok(ApiResult<PaginatedList<FarmModel>>.Succeed(paginatedFarms));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail($"An error occurred: {ex.Message}"));
+            }
+        }
 
     }
 }

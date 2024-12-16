@@ -153,6 +153,7 @@ namespace SmartFarmManager.API.Controllers
                     FullName = user.FullName,
                     Email = user.Email,
                     PhoneNumber = user.PhoneNumber,
+                    Address = user.Address,
                     Role = user.Role,
                     IsActive = user.IsActive
                 });
@@ -185,6 +186,7 @@ namespace SmartFarmManager.API.Controllers
                     FullName = user.FullName,
                     Email = user.Email,
                     PhoneNumber = user.PhoneNumber,
+                    Address = user.Address,
                     Role = user.Role,
                     IsActive = user.IsActive
                 };

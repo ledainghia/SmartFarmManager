@@ -2,9 +2,13 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.Farm;
+using SmartFarmManager.API.Payloads.Responses.Auth;
 using SmartFarmManager.API.Payloads.Responses.Farm;
+using SmartFarmManager.Service.BusinessModels.Auth;
 using SmartFarmManager.Service.BusinessModels.Farm;
+using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
+using SmartFarmManager.Service.Services;
 
 namespace SmartFarmManager.API.Controllers
 {
@@ -13,10 +17,12 @@ namespace SmartFarmManager.API.Controllers
     public class FarmController : ControllerBase
     {
         private readonly IFarmService _farmService;
+        private readonly IStaffService _staffService;
 
-        public FarmController(IFarmService farmService)
+        public FarmController(IFarmService farmService, IStaffService staffService)
         {
             _farmService = farmService;
+            _staffService = staffService;
         }
 
         [HttpPost]
@@ -162,6 +168,27 @@ namespace SmartFarmManager.API.Controllers
                 return StatusCode(500, ApiResult<string>.Fail($"An error occurred: {ex.Message}"));
             }
         }
+
+        [HttpGet("{farmId:guid}/users")]
+        public async Task<IActionResult> GetUsersByFarmId(Guid farmId, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                var paginatedUsers = await _staffService.GetStaffFarmsByFarmIdAsync(farmId, pageIndex, pageSize);
+
+                if (paginatedUsers == null || !paginatedUsers.Items.Any())
+                {
+                    return NotFound(ApiResult<string>.Fail("No users found for the given FarmId."));
+                }
+
+                return Ok(ApiResult<PaginatedList<UserModel>>.Succeed(paginatedUsers));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail($"An error occurred: {ex.Message}"));
+            }
+        }
+
     }
 
 }
