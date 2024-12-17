@@ -27,6 +27,7 @@ namespace SmartFarmManager.Repository.Interfaces
         IGrowthStageTemplateRepository GrowthStageTemplates { get; }
         IAnimalTemplateRepository AnimalTemplates { get; }
         IFoodTemplateRepository FoodTemplates { get; }
+        IVaccineTemplateRepository VaccineTemplates { get; }
         IGrowthStageRepository GrowthStages { get; }
 
         Task<int> CommitAsync();
