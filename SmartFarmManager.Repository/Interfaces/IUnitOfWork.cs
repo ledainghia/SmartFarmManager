@@ -19,7 +19,7 @@ namespace SmartFarmManager.Repository.Interfaces
         IMedicalSymptomRepository MedicalSymptom { get; }
         IPrescriptionRepository Prescription { get; }
         IMedicationRepository Medication { get; }
-        IFarmingBatchRepository FarmingBatch { get; }
+        IFarmingBatchRepository FarmingBatches { get; }
         IRoleRepository Roles { get; }
         IFarmRepository Farms { get; }
         IFarmAdminRepository FarmsAdmins { get; }
@@ -27,6 +27,7 @@ namespace SmartFarmManager.Repository.Interfaces
         IGrowthStageTemplateRepository GrowthStageTemplates { get; }
         IAnimalTemplateRepository AnimalTemplates { get; }
         IFoodTemplateRepository FoodTemplates { get; }
+        IGrowthStageRepository GrowthStages { get; }
 
         Task<int> CommitAsync();
         System.Threading.Tasks.Task BeginTransactionAsync();

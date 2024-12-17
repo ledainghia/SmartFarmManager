@@ -202,7 +202,8 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IAnimalTemplateService, AnimalTemplateService>();
             services.AddScoped<IGrowthStageTemplateService,GrowthStageTemplateService>();
             services.AddScoped<ITaskDailyTemplateService, TaskDailyTemplateService>();
-            services.AddScoped<IFoodTemplateService, FoodTemplateService>();    
+            services.AddScoped<IFoodTemplateService, FoodTemplateService>();
+            services.AddScoped<IFarmingBatchService, FarmingBatchService>();
             return services;
         }
 

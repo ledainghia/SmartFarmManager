@@ -24,7 +24,7 @@ namespace SmartFarmManager.Repository
         public IMedicalSymptomRepository MedicalSymptom { get; }
         public IPrescriptionRepository Prescription { get; }
         public IMedicationRepository Medication { get; }
-        public IFarmingBatchRepository FarmingBatch { get; }
+        public IFarmingBatchRepository FarmingBatches { get; }
         public IRoleRepository Roles { get; }
         public IFarmRepository Farms { get; }
         public IFarmAdminRepository FarmsAdmins { get; }
@@ -32,7 +32,7 @@ namespace SmartFarmManager.Repository
         public IGrowthStageTemplateRepository GrowthStageTemplates { get; }
         public ITaskDailyTemplateRepository TaskDailyTemplates { get; }
         public IFoodTemplateRepository FoodTemplates { get; }
-
+        public IGrowthStageRepository GrowthStages { get; }
         public UnitOfWork(SmartFarmContext context, IUserRepository users,
             ITaskTypeRepository taskTypes,
             ITaskRepository tasks,
@@ -50,7 +50,8 @@ namespace SmartFarmManager.Repository
             IAnimalTemplateRepository animalTemplates,
             IGrowthStageTemplateRepository growthStageTemplates,
             ITaskDailyTemplateRepository taskDailyTemplates,
-            IFoodTemplateRepository foodTemplates)
+            IFoodTemplateRepository foodTemplates,
+            IGrowthStageRepository growthStages)
         {
             _context = context;
             Users = users;
@@ -63,7 +64,7 @@ namespace SmartFarmManager.Repository
             Medication = medications;
             MedicalSymptom = medicalSymptoms;
             Prescription = prescriptions;
-            FarmingBatch = farmingBatchs;
+            FarmingBatches = farmingBatchs;
             Roles = roles;
             Farms = farms;
             FarmsAdmins = farmAdmins;
@@ -71,6 +72,7 @@ namespace SmartFarmManager.Repository
             GrowthStageTemplates = growthStageTemplates;
             TaskDailyTemplates = taskDailyTemplates;
             FoodTemplates = foodTemplates;
+            GrowthStages= growthStages;
         }
 
         public void Dispose()
