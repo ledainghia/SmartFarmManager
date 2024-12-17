@@ -20,5 +20,7 @@ namespace SmartFarmManager.Service.BusinessModels.Cages
         public bool BoardStatus { get; set; }
         public DateTime CreatedDate { get; set; }
         public string CameraUrl { get; set; }
+        public Guid StaffId { get; set; }
+        public string StaffName { get; set; }
     }
 }

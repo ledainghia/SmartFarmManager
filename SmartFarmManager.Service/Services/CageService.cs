@@ -26,7 +26,10 @@ namespace SmartFarmManager.Service.Services
         public async Task<PagedResult<CageResponseModel>> GetCagesAsync(CageFilterModel request)
         {
             // Lấy dữ liệu ban đầu từ UnitOfWork
-            var query = _unitOfWork.Cages.FindAll(false, x => x.Farm).AsQueryable();
+            var query = _unitOfWork.Cages.FindAll(false, x => x.Farm)
+                .Include(c => c.CageStaffs)
+                .ThenInclude(cs => cs.StaffFarm)
+                .AsQueryable();
 
             // Áp dụng các bộ lọc
             if (request.FarmId.HasValue)
@@ -69,7 +72,9 @@ namespace SmartFarmManager.Service.Services
                     BoardCode = c.BoardCode,
                     BoardStatus = c.BoardStatus,
                     CreatedDate = c.CreatedDate,
-                    CameraUrl = c.CameraUrl
+                    CameraUrl = c.CameraUrl,
+                    StaffId = c.CageStaffs.FirstOrDefault().StaffFarmId, // Lấy StaffId từ CageStaff
+                    StaffName = c.CageStaffs.FirstOrDefault().StaffFarm.FullName
                 })
                 .ToListAsync();
 
@@ -89,7 +94,8 @@ namespace SmartFarmManager.Service.Services
         public async Task<CageDetailModel> GetCageByIdAsync(Guid cageId)
         {
             // Lấy dữ liệu từ repository
-            var cage = await _unitOfWork.Cages.FindByCondition(x=>x.Id==cageId, false, c => c.Farm).FirstOrDefaultAsync();
+            var cage = await _unitOfWork.Cages.FindByCondition(x=>x.Id==cageId, false, c => c.Farm).Include(c => c.CageStaffs)
+                .ThenInclude(cs => cs.StaffFarm).FirstOrDefaultAsync();
 
             // Xử lý khi không tìm thấy cage
             if (cage == null || cage.IsDeleted)
@@ -111,7 +117,9 @@ namespace SmartFarmManager.Service.Services
                 BoardCode = cage.BoardCode,
                 BoardStatus = cage.BoardStatus,
                 CreatedDate = cage.CreatedDate,
-                CameraUrl = cage.CameraUrl
+                CameraUrl = cage.CameraUrl,
+                StaffId = cage.CageStaffs.FirstOrDefault().StaffFarmId, // Lấy StaffId từ CageStaff
+                StaffName = cage.CageStaffs.FirstOrDefault().StaffFarm.FullName
             };
         }
 
