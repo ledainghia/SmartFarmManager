@@ -166,7 +166,6 @@ namespace SmartFarmManager.Service.Services
                 TotalItems = result.TotalCount,
                 TotalPages = result.TotalPages,
             };
-            return new PaginatedList<UserModel>(userModels, totalCount, pageIndex, pageSize);
         }
 
 
