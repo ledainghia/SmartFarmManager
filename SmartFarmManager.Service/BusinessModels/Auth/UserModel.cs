@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SmartFarmManager.Service.BusinessModels.Cages;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,8 +17,7 @@ namespace SmartFarmManager.Service.BusinessModels.Auth
         public string Address { get; set; }
         public string Role { get; set; }
         public bool IsActive { get; set; }
-        public Guid CageId { get; set; }
-        public string? CageName { get; set; }
+        public List<CageModel> Cages { get; set; } = new List<CageModel>();
     }
     
 
