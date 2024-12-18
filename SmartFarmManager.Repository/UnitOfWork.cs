@@ -53,7 +53,9 @@ namespace SmartFarmManager.Repository
             IAnimalTemplateRepository animalTemplates,
             IGrowthStageTemplateRepository growthStageTemplates,
             ITaskDailyTemplateRepository taskDailyTemplates,
-            IFoodTemplateRepository foodTemplates)
+            IFoodTemplateRepository foodTemplates,
+            IGrowthStageRepository growthStages,
+            IVaccineTemplateRepository vaccineTemplates)
         {
             _context = context;
             Users = users;

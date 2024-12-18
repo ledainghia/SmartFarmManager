@@ -131,7 +131,7 @@ namespace SmartFarmManager.Service.Services
             var cageIds = cageStaffs.Select(cs => cs.CageId).Distinct();
 
             // Kiểm tra xem FarmBatchId có thuộc Cage của Staff không
-            var farmingBatch = await _unitOfWork.FarmingBatch
+            var farmingBatch = await _unitOfWork.FarmingBatches
                 .FindByCondition(fb => cageIds.Contains(fb.CageId) && fb.Id == farmBatchId, trackChanges: false, fb => fb.MedicalSymptoms)
                 .FirstOrDefaultAsync();
 
