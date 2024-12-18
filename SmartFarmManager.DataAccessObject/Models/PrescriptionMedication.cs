@@ -14,7 +14,11 @@ public partial class PrescriptionMedication : EntityBase
 
     public int? Dosage { get; set; }
 
-    public int? Frequency { get; set; }
+    public bool Morning { get; set; } = false;
+    public bool Afternoon { get; set; } = false;
+    public bool Evening { get; set; } = false;
+    public bool Night { get; set; } = false;
+
 
     public int? Duration { get; set; }
 
