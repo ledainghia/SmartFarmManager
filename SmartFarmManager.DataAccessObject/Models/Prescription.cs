@@ -10,7 +10,7 @@ public partial class Prescription : EntityBase
 
     public Guid RecordId { get; set; }
 
-    public DateOnly? PrescribedDate { get; set; }
+    public DateTime? PrescribedDate { get; set; }
 
     public string CaseType { get; set; }
 
@@ -20,6 +20,7 @@ public partial class Prescription : EntityBase
     public string Status { get; set; } 
 
     public decimal? Price { get; set; }
+    public Guid CageId { get; set; }
 
     public virtual ICollection<HealthLog> HealthLogs { get; set; } = new List<HealthLog>();
 
