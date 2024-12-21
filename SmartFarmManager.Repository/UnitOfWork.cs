@@ -33,12 +33,13 @@ namespace SmartFarmManager.Repository
         public ITaskDailyTemplateRepository TaskDailyTemplates { get; }
         public IFoodTemplateRepository FoodTemplates { get; }
         public IVaccineTemplateRepository VaccineTemplates { get; }
-
         public IGrowthStageRepository GrowthStages { get; }
         public IVaccineRepository Vaccines { get; }
         public IHealthLogRepository HealthLogs { get; }
         public IPictureRepository Pictures { get; }
         public IPrescriptionMedicationRepository PrescriptionMedications { get; }
+        public IVaccineScheduleLogRepository VaccineScheduleLogs { get; }
+        public IDailyFoodUsageLogRepository DailyFoodUsageLogs { get; }
 
         public UnitOfWork(SmartFarmContext context, IUserRepository users,
             ITaskTypeRepository taskTypes,
@@ -63,7 +64,9 @@ namespace SmartFarmManager.Repository
             IVaccineRepository vaccines,
             IHealthLogRepository healthLogs,
             IPictureRepository pictures,
-            IPrescriptionMedicationRepository prescriptionMedications)
+            IPrescriptionMedicationRepository prescriptionMedications,
+            IDailyFoodUsageLogRepository dailyFoodUsageLogs,
+            IVaccineScheduleLogRepository vaccineScheduleLogs)
         {
             _context = context;
             Users = users;
@@ -90,6 +93,8 @@ namespace SmartFarmManager.Repository
             HealthLogs = healthLogs;
             Pictures = pictures;
             PrescriptionMedications = prescriptionMedications;
+            DailyFoodUsageLogs = dailyFoodUsageLogs;
+            VaccineScheduleLogs = vaccineScheduleLogs;
         }
          
 
