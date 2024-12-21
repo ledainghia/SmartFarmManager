@@ -42,7 +42,6 @@ namespace SmartFarmManager.API.Controllers
 
                 if (!result)
                 {
-                    // Xử lý lỗi cụ thể nếu service trả về false
                     return BadRequest(ApiResult<string>.Fail("Failed to create Vaccine Template. Please try again."));
                 }
 
@@ -50,14 +49,10 @@ namespace SmartFarmManager.API.Controllers
             }
             catch (ArgumentException ex)
             {
-                // Log lỗi để dễ dàng debug
-                _logger.LogWarning(ex, "Validation error while creating Vaccine Template");
                 return BadRequest(ApiResult<string>.Fail(ex.Message));
             }
             catch (Exception ex)
             {
-                // Log lỗi server
-                _logger.LogError(ex, "Unexpected error while creating Vaccine Template");
                 return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred. Please contact support."));
             }
         }
