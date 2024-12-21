@@ -24,9 +24,10 @@ namespace SmartFarmManager.API.Controllers
             if (!ModelState.IsValid)
             {
                 // Collect validation errors
-                var errors = ModelState.Values.SelectMany(v => v.Errors)
-                                               .Select(e => e.ErrorMessage)
-                                               .ToList();
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
 
                 return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
         {
@@ -41,20 +42,26 @@ namespace SmartFarmManager.API.Controllers
 
                 if (!result)
                 {
-                    throw new Exception("Error while creating Vaccine Template!");
+                    // Xử lý lỗi cụ thể nếu service trả về false
+                    return BadRequest(ApiResult<string>.Fail("Failed to create Vaccine Template. Please try again."));
                 }
 
                 return Ok(ApiResult<string>.Succeed("Vaccine Template created successfully!"));
             }
             catch (ArgumentException ex)
             {
+                // Log lỗi để dễ dàng debug
+                _logger.LogWarning(ex, "Validation error while creating Vaccine Template");
                 return BadRequest(ApiResult<string>.Fail(ex.Message));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+                // Log lỗi server
+                _logger.LogError(ex, "Unexpected error while creating Vaccine Template");
+                return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred. Please contact support."));
             }
         }
+
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateVaccineTemplate(Guid id, [FromBody] UpdateVaccineTemplateRequest request)
         {

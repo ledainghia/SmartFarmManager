@@ -35,6 +35,7 @@ namespace SmartFarmManager.Repository
         public IVaccineTemplateRepository VaccineTemplates { get; }
 
         public IGrowthStageRepository GrowthStages { get; }
+        public IVaccineRepository Vaccines { get; }
 
         public UnitOfWork(SmartFarmContext context, IUserRepository users,
             ITaskTypeRepository taskTypes,
@@ -55,7 +56,8 @@ namespace SmartFarmManager.Repository
             ITaskDailyTemplateRepository taskDailyTemplates,
             IFoodTemplateRepository foodTemplates,
             IGrowthStageRepository growthStages,
-            IVaccineTemplateRepository vaccineTemplates)
+            IVaccineTemplateRepository vaccineTemplates,
+            IVaccineRepository vaccines)
         {
             _context = context;
             Users = users;
@@ -78,6 +80,7 @@ namespace SmartFarmManager.Repository
             FoodTemplates = foodTemplates;
             GrowthStages = growthStages;
             VaccineTemplates = vaccineTemplates;
+            Vaccines= vaccines;
         }
          
 
