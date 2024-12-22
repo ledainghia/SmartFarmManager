@@ -19,9 +19,6 @@ public partial class PrescriptionMedication : EntityBase
     public bool Evening { get; set; } = false;
     public bool Night { get; set; } = false;
 
-
-    public int? Duration { get; set; }
-
     public virtual Medication Medication { get; set; }
 
     public virtual Prescription Prescription { get; set; }
