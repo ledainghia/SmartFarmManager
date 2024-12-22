@@ -22,7 +22,7 @@ public partial class GrowthStage : EntityBase
     public DateTime? AgeEndDate { get; set; }
     public string Status { get; set; }
 
-    public decimal? RecommendedWeightPerSesson { get; set; }
+    public decimal? RecommendedWeightPerSession { get; set; }
 
     public decimal? WeightBasedOnBodyMass { get; set; }
 

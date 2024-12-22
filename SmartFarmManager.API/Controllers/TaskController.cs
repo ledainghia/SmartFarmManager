@@ -19,7 +19,47 @@ namespace SmartFarmManager.API.Controllers
         {
             _taskService = taskService;
         }
+        [HttpPost("create-recurring-task")]
+        public async Task<IActionResult> CreateTaskRecurring([FromBody] CreateTaskRecurringRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
 
+                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
+            {
+                { "Errors", errors.ToArray() }
+            }));
+            }
+
+            try
+            {
+                var model = request.MapToModel();
+                var result = await _taskService.CreateTaskRecurringAsync(model);
+
+                if (!result)
+                {
+                    return BadRequest(ApiResult<string>.Fail("Failed to create recurring tasks. Please try again."));
+                }
+
+                return Ok(ApiResult<string>.Succeed("Recurring tasks created successfully!"));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ApiResult<string>.Fail(ex.Message)); // Trả về lỗi Conflict nếu trùng lặp
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred. Please contact support."));
+            }
+        }
         [HttpPost]
         public async Task<IActionResult> CreateTask([FromBody] CreateTaskRequest request)
         {
