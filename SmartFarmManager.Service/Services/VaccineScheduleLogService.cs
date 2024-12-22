@@ -4,6 +4,7 @@ using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels.VaccineScheduleLog;
 using SmartFarmManager.Service.Interfaces;
+using SmartFarmManager.Service.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,7 +28,7 @@ namespace SmartFarmManager.Service.Services
         {
             // Tìm FarmingBatch với trạng thái "đang diễn ra"
             var farmingBatch = await _unitOfWork.FarmingBatches.FindByCondition(
-                fb => fb.CageId == cageId && fb.Status == "Đang diễn ra",
+                fb => fb.CageId == cageId && fb.Status == FarmingBatchStatusEnum.Active,
                 trackChanges: false
             ).FirstOrDefaultAsync();
 
@@ -36,7 +37,7 @@ namespace SmartFarmManager.Service.Services
 
             // Tìm GrowthStage với trạng thái "đang diễn ra"
             var growthStage = await _unitOfWork.GrowthStages.FindByCondition(
-                gs => gs.FarmingBatchId == farmingBatch.Id && gs.Status == "Đang diễn ra",
+                gs => gs.FarmingBatchId == farmingBatch.Id && gs.Status == GrowthStageStatusEnum.InProgess,
                 trackChanges: false
             ).FirstOrDefaultAsync();
 

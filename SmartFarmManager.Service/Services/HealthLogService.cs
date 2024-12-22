@@ -4,6 +4,7 @@ using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels.HealthLog;
 using SmartFarmManager.Service.Interfaces;
+using SmartFarmManager.Service.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,16 +24,32 @@ namespace SmartFarmManager.Service.Services
             _mapper = mapper;
         }
 
-        public async Task<Guid> CreateHealthLogAsync(HealthLogModel model)
+        public async Task<Guid?> CreateHealthLogAsync(Guid cageId, HealthLogModel model)
         {
-            var task = await _unitOfWork.Tasks.FindByCondition(p => p.Id == model.TaskId).FirstOrDefaultAsync(); 
-            var prescription = await _unitOfWork.Prescription.FindByCondition(p => p.CageId == task.CageId).FirstOrDefaultAsync();
-            model.PrescriptionId = prescription.Id;
-            var healthLog = _mapper.Map<HealthLog>(model);
-            await _unitOfWork.HealthLogs.CreateAsync(healthLog);
+            // Tìm Prescription với CageId và trạng thái phù hợp
+            var prescription = await _unitOfWork.Prescription.FindByCondition(
+                p => p.CageId == cageId && p.Status == PrescriptionStatusEnum.Active, // Tìm đơn thuốc đang hoạt động
+                trackChanges: false
+            ).FirstOrDefaultAsync();
+
+            if (prescription == null)
+                return null;
+
+            // Tạo log
+            var newLog = new HealthLog
+            {
+                PrescriptionId = prescription.Id,
+                Date = DateTime.Now,
+                Notes = model.Notes,
+                Photo = model.Photo
+            };
+
+            await _unitOfWork.HealthLogs.CreateAsync(newLog);
             await _unitOfWork.CommitAsync();
-            return healthLog.Id;
+
+            return newLog.Id;
         }
+
 
         public async Task<HealthLogModel> GetHealthLogByIdAsync(Guid id)
         {

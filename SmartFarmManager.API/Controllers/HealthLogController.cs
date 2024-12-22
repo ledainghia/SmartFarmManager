@@ -20,23 +20,25 @@ namespace SmartFarmManager.API.Controllers
         }
 
         // POST: api/healthlogs
-        [HttpPost]
-        public async Task<IActionResult> CreateHealthLog([FromBody] CreateHealthLogRequest request)
+        [HttpPost("{cageId:guid}/health-log")]
+        public async Task<IActionResult> CreateHealthLog(Guid cageId, [FromBody] CreateHealthLogRequest request)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ApiResult<string>.Fail("Invalid request"));
+                return BadRequest(ApiResult<string>.Fail("Yêu cầu không hợp lệ"));
 
-            var id = await _healthLogService.CreateHealthLogAsync(new HealthLogModel
+            var result = await _healthLogService.CreateHealthLogAsync(cageId, new HealthLogModel
             {
-                PrescriptionId = request.PrescriptionId,
                 Date = request.Date,
                 Notes = request.Notes,
-                Photo = request.Photo,
-                TaskId = request.TaskId
+                Photo = request.Photo
             });
 
-            return CreatedAtAction(nameof(GetHealthLogById), new { id }, ApiResult<Guid>.Succeed(id));
+            if (result == null)
+                return NotFound(ApiResult<string>.Fail("Không tìm thấy đơn thuốc tương ứng"));
+
+            return Created("", ApiResult<Guid?>.Succeed(result));
         }
+
 
         // GET: api/healthlogs/{id}
         [HttpGet("{id:guid}")]
@@ -50,7 +52,7 @@ namespace SmartFarmManager.API.Controllers
             {
                 Id = healthLog.Id,
                 PrescriptionId = healthLog.PrescriptionId.Value,
-                Date = healthLog.Date,
+                Date = healthLog.Date.Value,
                 Notes = healthLog.Notes,
                 Photo = healthLog.Photo,
                 TaskId = healthLog.TaskId
@@ -69,7 +71,7 @@ namespace SmartFarmManager.API.Controllers
             {
                 Id = hl.Id,
                 PrescriptionId = hl.PrescriptionId.Value,
-                Date = hl.Date,
+                Date = hl.Date.Value,
                 Notes = hl.Notes,
                 Photo = hl.Photo,
                 TaskId = hl.TaskId

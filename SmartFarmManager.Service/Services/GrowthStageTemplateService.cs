@@ -225,7 +225,7 @@ namespace SmartFarmManager.Service.Services
                 {
                     Id = f.Id,
                     FoodName = f.FoodName,
-                    RecommendedWeightPerDay = f.RecommendedWeightPerDay,
+                    RecommendedWeightPerDay = f.RecommendedWeightPerSesson,
                     Session = f.Session,
                     WeightBasedOnBodyMass = f.WeightBasedOnBodyMass
                 }).ToList(),

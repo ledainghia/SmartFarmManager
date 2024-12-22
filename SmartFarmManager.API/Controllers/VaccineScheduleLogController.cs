@@ -48,7 +48,7 @@ namespace SmartFarmManager.API.Controllers
             var response = new VaccineScheduleLogResponse
             {
                 Id = log.Id,
-                ScheduleId = log.ScheduleId,
+                ScheduleId = log.ScheduleId.Value,
                 Date = log.Date,
                 Notes = log.Notes,
                 Photo = log.Photo,

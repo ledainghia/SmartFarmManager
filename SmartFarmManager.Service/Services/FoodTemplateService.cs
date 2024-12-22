@@ -47,7 +47,7 @@ namespace SmartFarmManager.Service.Services
             {
                 StageTemplateId = model.StageTemplateId,
                 FoodName = model.FoodName,
-                RecommendedWeightPerDay = model.RecommendedWeightPerDay,
+                RecommendedWeightPerSesson = model.RecommendedWeightPerDay,
                 Session = model.Session,
                 WeightBasedOnBodyMass = model.WeightBasedOnBodyMass
             };
@@ -88,7 +88,7 @@ namespace SmartFarmManager.Service.Services
 
             if (model.RecommendedWeightPerDay.HasValue)
             {
-                foodTemplate.RecommendedWeightPerDay = model.RecommendedWeightPerDay.Value;
+                foodTemplate.RecommendedWeightPerSesson = model.RecommendedWeightPerDay.Value;
             }
 
             if (model.Session.HasValue)
@@ -153,7 +153,7 @@ namespace SmartFarmManager.Service.Services
                     Id = f.Id,
                     StageTemplateId = f.StageTemplateId,
                     FoodName = f.FoodName,
-                    RecommendedWeightPerDay = f.RecommendedWeightPerDay,
+                    RecommendedWeightPerDay = f.RecommendedWeightPerSesson,
                     Session = f.Session,
                     WeightBasedOnBodyMass = f.WeightBasedOnBodyMass
                 })
@@ -191,7 +191,7 @@ namespace SmartFarmManager.Service.Services
                 Id = foodTemplate.Id,
                 StageTemplateId = foodTemplate.StageTemplateId,
                 FoodName = foodTemplate.FoodName,
-                RecommendedWeightPerDay = foodTemplate.RecommendedWeightPerDay,
+                RecommendedWeightPerDay = foodTemplate.RecommendedWeightPerSesson,
                 Session = foodTemplate.Session,
                 WeightBasedOnBodyMass = foodTemplate.WeightBasedOnBodyMass,
                 GrowthStageTemplate = foodTemplate.StageTemplate == null ? null : new GrowthStageTemplateResponse

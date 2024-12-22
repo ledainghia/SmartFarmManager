@@ -9,8 +9,8 @@ namespace SmartFarmManager.Service.Interfaces
 {
     public interface IHealthLogService
     {
-        Task<Guid> CreateHealthLogAsync(HealthLogModel model);
         Task<HealthLogModel> GetHealthLogByIdAsync(Guid id);
         Task<IEnumerable<HealthLogModel>> GetHealthLogsAsync(Guid? prescriptionId);
+        Task<Guid?> CreateHealthLogAsync(Guid cageId, HealthLogModel model);
     }
 }
