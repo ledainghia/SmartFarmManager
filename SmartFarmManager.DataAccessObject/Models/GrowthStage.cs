@@ -20,8 +20,9 @@ public partial class GrowthStage : EntityBase
     public DateTime? AgeStartDate { get; set; }
 
     public DateTime? AgeEndDate { get; set; }
+    public string Status { get; set; }
 
-    public decimal? RecommendedWeightPerDay { get; set; }
+    public decimal? RecommendedWeightPerSesson { get; set; }
 
     public decimal? WeightBasedOnBodyMass { get; set; }
 

@@ -12,7 +12,7 @@ public partial class FoodTemplate : EntityBase
 
     public string FoodName { get; set; }
 
-    public decimal? RecommendedWeightPerDay { get; set; }
+    public decimal? RecommendedWeightPerSesson { get; set; }
     public int Session { get; set; }
 
     public decimal? WeightBasedOnBodyMass { get; set; }
