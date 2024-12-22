@@ -69,7 +69,7 @@ namespace SmartFarmManager.Service.Services
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(authClaims),
-                Expires = utcNow.Add(TimeSpan.FromHours(1)),
+                Expires = utcNow.Add(TimeSpan.FromMinutes(1)),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256)
             };
 
