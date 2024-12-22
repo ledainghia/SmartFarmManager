@@ -47,7 +47,7 @@ namespace SmartFarmManager.Service.Services
             {
                 StageTemplateId = model.StageTemplateId,
                 FoodName = model.FoodName,
-                RecommendedWeightPerDay = model.RecommendedWeightPerDay,
+                RecommendedWeightPerSession = model.RecommendedWeightPerSession,
                 Session = model.Session,
                 WeightBasedOnBodyMass = model.WeightBasedOnBodyMass
             };
@@ -86,9 +86,9 @@ namespace SmartFarmManager.Service.Services
                 foodTemplate.FoodName = model.FoodName;
             }
 
-            if (model.RecommendedWeightPerDay.HasValue)
+            if (model.RecommendedWeightPerSession.HasValue)
             {
-                foodTemplate.RecommendedWeightPerDay = model.RecommendedWeightPerDay.Value;
+                foodTemplate.RecommendedWeightPerSession = model.RecommendedWeightPerSession.Value;
             }
 
             if (model.Session.HasValue)
@@ -153,7 +153,7 @@ namespace SmartFarmManager.Service.Services
                     Id = f.Id,
                     StageTemplateId = f.StageTemplateId,
                     FoodName = f.FoodName,
-                    RecommendedWeightPerDay = f.RecommendedWeightPerDay,
+                    RecommendedWeightPerDay = f.RecommendedWeightPerSession,
                     Session = f.Session,
                     WeightBasedOnBodyMass = f.WeightBasedOnBodyMass
                 })
@@ -191,7 +191,7 @@ namespace SmartFarmManager.Service.Services
                 Id = foodTemplate.Id,
                 StageTemplateId = foodTemplate.StageTemplateId,
                 FoodName = foodTemplate.FoodName,
-                RecommendedWeightPerDay = foodTemplate.RecommendedWeightPerDay,
+                RecommendedWeightPerSession = foodTemplate.RecommendedWeightPerSession,
                 Session = foodTemplate.Session,
                 WeightBasedOnBodyMass = foodTemplate.WeightBasedOnBodyMass,
                 GrowthStageTemplate = foodTemplate.StageTemplate == null ? null : new GrowthStageTemplateResponse

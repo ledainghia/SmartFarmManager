@@ -9,7 +9,7 @@ namespace SmartFarmManager.API.Payloads.Requests.FoodTemplate
         [MaxLength(100)]
         public string? FoodName { get; set; }
 
-        public decimal? RecommendedWeightPerDay { get; set; }
+        public decimal? RecommendedWeightPerSession { get; set; }
         [ValidSessionType]
         public int? Session { get; set; }
         public decimal? WeightBasedOnBodyMass { get; set; }
@@ -20,7 +20,7 @@ namespace SmartFarmManager.API.Payloads.Requests.FoodTemplate
             {
                 Id = id,
                 FoodName = this.FoodName,
-                RecommendedWeightPerDay = this.RecommendedWeightPerDay,
+                RecommendedWeightPerSession = this.RecommendedWeightPerSession,
                 Session = this.Session,
                 WeightBasedOnBodyMass = this.WeightBasedOnBodyMass
             };
