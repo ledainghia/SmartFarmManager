@@ -9,7 +9,7 @@ namespace SmartFarmManager.Service.Interfaces
 {
     public interface IDailyFoodUsageLogService
     {
-        Task<Guid> CreateDailyFoodUsageLogAsync(DailyFoodUsageLogModel model);
         Task<DailyFoodUsageLogModel> GetDailyFoodUsageLogByIdAsync(Guid id);
+        Task<Guid?> CreateDailyFoodUsageLogAsync(Guid cageId, DailyFoodUsageLogModel model);
     }
 }

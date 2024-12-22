@@ -40,6 +40,7 @@ namespace SmartFarmManager.Repository
         public IPrescriptionMedicationRepository PrescriptionMedications { get; }
         public IVaccineScheduleLogRepository VaccineScheduleLogs { get; }
         public IDailyFoodUsageLogRepository DailyFoodUsageLogs { get; }
+        public IVaccineScheduleRepository VaccineSchedules { get; }
 
         public UnitOfWork(SmartFarmContext context, IUserRepository users,
             ITaskTypeRepository taskTypes,
@@ -66,7 +67,8 @@ namespace SmartFarmManager.Repository
             IPictureRepository pictures,
             IPrescriptionMedicationRepository prescriptionMedications,
             IDailyFoodUsageLogRepository dailyFoodUsageLogs,
-            IVaccineScheduleLogRepository vaccineScheduleLogs)
+            IVaccineScheduleLogRepository vaccineScheduleLogs,
+            IVaccineScheduleRepository vaccineSchedules)
         {
             _context = context;
             Users = users;
@@ -95,6 +97,7 @@ namespace SmartFarmManager.Repository
             PrescriptionMedications = prescriptionMedications;
             DailyFoodUsageLogs = dailyFoodUsageLogs;
             VaccineScheduleLogs = vaccineScheduleLogs;
+            VaccineSchedules = vaccineSchedules;
         }
          
 

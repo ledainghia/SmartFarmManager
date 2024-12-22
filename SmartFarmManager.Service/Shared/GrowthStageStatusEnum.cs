@@ -6,12 +6,9 @@ using System.Threading.Tasks;
 
 namespace SmartFarmManager.Service.Shared
 {
-    public static class FarmingBatchStatusEnum
+    public static class GrowthStageStatusEnum
     {
-        public const string Planning = "Planning";
-        public const string Active = "Đang diễn ra";
+        public const string InProgess = "Đang diễn ra";
         public const string Completed = "Completed";
-        public const string Cancelled = "Cancelled";
     }
-
 }

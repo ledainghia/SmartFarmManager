@@ -9,7 +9,7 @@ namespace SmartFarmManager.Service.Interfaces
 {
     public interface IVaccineScheduleLogService
     {
-        Task<Guid> CreateVaccineScheduleLogAsync(VaccineScheduleLogModel model);
+        Task<Guid?> CreateVaccineScheduleLogAsync(Guid cageId, VaccineScheduleLogModel model);
         Task<VaccineScheduleLogModel> GetVaccineScheduleLogByIdAsync(Guid id);
     }
 }

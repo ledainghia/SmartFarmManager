@@ -19,24 +19,24 @@ namespace SmartFarmManager.API.Controllers
             _dailyFoodUsageLogService = service;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> CreateDailyFoodUsageLog([FromBody] CreateDailyFoodUsageLogRequest request)
+        [HttpPost("{cageId:guid}")]
+        public async Task<IActionResult> CreateDailyFoodUsageLog(Guid cageId, [FromBody] CreateDailyFoodUsageLogRequest request)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ApiResult<string>.Fail("Invalid request"));
+                return BadRequest(ApiResult<string>.Fail("Yêu cầu không hợp lệ"));
 
-            var id = await _dailyFoodUsageLogService.CreateDailyFoodUsageLogAsync(new DailyFoodUsageLogModel
+            var result = await _dailyFoodUsageLogService.CreateDailyFoodUsageLogAsync(cageId, new DailyFoodUsageLogModel
             {
-                StageId = request.StageId,
                 RecommendedWeight = request.RecommendedWeight,
                 ActualWeight = request.ActualWeight,
                 Notes = request.Notes,
-                LogTime = request.LogTime,
-                Photo = request.Photo,
-                TaskId = request.TaskId
+                Photo = request.Photo
             });
 
-            return CreatedAtAction(nameof(GetDailyFoodUsageLogById), new { id }, ApiResult<Guid>.Succeed(id));
+            if (result == null)
+                return NotFound(ApiResult<string>.Fail("Không tìm thấy GrowthStage tương ứng"));
+
+            return Created("", ApiResult<Guid?>.Succeed(result));
         }
 
         [HttpGet("{id:guid}")]
@@ -44,7 +44,7 @@ namespace SmartFarmManager.API.Controllers
         {
             var log = await _dailyFoodUsageLogService.GetDailyFoodUsageLogByIdAsync(id);
             if (log == null)
-                return NotFound(ApiResult<string>.Fail("Daily food usage log not found"));
+                return NotFound(ApiResult<string>.Fail("Không tìm thấy log cho ăn hàng ngày"));
 
             var response = new DailyFoodUsageLogResponse
             {

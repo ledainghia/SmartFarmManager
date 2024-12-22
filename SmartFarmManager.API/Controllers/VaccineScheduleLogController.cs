@@ -19,30 +19,31 @@ namespace SmartFarmManager.API.Controllers
             _vaccineScheduleLogService = service;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> CreateVaccineScheduleLog([FromBody] CreateVaccineScheduleLogRequest request)
+        [HttpPost("{cageId:guid}")]
+        public async Task<IActionResult> CreateVaccineScheduleLog(Guid cageId, [FromBody] CreateVaccineScheduleLogRequest request)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ApiResult<string>.Fail("Invalid request"));
+                return BadRequest(ApiResult<string>.Fail("Yêu cầu không hợp lệ"));
 
-            var id = await _vaccineScheduleLogService.CreateVaccineScheduleLogAsync(new VaccineScheduleLogModel
+            var result = await _vaccineScheduleLogService.CreateVaccineScheduleLogAsync(cageId, new VaccineScheduleLogModel
             {
-                ScheduleId = request.ScheduleId,
-                Date = request.Date,
                 Notes = request.Notes,
-                Photo = request.Photo,
-                TaskId = request.TaskId
+                Photo = request.Photo
             });
 
-            return CreatedAtAction(nameof(GetVaccineScheduleLogById), new { id }, ApiResult<Guid>.Succeed(id));
+            if (result == null)
+                return NotFound(ApiResult<string>.Fail("Không tìm thấy VaccineSchedule tương ứng"));
+
+            return Created("", ApiResult<Guid?>.Succeed(result));
         }
+
 
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetVaccineScheduleLogById(Guid id)
         {
             var log = await _vaccineScheduleLogService.GetVaccineScheduleLogByIdAsync(id);
             if (log == null)
-                return NotFound(ApiResult<string>.Fail("Vaccine schedule log not found"));
+                return NotFound(ApiResult<string>.Fail("Không tìm thấy log tiêm vắc-xin"));
 
             var response = new VaccineScheduleLogResponse
             {
