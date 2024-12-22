@@ -36,6 +36,7 @@ namespace SmartFarmManager.Repository
 
         public IGrowthStageRepository GrowthStages { get; }
         public IVaccineRepository Vaccines { get; }
+        public ITaskDailyRepository TaskDailies { get; }
 
         public UnitOfWork(SmartFarmContext context, IUserRepository users,
             ITaskTypeRepository taskTypes,

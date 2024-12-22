@@ -29,6 +29,69 @@ namespace SmartFarmManager.Service.Services
             _notificationService = notificationService;
         }
 
+        public async Task<bool> CreateTaskRecurringAsync(CreateTaskRecurringModel model)
+        {
+            // 1. Kiểm tra Cage có thuộc FarmingBatch đang hoạt động không
+            var farmingBatch = await _unitOfWork.FarmingBatches
+                .FindByCondition(fb => fb.CageId == model.CageId && fb.Status == "Active")
+                .Include(fb => fb.GrowthStages)
+                .FirstOrDefaultAsync();
+
+            if (farmingBatch == null)
+            {
+                throw new ArgumentException("No active farming batch found for the specified cage.");
+            }
+
+            // 2. Kiểm tra StartAt và EndAt có nằm trong khoảng của GrowthStage không
+            var validGrowthStage = farmingBatch.GrowthStages
+                .FirstOrDefault(gs => model.StartAt >= gs.AgeStartDate && model.EndAt <= gs.AgeEndDate && gs.Status == "Active");
+
+            if (validGrowthStage == null)
+            {
+                throw new ArgumentException("The specified date range does not align with any active growth stage.");
+            }
+
+            // 3. Kiểm tra trùng lặp trong khoảng ngày
+            foreach (var session in model.Sessions)
+            {
+                var duplicateTaskDailyExists = await _unitOfWork.TaskDailies
+                    .FindByCondition(td => td.GrowthStageId == validGrowthStage.Id &&
+                                           td.Session == session &&
+                                           td.TaskTypeId == model.TaskTypeId &&
+                                           td.StartAt <= model.EndAt && td.EndAt >= model.StartAt)
+                    .AnyAsync();
+
+                if (duplicateTaskDailyExists)
+                {
+                    throw new InvalidOperationException($"A TaskDaily with TaskTypeId '{model.TaskTypeId}' already exists in session '{session}' for the specified time range.");
+                }
+            }
+
+            var taskDailies = new List<TaskDaily>();
+
+            foreach (var session in model.Sessions)
+            {
+                var taskDaily = new TaskDaily
+                {
+                    GrowthStageId = validGrowthStage.Id,
+                    TaskTypeId = model.TaskTypeId,
+                    TaskName = model.TaskName,
+                    Description = model.Description,
+                    Session = session,
+                    StartAt = model.StartAt,
+                    EndAt = model.EndAt
+                };
+
+                taskDailies.Add(taskDaily);
+            }
+
+            await _unitOfWork.TaskDailies.CreateListAsync(taskDailies);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
+
+
         public async Task<bool> CreateTaskAsync(CreateTaskModel model)
         {
             // 1. Validate DueDate

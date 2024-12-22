@@ -13,7 +13,7 @@ namespace SmartFarmManager.API.Payloads.Requests.FoodTemplate
         [MaxLength(100)]
         public string FoodName { get; set; } // Tên của thực phẩm
 
-        public decimal? RecommendedWeightPerDay { get; set; } // Trọng lượng khuyến nghị mỗi ngày
+        public decimal? RecommendedWeightPerSession { get; set; } // Trọng lượng khuyến nghị mỗi ngày
         [ValidSessionType]
         public int Session { get; set; } // Buổi (Sáng/Chiều/Tối)
         public decimal? WeightBasedOnBodyMass { get; set; } // Trọng lượng dựa trên khối lượng cơ thể
@@ -24,7 +24,7 @@ namespace SmartFarmManager.API.Payloads.Requests.FoodTemplate
             {
                 StageTemplateId = this.StageTemplateId,
                 FoodName = this.FoodName,
-                RecommendedWeightPerDay = this.RecommendedWeightPerDay,
+                RecommendedWeightPerSession = this.RecommendedWeightPerSession,
                 Session = this.Session,
                 WeightBasedOnBodyMass = this.WeightBasedOnBodyMass
             };
