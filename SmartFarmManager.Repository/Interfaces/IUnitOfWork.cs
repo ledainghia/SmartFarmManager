@@ -32,7 +32,7 @@ namespace SmartFarmManager.Repository.Interfaces
         IVaccineRepository Vaccines { get; }
         ITaskDailyRepository TaskDailies { get; }
         ITemporaryCageAssignmentRepository TemporaryCageAssignments { get; }
-
+        IVaccineScheduleRepository VaccineSchedules { get; }
         Task<int> CommitAsync();
         System.Threading.Tasks.Task BeginTransactionAsync();
         System.Threading.Tasks.Task RollbackAsync();

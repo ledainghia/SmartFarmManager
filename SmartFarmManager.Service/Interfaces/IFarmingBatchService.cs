@@ -9,6 +9,6 @@ namespace SmartFarmManager.Service.Interfaces
 {
     public interface IFarmingBatchService
     {
-        
+        Task<bool> CreateFarmingBatchAsync(CreateFarmingBatchModel model);
     }
 }

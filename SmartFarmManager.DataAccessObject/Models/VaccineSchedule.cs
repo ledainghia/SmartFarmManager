@@ -15,6 +15,7 @@ public partial class VaccineSchedule : EntityBase
     public DateOnly? Date { get; set; }
 
     public int? Quantity { get; set; }
+    public int? ApplicationAge { get; set; }
 
     public string Status { get; set; }
 
