@@ -10,5 +10,6 @@ namespace SmartFarmManager.Service.Interfaces
     public interface IFarmingBatchService
     {
         Task<bool> CreateFarmingBatchAsync(CreateFarmingBatchModel model);
+        Task<bool> UpdateFarmingBatchStatusAsync(Guid farmingBatchId, string newStatus);
     }
 }
