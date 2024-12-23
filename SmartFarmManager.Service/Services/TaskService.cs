@@ -130,28 +130,51 @@ namespace SmartFarmManager.Service.Services
                 throw new InvalidOperationException($"A task of type {taskType.TaskTypeName} already exists in cage {model.CageId} on {model.DueDate.Date.ToShortDateString()} during session {model.Session}.");
             }
 
-            // 5. Ensure AssignedToUserId is valid
-            var assignedUser = await _unitOfWork.Users.FindAsync(x => x.Id == model.AssignedToUserId);
-            if (assignedUser == null || assignedUser.IsActive==null||(bool)assignedUser.IsActive==false)
-            {
-                throw new ArgumentException("Invalid or inactive AssignedToUserId.");
-            }
-
-                // 6. Check if Cage already has an assigned staff
-                var cageStaff = await _unitOfWork.CageStaffs
-                    .FindByCondition(cs => cs.CageId == model.CageId&&cs.StaffFarmId==model.AssignedToUserId)
-                    .FirstOrDefaultAsync();
-
-                if (cageStaff == null || cageStaff.StaffFarmId != model.AssignedToUserId)
-                {
-                    throw new UnauthorizedAccessException($"Cage {model.CageId} is not assigned to the user {model.AssignedToUserId}.");
-                }
-
-            // 7. Ensure CageId is valid and active
+            // 5. Ensure CageId is valid and active
             var cage = await _unitOfWork.Cages.FindAsync(x => x.Id == model.CageId);
             if (cage == null || cage.IsDeleted)
             {
                 throw new ArgumentException("Invalid or inactive CageId.");
+            }
+
+            // 6. Get Assigned User for the Cage
+            Guid? assignedUserId = null;
+
+            // Check if there is a temporary staff assigned to the cage
+            var temporaryAssignment = await _unitOfWork.TemporaryCageAssignments
+                .FindByCondition(ta => ta.CageId == model.CageId &&
+                                       ta.StartDate <= model.DueDate &&
+                                       ta.EndDate >= model.DueDate)
+                .FirstOrDefaultAsync();
+
+            if (temporaryAssignment != null)
+            {
+                assignedUserId = temporaryAssignment.TemporaryStaffId;
+            }
+            else
+            {
+                // If no temporary staff, check the default staff assigned to the cage
+                var cageStaff = await _unitOfWork.CageStaffs
+                    .FindByCondition(cs => cs.CageId == model.CageId)
+                    .FirstOrDefaultAsync();
+
+                if (cageStaff != null)
+                {
+                    assignedUserId = cageStaff.StaffFarmId;
+                }
+            }
+
+            // If no staff is assigned to the cage, throw an exception
+            if (assignedUserId == null)
+            {
+                throw new InvalidOperationException($"No staff is assigned to the cage {model.CageId}.");
+            }
+
+            // 7. Ensure AssignedToUserId is valid and active
+            var assignedUser = await _unitOfWork.Users.FindAsync(x => x.Id == assignedUserId);
+            if (assignedUser == null || assignedUser.IsActive == null || (bool)assignedUser.IsActive == false)
+            {
+                throw new ArgumentException("Invalid or inactive AssignedToUserId.");
             }
 
             // 8. Prevent duplicate task names within the same session for a cage
@@ -173,7 +196,7 @@ namespace SmartFarmManager.Service.Services
             {
                 TaskTypeId = model.TaskTypeId,
                 CageId = model.CageId,
-                AssignedToUserId = model.AssignedToUserId,
+                AssignedToUserId = assignedUserId.Value,
                 CreatedByUserId = model.CreatedByUserId,
                 TaskName = model.TaskName,
                 PriorityNum = (int)taskType.PriorityNum,
@@ -186,10 +209,13 @@ namespace SmartFarmManager.Service.Services
 
             await _unitOfWork.Tasks.CreateAsync(task);
             await _unitOfWork.CommitAsync();
-            var message = $"Task '{task.TaskName}' đã được tạo và giao cho bạn.";
+
+            var message = $"Task '{task.TaskName}' has been created and assigned to {assignedUser.FullName}.";
             await _notificationService.SendNotificationToUser(task.AssignedToUserId.ToString(), message);
+
             return true;
         }
+
 
         public async Task<bool> UpdateTaskPriorityAsync(Guid taskId, UpdateTaskPriorityModel model)
         {

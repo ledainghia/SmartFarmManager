@@ -31,6 +31,7 @@ namespace SmartFarmManager.Repository.Interfaces
         IGrowthStageRepository GrowthStages { get; }
         IVaccineRepository Vaccines { get; }
         ITaskDailyRepository TaskDailies { get; }
+        ITemporaryCageAssignmentRepository TemporaryCageAssignments { get; }
 
         Task<int> CommitAsync();
         System.Threading.Tasks.Task BeginTransactionAsync();
