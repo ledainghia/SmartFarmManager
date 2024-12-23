@@ -155,6 +155,115 @@ namespace SmartFarmManager.Service.Services
             }
         }
 
+        public async Task<bool> UpdateFarmingBatchStatusAsync(Guid farmingBatchId, string newStatus)
+        {
+            // 1. Lấy thông tin FarmingBatch
+            var farmingBatch = await _unitOfWork.FarmingBatches
+                .FindByCondition(fb => fb.Id == farmingBatchId)
+                .Include(fb => fb.GrowthStages)
+                .ThenInclude(gs => gs.VaccineSchedules)
+                .FirstOrDefaultAsync();
+
+            if (farmingBatch == null)
+            {
+                throw new ArgumentException($"FarmingBatch with ID {farmingBatchId} does not exist.");
+            }
+
+            // 2. Kiểm tra trạng thái hiện tại
+            if (farmingBatch.Status == newStatus)
+            {
+                throw new InvalidOperationException($"FarmingBatch is already in '{newStatus}' status.");
+            }
+
+            if (newStatus != FarmingBatchStatusEnum.Active && newStatus != FarmingBatchStatusEnum.Completed)
+            {
+                throw new ArgumentException($"Invalid status transition to '{newStatus}'.");
+            }
+
+            // 3. Chuyển trạng thái từ Planning -> Active
+            if (farmingBatch.Status == FarmingBatchStatusEnum.Planning && newStatus == FarmingBatchStatusEnum.Active)
+            {
+                farmingBatch.Status = FarmingBatchStatusEnum.Active;
+                farmingBatch.StartDate = DateTime.UtcNow;
+
+                // Tính toán ngày bắt đầu và kết thúc cho GrowthStages
+                var currentStartDate = farmingBatch.StartDate;
+                foreach (var stage in farmingBatch.GrowthStages.OrderBy(gs => gs.AgeStart))
+                {
+                    stage.AgeStartDate = currentStartDate;
+                    stage.AgeEndDate = currentStartDate.Value.AddDays(stage.AgeEnd - stage.AgeStart ?? 0);
+
+                    stage.Status = stage.AgeStartDate == farmingBatch.StartDate
+                        ? GrowthStageStatusEnum.Active
+                        : GrowthStageStatusEnum.Upcoming;
+
+                    currentStartDate = stage.AgeEndDate.Value.AddDays(1); // Ngày bắt đầu của giai đoạn tiếp theo
+                }
+
+                // Cập nhật ngày và trạng thái cho VaccineSchedules
+                foreach (var growthStage in farmingBatch.GrowthStages)
+                {
+                    foreach (var vaccineSchedule in growthStage.VaccineSchedules)
+                    {
+                        // Tính ngày tiêm từ AgeStartDate của GrowthStage
+                        if (growthStage.AgeStartDate.HasValue)
+                        {
+                            vaccineSchedule.Date = growthStage.AgeStartDate.Value.AddDays(
+                                (vaccineSchedule.ApplicationAge ?? 0) - (growthStage.AgeStart ?? 0)
+                            );
+
+                            // Cập nhật trạng thái VaccineSchedule
+                            if (vaccineSchedule.Date > DateTime.UtcNow.Date)
+                            {
+                                vaccineSchedule.Status = VaccineScheduleStatusEnum.Upcoming;
+                            }
+                            else if (vaccineSchedule.Date == DateTime.UtcNow.Date)
+                            {
+                                vaccineSchedule.Status = VaccineScheduleStatusEnum.Completed;
+                            }
+                            else
+                            {
+                                vaccineSchedule.Status = VaccineScheduleStatusEnum.Missed;
+                            }
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException($"GrowthStage '{growthStage.Name}' does not have a valid AgeStartDate.");
+                        }
+                    }
+                }
+            }
+            else if (newStatus == FarmingBatchStatusEnum.Completed)
+            {
+                // 4. Chuyển trạng thái sang Completed
+                farmingBatch.Status = FarmingBatchStatusEnum.Completed;
+                farmingBatch.CompleteAt = DateTime.UtcNow;
+
+                foreach (var stage in farmingBatch.GrowthStages)
+                {
+                    stage.Status = GrowthStageStatusEnum.Completed;
+                }
+
+                foreach (var growthStage in farmingBatch.GrowthStages)
+                {
+                    foreach (var vaccineSchedule in growthStage.VaccineSchedules)
+                    {
+                        if (vaccineSchedule.Status == VaccineScheduleStatusEnum.Upcoming)
+                        {
+                            vaccineSchedule.Status = VaccineScheduleStatusEnum.Missed;
+                        }
+                    }
+                }
+            }
+
+            // 5. Lưu thay đổi
+            await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatch);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
+
+
 
     }
 }

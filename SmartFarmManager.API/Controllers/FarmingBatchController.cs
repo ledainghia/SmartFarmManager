@@ -18,7 +18,7 @@ namespace SmartFarmManager.API.Controllers
         }
 
 
-        [HttpPost("")]
+        [HttpPost()]
         public async Task<IActionResult> CreateFarmingBatch([FromBody] CreateFarmingBatchRequest request)
         {
             if (!ModelState.IsValid)
@@ -60,5 +60,46 @@ namespace SmartFarmManager.API.Controllers
             }
         }
 
+
+        [HttpPut("{id}/status")]
+        public async Task<IActionResult> UpdateFarmingBatchStatus(Guid id, [FromBody] UpdateFarmingBatchStatusRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
+            {
+                { "Errors", errors.ToArray() }
+            }));
+            }
+
+            try
+            {
+                var result = await _farmingBatchService.UpdateFarmingBatchStatusAsync(id, request.NewStatus);
+
+                if (!result)
+                {
+                    return BadRequest(ApiResult<string>.Fail("Failed to update farming batch status. Please try again."));
+                }
+
+                return Ok(ApiResult<string>.Succeed("Farming batch status updated successfully!"));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred. Please contact support."));
+            }
+        }
     }
 }
