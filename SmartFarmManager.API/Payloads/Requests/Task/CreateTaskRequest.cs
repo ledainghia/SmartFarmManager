@@ -34,7 +34,6 @@ namespace SmartFarmManager.API.Payloads.Requests.Task
             {
                 TaskTypeId = this.TaskTypeId,
                 CageId = this.CageId,
-                AssignedToUserId = this.AssignedToUserId,
                 CreatedByUserId = this.CreatedByUserId,
                 TaskName = this.TaskName,
                 Description =this.Description,

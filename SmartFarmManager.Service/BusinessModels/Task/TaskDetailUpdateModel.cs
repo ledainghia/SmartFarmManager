@@ -16,8 +16,6 @@ namespace SmartFarmManager.Service.BusinessModels.Task
 
         public Guid? TaskTypeId { get; set; }
 
-        public Guid? AssignedToUserId { get; set; }
-
         public DateTime? DueDate { get; set; }
 
         public string Session { get; set; }

@@ -986,27 +986,7 @@ namespace SmartFarmManager.Service.Services
                 task.Description = model.Description;
             }
 
-            if (model.AssignedToUserId.HasValue)
-            {
-                // Kiểm tra AssignedToUserId hợp lệ
-                var assignedUser = await _unitOfWork.Users.FindAsync(x => x.Id == model.AssignedToUserId);
-                if (assignedUser == null || assignedUser.IsActive == null || (bool)assignedUser.IsActive == false)
-                {
-                    throw new ArgumentException("Invalid or inactive AssignedToUserId.");
-                }
-
-                // Kiểm tra xem user có được gán vào cage không
-                var cageStaff = await _unitOfWork.CageStaffs
-                    .FindByCondition(cs => cs.CageId == task.CageId && cs.StaffFarmId == model.AssignedToUserId)
-                    .FirstOrDefaultAsync();
-
-                if (cageStaff == null)
-                {
-                    throw new UnauthorizedAccessException($"Cage {task.CageId} is not assigned to the user {model.AssignedToUserId}.");
-                }
-
-                task.AssignedToUserId = model.AssignedToUserId.Value;
-            }
+          
 
             // 8. Lưu thay đổi
             await _unitOfWork.Tasks.UpdateAsync(task);

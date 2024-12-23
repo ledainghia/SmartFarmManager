@@ -14,7 +14,6 @@ namespace SmartFarmManager.API.Payloads.Requests.Task
 
         public Guid? TaskTypeId { get; set; }
 
-        public Guid? AssignedToUserId { get; set; }
 
         public DateTime? DueDate { get; set; }
 
@@ -29,7 +28,6 @@ namespace SmartFarmManager.API.Payloads.Requests.Task
                 TaskName = this.TaskName,
                 Description = this.Description,
                 TaskTypeId = this.TaskTypeId,
-                AssignedToUserId = this.AssignedToUserId,
                 DueDate = this.DueDate,
                 Session = this.Session
             };
