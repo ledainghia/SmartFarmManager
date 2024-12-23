@@ -182,7 +182,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IVaccineRepository, VaccineRepository>();
             services.AddScoped<ITaskDailyRepository, TaskDailyRepository>();
             services.AddScoped<ITemporaryCageAssignmentRepository, TemporaryCageAssignmentRepository>();
-
+            services.AddScoped<IVaccineScheduleRepository, VaccineScheduleRepository>();
 
             return services;
         }

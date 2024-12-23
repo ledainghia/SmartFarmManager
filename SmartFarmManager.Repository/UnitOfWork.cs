@@ -38,6 +38,7 @@ namespace SmartFarmManager.Repository
         public IVaccineRepository Vaccines { get; }
         public ITaskDailyRepository TaskDailies { get; }
         public ITemporaryCageAssignmentRepository TemporaryCageAssignments { get; }
+        public IVaccineScheduleRepository VaccineSchedules { get; }
 
         public UnitOfWork(SmartFarmContext context, IUserRepository users,
             ITaskTypeRepository taskTypes,
@@ -60,7 +61,8 @@ namespace SmartFarmManager.Repository
             IGrowthStageRepository growthStages,
             IVaccineTemplateRepository vaccineTemplates,
             IVaccineRepository vaccines,
-            ITemporaryCageAssignmentRepository temporaryCageAssignments)
+            ITemporaryCageAssignmentRepository temporaryCageAssignments,
+            IVaccineScheduleRepository vaccineSchedules)
         {
             _context = context;
             Users = users;
@@ -85,6 +87,7 @@ namespace SmartFarmManager.Repository
             VaccineTemplates = vaccineTemplates;
             Vaccines= vaccines;
             TemporaryCageAssignments= temporaryCageAssignments;
+            VaccineSchedules= vaccineSchedules;
         }
          
 

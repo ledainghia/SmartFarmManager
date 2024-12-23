@@ -16,6 +16,9 @@ public partial class GrowthStage : EntityBase
     public decimal? WeightAnimal { get; set; }
 
     public int? Quantity { get; set; }
+    public int? AgeStart { get; set; }
+
+    public int? AgeEnd { get; set; }
 
     public DateTime? AgeStartDate { get; set; }
 
