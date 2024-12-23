@@ -9,8 +9,9 @@ public partial class Prescription : EntityBase
 {
 
     public Guid RecordId { get; set; }
+    public Guid CageId { get; set; }
 
-    public DateOnly? PrescribedDate { get; set; }
+    public DateTime? PrescribedDate { get; set; }
 
     public string CaseType { get; set; }
 

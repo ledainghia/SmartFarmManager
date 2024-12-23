@@ -12,9 +12,10 @@ public partial class VaccineSchedule : EntityBase
 
     public Guid StageId { get; set; }
 
-    public DateOnly? Date { get; set; }
+    public DateTime? Date { get; set; }
 
     public int? Quantity { get; set; }
+    public int? ApplicationAge { get; set; }
 
     public string Status { get; set; }
 

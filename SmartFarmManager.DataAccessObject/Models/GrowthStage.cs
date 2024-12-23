@@ -16,12 +16,16 @@ public partial class GrowthStage : EntityBase
     public decimal? WeightAnimal { get; set; }
 
     public int? Quantity { get; set; }
+    public int? AgeStart { get; set; }
+
+    public int? AgeEnd { get; set; }
 
     public DateTime? AgeStartDate { get; set; }
 
     public DateTime? AgeEndDate { get; set; }
+    public string Status { get; set; }
 
-    public decimal? RecommendedWeightPerDay { get; set; }
+    public decimal? RecommendedWeightPerSession { get; set; }
 
     public decimal? WeightBasedOnBodyMass { get; set; }
 

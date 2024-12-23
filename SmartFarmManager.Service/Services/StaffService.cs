@@ -3,6 +3,7 @@ using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Auth;
+using SmartFarmManager.Service.BusinessModels.Cages;
 using SmartFarmManager.Service.BusinessModels.Staff;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
@@ -100,30 +101,59 @@ namespace SmartFarmManager.Service.Services
         }
         public async Task<PagedResult<UserModel>> GetStaffFarmsByFarmIdAsync(Guid farmId, int pageIndex, int pageSize)
         {
-            var cageIds = await _unitOfWork.Cages.FindByCondition(c => c.FarmId == farmId)
-                                                 .Select(c => c.Id)
-                                                 .ToListAsync();
+            var cageIds = await _unitOfWork.Cages
+                                           .FindByCondition(c => c.FarmId == farmId)
+                                           .Select(c => c.Id)
+                                           .ToListAsync();
 
+            // Truy vấn CageStaffs, bao gồm StaffFarm và Cage
             var usersQuery = _unitOfWork.CageStaffs
                                         .FindByCondition(cs => cageIds.Contains(cs.CageId))
                                         .Include(cs => cs.StaffFarm.Role)
-                                        .Select(cs => cs.StaffFarm);
+                                        .Include(cs => cs.Cage)
+                                        .Select(cs => new
+                                        {
+                                            StaffFarm = cs.StaffFarm,
+                                            CageId = cs.CageId,
+                                            CageName = cs.Cage.Name
+                                        });
 
-            var totalCount = await usersQuery.CountAsync();
-            var users = await usersQuery.Skip((pageIndex - 1) * pageSize)
-                                        .Take(pageSize)
-                                        .ToListAsync();
-            // Ánh xạ User thành UserModel
-            var userModels = users.Select(u => new UserModel
+            // Nhóm theo StaffFarm và gộp danh sách Cage
+            var groupedUsers = await usersQuery
+                .GroupBy(u => u.StaffFarm)
+                .Select(group => new
+                {
+                    StaffFarm = group.Key,
+                    Cages = group.Select(c => new
+                    {
+                        CageId = c.CageId,
+                        CageName = c.CageName
+                    }).ToList()
+                })
+                .Skip((pageIndex - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var totalCount = await usersQuery
+                .GroupBy(u => u.StaffFarm)
+                .CountAsync();
+
+            // Ánh xạ sang UserModel
+            var userModels = groupedUsers.Select(g => new UserModel
             {
-                Id = u.Id,
-                Username = u.Username,
-                FullName = u.FullName,
-                Email = u.Email,
-                PhoneNumber = u.PhoneNumber,
-                Address = u.Address,
-                Role = u.Role.RoleName,
-                IsActive = u.IsActive ?? false
+                Id = g.StaffFarm.Id,
+                Username = g.StaffFarm.Username,
+                FullName = g.StaffFarm.FullName,
+                Email = g.StaffFarm.Email,
+                PhoneNumber = g.StaffFarm.PhoneNumber,
+                Address = g.StaffFarm.Address,
+                Role = g.StaffFarm.Role != null ? g.StaffFarm.Role.RoleName : "No Role",
+                IsActive = g.StaffFarm.IsActive ?? false,
+                Cages = g.Cages.Select(c => new CageModel
+                {
+                    Id = c.CageId,
+                    Name = c.CageName
+                }).ToList()
             }).ToList();
             var result= new PaginatedList<UserModel>(userModels, totalCount, pageIndex, pageSize);
             return new PagedResult<UserModel>()
@@ -137,6 +167,7 @@ namespace SmartFarmManager.Service.Services
                 TotalPages = result.TotalPages,
             };
         }
+
 
     }
 }

@@ -178,7 +178,11 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<ITaskDailyTemplateRepository, TaskDailyTemplateRepository>();
             services.AddScoped<IFoodTemplateRepository, FoodTemplateRepository>();
             services.AddScoped<IVaccineTemplateRepository, VaccineTemplateRepository>();
-
+            services.AddScoped<IGrowthStageRepository, GrowthStageRepository>();
+            services.AddScoped<IVaccineRepository, VaccineRepository>();
+            services.AddScoped<ITaskDailyRepository, TaskDailyRepository>();
+            services.AddScoped<ITemporaryCageAssignmentRepository, TemporaryCageAssignmentRepository>();
+            services.AddScoped<IVaccineScheduleRepository, VaccineScheduleRepository>();
 
             return services;
         }
@@ -203,7 +207,8 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IAnimalTemplateService, AnimalTemplateService>();
             services.AddScoped<IGrowthStageTemplateService,GrowthStageTemplateService>();
             services.AddScoped<ITaskDailyTemplateService, TaskDailyTemplateService>();
-            services.AddScoped<IFoodTemplateService, FoodTemplateService>();    
+            services.AddScoped<IFoodTemplateService, FoodTemplateService>();
+            services.AddScoped<IFarmingBatchService, FarmingBatchService>();
             return services;
         }
 

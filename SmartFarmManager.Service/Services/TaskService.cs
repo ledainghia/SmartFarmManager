@@ -20,12 +20,77 @@ namespace SmartFarmManager.Service.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly NotificationService _notificationService;
 
-        public TaskService(IUnitOfWork unitOfWork, IMapper mapper)
+        public TaskService(IUnitOfWork unitOfWork, IMapper mapper, NotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _notificationService = notificationService;
         }
+
+        public async Task<bool> CreateTaskRecurringAsync(CreateTaskRecurringModel model)
+        {
+            // 1. Kiểm tra Cage có thuộc FarmingBatch đang hoạt động không
+            var farmingBatch = await _unitOfWork.FarmingBatches
+                .FindByCondition(fb => fb.CageId == model.CageId && fb.Status == "Active")
+                .Include(fb => fb.GrowthStages)
+                .FirstOrDefaultAsync();
+
+            if (farmingBatch == null)
+            {
+                throw new ArgumentException("No active farming batch found for the specified cage.");
+            }
+
+            // 2. Kiểm tra StartAt và EndAt có nằm trong khoảng của GrowthStage không
+            var validGrowthStage = farmingBatch.GrowthStages
+                .FirstOrDefault(gs => model.StartAt >= gs.AgeStartDate && model.EndAt <= gs.AgeEndDate && gs.Status == "Active");
+
+            if (validGrowthStage == null)
+            {
+                throw new ArgumentException("The specified date range does not align with any active growth stage.");
+            }
+
+            // 3. Kiểm tra trùng lặp trong khoảng ngày
+            foreach (var session in model.Sessions)
+            {
+                var duplicateTaskDailyExists = await _unitOfWork.TaskDailies
+                    .FindByCondition(td => td.GrowthStageId == validGrowthStage.Id &&
+                                           td.Session == session &&
+                                           td.TaskTypeId == model.TaskTypeId &&
+                                           td.StartAt <= model.EndAt && td.EndAt >= model.StartAt)
+                    .AnyAsync();
+
+                if (duplicateTaskDailyExists)
+                {
+                    throw new InvalidOperationException($"A TaskDaily with TaskTypeId '{model.TaskTypeId}' already exists in session '{session}' for the specified time range.");
+                }
+            }
+
+            var taskDailies = new List<TaskDaily>();
+
+            foreach (var session in model.Sessions)
+            {
+                var taskDaily = new TaskDaily
+                {
+                    GrowthStageId = validGrowthStage.Id,
+                    TaskTypeId = model.TaskTypeId,
+                    TaskName = model.TaskName,
+                    Description = model.Description,
+                    Session = session,
+                    StartAt = model.StartAt,
+                    EndAt = model.EndAt
+                };
+
+                taskDailies.Add(taskDaily);
+            }
+
+            await _unitOfWork.TaskDailies.CreateListAsync(taskDailies);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
+
 
         public async Task<bool> CreateTaskAsync(CreateTaskModel model)
         {
@@ -65,28 +130,51 @@ namespace SmartFarmManager.Service.Services
                 throw new InvalidOperationException($"A task of type {taskType.TaskTypeName} already exists in cage {model.CageId} on {model.DueDate.Date.ToShortDateString()} during session {model.Session}.");
             }
 
-            // 5. Ensure AssignedToUserId is valid
-            var assignedUser = await _unitOfWork.Users.FindAsync(x => x.Id == model.AssignedToUserId);
-            if (assignedUser == null || assignedUser.IsActive==null||(bool)assignedUser.IsActive==false)
-            {
-                throw new ArgumentException("Invalid or inactive AssignedToUserId.");
-            }
-
-                // 6. Check if Cage already has an assigned staff
-                var cageStaff = await _unitOfWork.CageStaffs
-                    .FindByCondition(cs => cs.CageId == model.CageId&&cs.StaffFarmId==model.AssignedToUserId)
-                    .FirstOrDefaultAsync();
-
-                if (cageStaff == null || cageStaff.StaffFarmId != model.AssignedToUserId)
-                {
-                    throw new UnauthorizedAccessException($"Cage {model.CageId} is not assigned to the user {model.AssignedToUserId}.");
-                }
-
-            // 7. Ensure CageId is valid and active
+            // 5. Ensure CageId is valid and active
             var cage = await _unitOfWork.Cages.FindAsync(x => x.Id == model.CageId);
             if (cage == null || cage.IsDeleted)
             {
                 throw new ArgumentException("Invalid or inactive CageId.");
+            }
+
+            // 6. Get Assigned User for the Cage
+            Guid? assignedUserId = null;
+
+            // Check if there is a temporary staff assigned to the cage
+            var temporaryAssignment = await _unitOfWork.TemporaryCageAssignments
+                .FindByCondition(ta => ta.CageId == model.CageId &&
+                                       ta.StartDate <= model.DueDate &&
+                                       ta.EndDate >= model.DueDate)
+                .FirstOrDefaultAsync();
+
+            if (temporaryAssignment != null)
+            {
+                assignedUserId = temporaryAssignment.TemporaryStaffId;
+            }
+            else
+            {
+                // If no temporary staff, check the default staff assigned to the cage
+                var cageStaff = await _unitOfWork.CageStaffs
+                    .FindByCondition(cs => cs.CageId == model.CageId)
+                    .FirstOrDefaultAsync();
+
+                if (cageStaff != null)
+                {
+                    assignedUserId = cageStaff.StaffFarmId;
+                }
+            }
+
+            // If no staff is assigned to the cage, throw an exception
+            if (assignedUserId == null)
+            {
+                throw new InvalidOperationException($"No staff is assigned to the cage {model.CageId}.");
+            }
+
+            // 7. Ensure AssignedToUserId is valid and active
+            var assignedUser = await _unitOfWork.Users.FindAsync(x => x.Id == assignedUserId);
+            if (assignedUser == null || assignedUser.IsActive == null || (bool)assignedUser.IsActive == false)
+            {
+                throw new ArgumentException("Invalid or inactive AssignedToUserId.");
             }
 
             // 8. Prevent duplicate task names within the same session for a cage
@@ -108,7 +196,7 @@ namespace SmartFarmManager.Service.Services
             {
                 TaskTypeId = model.TaskTypeId,
                 CageId = model.CageId,
-                AssignedToUserId = model.AssignedToUserId,
+                AssignedToUserId = assignedUserId.Value,
                 CreatedByUserId = model.CreatedByUserId,
                 TaskName = model.TaskName,
                 PriorityNum = (int)taskType.PriorityNum,
@@ -122,8 +210,12 @@ namespace SmartFarmManager.Service.Services
             await _unitOfWork.Tasks.CreateAsync(task);
             await _unitOfWork.CommitAsync();
 
+            var message = $"Task '{task.TaskName}' has been created and assigned to {assignedUser.FullName}.";
+            await _notificationService.SendNotificationToUser(task.AssignedToUserId.ToString(), message);
+
             return true;
         }
+
 
         public async Task<bool> UpdateTaskPriorityAsync(Guid taskId, UpdateTaskPriorityModel model)
         {
@@ -894,27 +986,7 @@ namespace SmartFarmManager.Service.Services
                 task.Description = model.Description;
             }
 
-            if (model.AssignedToUserId.HasValue)
-            {
-                // Kiểm tra AssignedToUserId hợp lệ
-                var assignedUser = await _unitOfWork.Users.FindAsync(x => x.Id == model.AssignedToUserId);
-                if (assignedUser == null || assignedUser.IsActive == null || (bool)assignedUser.IsActive == false)
-                {
-                    throw new ArgumentException("Invalid or inactive AssignedToUserId.");
-                }
-
-                // Kiểm tra xem user có được gán vào cage không
-                var cageStaff = await _unitOfWork.CageStaffs
-                    .FindByCondition(cs => cs.CageId == task.CageId && cs.StaffFarmId == model.AssignedToUserId)
-                    .FirstOrDefaultAsync();
-
-                if (cageStaff == null)
-                {
-                    throw new UnauthorizedAccessException($"Cage {task.CageId} is not assigned to the user {model.AssignedToUserId}.");
-                }
-
-                task.AssignedToUserId = model.AssignedToUserId.Value;
-            }
+          
 
             // 8. Lưu thay đổi
             await _unitOfWork.Tasks.UpdateAsync(task);

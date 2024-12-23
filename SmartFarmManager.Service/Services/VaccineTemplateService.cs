@@ -26,6 +26,7 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<bool> CreateVaccineTemplateAsync(CreateVaccineTemplateModel model)
         {
+            // 1. Kiểm tra AnimalTemplate có tồn tại
             var animalTemplate = await _unitOfWork.AnimalTemplates
                 .FindByCondition(a => a.Id == model.TemplateId)
                 .FirstOrDefaultAsync();
@@ -34,6 +35,8 @@ namespace SmartFarmManager.Service.Services
             {
                 throw new ArgumentException($"Animal Template with ID {model.TemplateId} does not exist.");
             }
+
+            // 2. Kiểm tra VaccineName trùng lặp
             var duplicateVaccineNameExists = await _unitOfWork.VaccineTemplates
                 .FindByCondition(v => v.TemplateId == model.TemplateId && v.VaccineName == model.VaccineName)
                 .AnyAsync();
@@ -42,6 +45,24 @@ namespace SmartFarmManager.Service.Services
             {
                 throw new InvalidOperationException($"Vaccine with name '{model.VaccineName}' already exists in the specified Animal Template.");
             }
+
+            // 3. Kiểm tra ApplicationAge nằm trong khoảng AgeStart và AgeEnd của Vaccine
+            var vaccine = await _unitOfWork.Vaccines
+                .FindByCondition(v => v.Name == model.VaccineName)
+                .FirstOrDefaultAsync();
+
+            if (vaccine == null)
+            {
+                throw new ArgumentException($"Vaccine '{model.VaccineName}' does not exist.");
+            }
+
+            if (model.ApplicationAge < vaccine.AgeStart || model.ApplicationAge > vaccine.AgeEnd)
+            {
+                throw new InvalidOperationException(
+                    $"ApplicationAge {model.ApplicationAge} must be between {vaccine.AgeStart} and {vaccine.AgeEnd} for Vaccine '{model.VaccineName}'.");
+            }
+
+            // 4. Tạo VaccineTemplate
             var vaccineTemplate = new VaccineTemplate
             {
                 TemplateId = model.TemplateId,
@@ -57,9 +78,10 @@ namespace SmartFarmManager.Service.Services
             return true;
         }
 
+
         public async Task<bool> UpdateVaccineTemplateAsync(UpdateVaccineTemplateModel model)
         {
-
+            // 1. Kiểm tra VaccineTemplate có tồn tại
             var vaccineTemplate = await _unitOfWork.VaccineTemplates
                 .FindByCondition(v => v.Id == model.Id)
                 .FirstOrDefaultAsync();
@@ -68,10 +90,14 @@ namespace SmartFarmManager.Service.Services
             {
                 return false; // Không tìm thấy
             }
+
+            // 2. Kiểm tra trùng lặp VaccineName (nếu có thay đổi VaccineName)
             if (!string.IsNullOrEmpty(model.VaccineName) && vaccineTemplate.VaccineName != model.VaccineName)
             {
                 var duplicateVaccineNameExists = await _unitOfWork.VaccineTemplates
-                    .FindByCondition(v => v.TemplateId == vaccineTemplate.TemplateId && v.VaccineName == model.VaccineName && v.Id != model.Id)
+                    .FindByCondition(v => v.TemplateId == vaccineTemplate.TemplateId
+                                          && v.VaccineName == model.VaccineName
+                                          && v.Id != model.Id)
                     .AnyAsync();
 
                 if (duplicateVaccineNameExists)
@@ -82,6 +108,7 @@ namespace SmartFarmManager.Service.Services
                 vaccineTemplate.VaccineName = model.VaccineName;
             }
 
+            // 3. Cập nhật ApplicationMethod (nếu có)
             if (!string.IsNullOrEmpty(model.ApplicationMethod))
             {
                 vaccineTemplate.ApplicationMethod = model.ApplicationMethod;
@@ -89,6 +116,22 @@ namespace SmartFarmManager.Service.Services
 
             if (model.ApplicationAge.HasValue)
             {
+
+                var vaccine = await _unitOfWork.Vaccines
+                    .FindByCondition(v => v.Name == vaccineTemplate.VaccineName)
+                    .FirstOrDefaultAsync();
+
+                if (vaccine == null)
+                {
+                    throw new ArgumentException($"Vaccine '{vaccineTemplate.VaccineName}' does not exist.");
+                }
+
+                if (model.ApplicationAge < vaccine.AgeStart || model.ApplicationAge > vaccine.AgeEnd)
+                {
+                    throw new InvalidOperationException(
+                        $"ApplicationAge {model.ApplicationAge} must be between {vaccine.AgeStart} and {vaccine.AgeEnd} for Vaccine '{vaccineTemplate.VaccineName}'.");
+                }
+
                 vaccineTemplate.ApplicationAge = model.ApplicationAge.Value;
             }
 
@@ -96,12 +139,12 @@ namespace SmartFarmManager.Service.Services
             {
                 vaccineTemplate.Session = model.Session.Value;
             }
-
             await _unitOfWork.VaccineTemplates.UpdateAsync(vaccineTemplate);
             await _unitOfWork.CommitAsync();
 
             return true;
         }
+
 
         public async Task<bool> DeleteVaccineTemplateAsync(Guid id)
         {

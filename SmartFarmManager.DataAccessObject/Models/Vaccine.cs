@@ -12,9 +12,9 @@ public partial class Vaccine : EntityBase
 
     public string Method { get; set; }
 
-    public DateTime? AgeStartDate { get; set; }
+    public int? AgeStart { get; set; }
 
-    public DateTime? AgeEndDate { get; set; }
+    public int? AgeEnd { get; set; }
 
     public virtual ICollection<VaccineSchedule> VaccineSchedules { get; set; } = new List<VaccineSchedule>();
 }

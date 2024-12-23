@@ -24,7 +24,7 @@ namespace SmartFarmManager.Repository
         public IMedicalSymptomRepository MedicalSymptom { get; }
         public IPrescriptionRepository Prescription { get; }
         public IMedicationRepository Medication { get; }
-        public IFarmingBatchRepository FarmingBatch { get; }
+        public IFarmingBatchRepository FarmingBatches { get; }
         public IRoleRepository Roles { get; }
         public IFarmRepository Farms { get; }
         public IFarmAdminRepository FarmsAdmins { get; }
@@ -34,6 +34,11 @@ namespace SmartFarmManager.Repository
         public IFoodTemplateRepository FoodTemplates { get; }
         public IVaccineTemplateRepository VaccineTemplates { get; }
 
+        public IGrowthStageRepository GrowthStages { get; }
+        public IVaccineRepository Vaccines { get; }
+        public ITaskDailyRepository TaskDailies { get; }
+        public ITemporaryCageAssignmentRepository TemporaryCageAssignments { get; }
+        public IVaccineScheduleRepository VaccineSchedules { get; }
 
         public UnitOfWork(SmartFarmContext context, IUserRepository users,
             ITaskTypeRepository taskTypes,
@@ -53,7 +58,11 @@ namespace SmartFarmManager.Repository
             IGrowthStageTemplateRepository growthStageTemplates,
             ITaskDailyTemplateRepository taskDailyTemplates,
             IFoodTemplateRepository foodTemplates,
-            IVaccineTemplateRepository vaccineTemplates)
+            IGrowthStageRepository growthStages,
+            IVaccineTemplateRepository vaccineTemplates,
+            IVaccineRepository vaccines,
+            ITemporaryCageAssignmentRepository temporaryCageAssignments,
+            IVaccineScheduleRepository vaccineSchedules)
         {
             _context = context;
             Users = users;
@@ -66,7 +75,7 @@ namespace SmartFarmManager.Repository
             Medication = medications;
             MedicalSymptom = medicalSymptoms;
             Prescription = prescriptions;
-            FarmingBatch = farmingBatchs;
+            FarmingBatches = farmingBatchs;
             Roles = roles;
             Farms = farms;
             FarmsAdmins = farmAdmins;
@@ -74,8 +83,13 @@ namespace SmartFarmManager.Repository
             GrowthStageTemplates = growthStageTemplates;
             TaskDailyTemplates = taskDailyTemplates;
             FoodTemplates = foodTemplates;
-            VaccineTemplates= vaccineTemplates;
+            GrowthStages = growthStages;
+            VaccineTemplates = vaccineTemplates;
+            Vaccines= vaccines;
+            TemporaryCageAssignments= temporaryCageAssignments;
+            VaccineSchedules= vaccineSchedules;
         }
+         
 
         public void Dispose()
         {

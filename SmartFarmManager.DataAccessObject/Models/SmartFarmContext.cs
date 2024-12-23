@@ -19,38 +19,38 @@ public partial class SmartFarmContext : DbContext
     {
     }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if (!optionsBuilder.IsConfigured)
-        {
-            var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-
-            IConfigurationRoot configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json")
-                .Build();
-
-            string connectionString;
-
-            if (environment == "Development")
-            {
-                connectionString = configuration.GetConnectionString("DefaultConnection");
-            }
-            else // Production
-            {
-                connectionString = configuration.GetConnectionString("ProductConnection");
-            }
-
-            optionsBuilder.UseSqlServer(connectionString);
-        }
-    }
     //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     //{
+    //    if (!optionsBuilder.IsConfigured)
+    //    {
+    //        var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
 
+    //        IConfigurationRoot configuration = new ConfigurationBuilder()
+    //            .SetBasePath(Directory.GetCurrentDirectory())
+    //            .AddJsonFile("appsettings.json")
+    //            .Build();
 
-    //    optionsBuilder.UseSqlServer("Server=103.48.193.165,5053;Database=Farm;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;");
+    //        string connectionString;
 
+    //        if (environment == "Development")
+    //        {
+    //            connectionString = configuration.GetConnectionString("DefaultConnection");
+    //        }
+    //        else // Production
+    //        {
+    //            connectionString = configuration.GetConnectionString("ProductConnection");
+    //        }
+
+    //        optionsBuilder.UseSqlServer(connectionString);
+    //    }
     //}
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+
+
+        optionsBuilder.UseSqlServer("Server=103.48.193.165,5053;Database=Farm;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;");
+
+    }
 
     public virtual DbSet<AnimalSale> AnimalSales { get; set; }
 
@@ -150,6 +150,63 @@ public partial class SmartFarmContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // LeaveRequest Configuration
+        modelBuilder.Entity<LeaveRequest>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Status)
+                  .HasMaxLength(50)
+                  .HasDefaultValue("Pending");
+
+            entity.Property(e => e.CreatedAt)
+                  .HasDefaultValueSql("GETDATE()");
+
+            entity.Property(e => e.Reason)
+                  .HasMaxLength(255);
+
+            entity.Property(e => e.Notes)
+                  .HasMaxLength(255);
+
+            // Foreign Key: StaffFarmId -> Users(UserId)
+            entity.HasOne(e => e.StaffFarm)
+                  .WithMany()
+                  .HasForeignKey(e => e.StaffFarmId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Foreign Key: AdminId -> Users(UserId)
+            entity.HasOne(e => e.Admin)
+                  .WithMany()
+                  .HasForeignKey(e => e.AdminId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<TemporaryCageAssignment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Notes)
+                  .HasMaxLength(255);
+
+            // Foreign Key: CageId -> Cages(CageId)
+            entity.HasOne(e => e.Cage)
+                  .WithMany()
+                  .HasForeignKey(e => e.CageId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Foreign Key: OriginalStaffId -> Users(UserId)
+            entity.HasOne(e => e.OriginalStaff)
+                  .WithMany()
+                  .HasForeignKey(e => e.OriginalStaffId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            // Foreign Key: TemporaryStaffId -> Users(UserId)
+            entity.HasOne(e => e.TemporaryStaff)
+                  .WithMany()
+                  .HasForeignKey(e => e.TemporaryStaffId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
 
         // TaskDaily
         modelBuilder.Entity<TaskDaily>(entity =>
@@ -480,7 +537,7 @@ public partial class SmartFarmContext : DbContext
             entity.Property(e => e.FoodName)
                 .IsRequired()
                 .HasMaxLength(100);
-            entity.Property(e => e.RecommendedWeightPerDay).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.RecommendedWeightPerSession).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.WeightBasedOnBodyMass).HasColumnType("decimal(5, 2)");
 
             entity.HasOne(d => d.StageTemplate).WithMany(p => p.FoodTemplates)
@@ -501,7 +558,7 @@ public partial class SmartFarmContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.Name).HasMaxLength(50);
-            entity.Property(e => e.RecommendedWeightPerDay).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.RecommendedWeightPerSession).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.WeightAnimal).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.WeightBasedOnBodyMass).HasColumnType("decimal(5, 2)");
 
@@ -986,12 +1043,10 @@ public partial class SmartFarmContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__Vaccines__45DC6889A12FCD5C");
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.AgeEndDate)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.AgeStartDate)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
+            entity.Property(e => e.AgeEnd)
+                .HasColumnType("int");
+            entity.Property(e => e.AgeStart)
+                .HasColumnType("int");
             entity.Property(e => e.Method).HasMaxLength(50);
             entity.Property(e => e.Name).HasMaxLength(100);
         });

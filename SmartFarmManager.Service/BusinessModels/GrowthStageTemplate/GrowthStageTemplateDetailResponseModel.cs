@@ -24,7 +24,7 @@ namespace SmartFarmManager.Service.BusinessModels.GrowthStageTemplate
     {
         public Guid Id { get; set; }
         public string FoodName { get; set; }
-        public decimal? RecommendedWeightPerDay { get; set; }
+        public decimal? RecommendedWeightPerSession { get; set; }
         public int Session { get; set; }
         public decimal? WeightBasedOnBodyMass { get; set; }
     }

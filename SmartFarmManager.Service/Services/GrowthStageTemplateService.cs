@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿    using Microsoft.EntityFrameworkCore;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels.AnimalTemplate;
@@ -225,7 +225,7 @@ namespace SmartFarmManager.Service.Services
                 {
                     Id = f.Id,
                     FoodName = f.FoodName,
-                    RecommendedWeightPerDay = f.RecommendedWeightPerDay,
+                    RecommendedWeightPerSession = f.RecommendedWeightPerSession,
                     Session = f.Session,
                     WeightBasedOnBodyMass = f.WeightBasedOnBodyMass
                 }).ToList(),
