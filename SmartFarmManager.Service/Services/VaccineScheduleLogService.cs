@@ -37,7 +37,7 @@ namespace SmartFarmManager.Service.Services
 
             // Tìm GrowthStage với trạng thái "đang diễn ra"
             var growthStage = await _unitOfWork.GrowthStages.FindByCondition(
-                gs => gs.FarmingBatchId == farmingBatch.Id && gs.Status == GrowthStageStatusEnum.InProgess,
+                gs => gs.FarmingBatchId == farmingBatch.Id && gs.Status == GrowthStageStatusEnum.Active,
                 trackChanges: false
             ).FirstOrDefaultAsync();
 
@@ -47,7 +47,7 @@ namespace SmartFarmManager.Service.Services
             // Tìm VaccineSchedule theo ngày hiện tại
             var currentDate = DateOnly.FromDateTime(DateTime.UtcNow);
             var vaccineSchedule = await _unitOfWork.VaccineSchedules.FindByCondition(
-                vs => vs.StageId == growthStage.Id && vs.Date == currentDate,
+                vs => vs.StageId == growthStage.Id && DateOnly.FromDateTime(vs.Date.Value) == currentDate,
                 trackChanges: false
             ).FirstOrDefaultAsync();
 

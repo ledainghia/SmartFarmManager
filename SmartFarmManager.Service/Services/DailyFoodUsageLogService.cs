@@ -38,7 +38,7 @@ namespace SmartFarmManager.Service.Services
 
             // Tìm GrowthStage với trạng thái "đang diễn ra"
             var growthStage = await _unitOfWork.GrowthStages.FindByCondition(
-                gs => gs.FarmingBatchId == farmingBatch.Id && gs.Status == GrowthStageStatusEnum.InProgess,
+                gs => gs.FarmingBatchId == farmingBatch.Id && gs.Status == GrowthStageStatusEnum.Active,
                 trackChanges: false
             ).FirstOrDefaultAsync();
 

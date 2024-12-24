@@ -21,7 +21,6 @@ public partial class Prescription : EntityBase
     public string Status { get; set; } 
 
     public decimal? Price { get; set; }
-    public Guid CageId { get; set; }
 
     public virtual ICollection<HealthLog> HealthLogs { get; set; } = new List<HealthLog>();
 
