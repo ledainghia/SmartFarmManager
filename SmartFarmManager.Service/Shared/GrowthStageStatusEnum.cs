@@ -10,6 +10,6 @@ namespace SmartFarmManager.Service.Shared
     {
         public const string Upcoming = "Upcoming";    // Chưa bắt đầu
         public const string Active = "Active";        // Đang trong giai đoạn
-        public const string Completed = "Completed";  // Giai đoạn đã kết thúc
+        public const string Completed = "Completed";  // Giai đoạn đã kết thú
     }
 }

@@ -33,11 +33,15 @@ namespace SmartFarmManager.Repository
         public ITaskDailyTemplateRepository TaskDailyTemplates { get; }
         public IFoodTemplateRepository FoodTemplates { get; }
         public IVaccineTemplateRepository VaccineTemplates { get; }
-
         public IGrowthStageRepository GrowthStages { get; }
         public IVaccineRepository Vaccines { get; }
         public ITaskDailyRepository TaskDailies { get; }
         public ITemporaryCageAssignmentRepository TemporaryCageAssignments { get; }
+        public IHealthLogRepository HealthLogs { get; }
+        public IPictureRepository Pictures { get; }
+        public IPrescriptionMedicationRepository PrescriptionMedications { get; }
+        public IVaccineScheduleLogRepository VaccineScheduleLogs { get; }
+        public IDailyFoodUsageLogRepository DailyFoodUsageLogs { get; }
         public IVaccineScheduleRepository VaccineSchedules { get; }
 
         public UnitOfWork(SmartFarmContext context, IUserRepository users,
@@ -62,6 +66,11 @@ namespace SmartFarmManager.Repository
             IVaccineTemplateRepository vaccineTemplates,
             IVaccineRepository vaccines,
             ITemporaryCageAssignmentRepository temporaryCageAssignments,
+            IHealthLogRepository healthLogs,
+            IPictureRepository pictures,
+            IPrescriptionMedicationRepository prescriptionMedications,
+            IDailyFoodUsageLogRepository dailyFoodUsageLogs,
+            IVaccineScheduleLogRepository vaccineScheduleLogs,
             IVaccineScheduleRepository vaccineSchedules)
         {
             _context = context;
@@ -88,6 +97,12 @@ namespace SmartFarmManager.Repository
             Vaccines= vaccines;
             TemporaryCageAssignments= temporaryCageAssignments;
             VaccineSchedules= vaccineSchedules;
+            HealthLogs = healthLogs;
+            Pictures = pictures;
+            PrescriptionMedications = prescriptionMedications;
+            DailyFoodUsageLogs = dailyFoodUsageLogs;
+            VaccineScheduleLogs = vaccineScheduleLogs;
+            VaccineSchedules = vaccineSchedules;
         }
          
 
