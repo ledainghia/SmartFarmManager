@@ -4,6 +4,7 @@ using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels.DailyFoodUsageLog;
 using SmartFarmManager.Service.BusinessModels.VaccineScheduleLog;
+using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Shared;
 using System;
@@ -53,7 +54,7 @@ namespace SmartFarmManager.Service.Services
                 ActualWeight = model.ActualWeight,
                 Notes = model.Notes,
                 Photo = model.Photo,
-                LogTime = DateTime.UtcNow,
+                LogTime = DateTimeUtils.VietnamNow(),
                 TaskId = model.TaskId,
             };
 

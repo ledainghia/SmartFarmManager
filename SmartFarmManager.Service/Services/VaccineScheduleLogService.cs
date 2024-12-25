@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels.VaccineScheduleLog;
+using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Shared;
 using System;
@@ -45,7 +46,7 @@ namespace SmartFarmManager.Service.Services
                 return null;
 
             // Tìm VaccineSchedule theo ngày hiện tại
-            var currentDate = DateOnly.FromDateTime(DateTime.UtcNow);
+            var currentDate = DateOnly.FromDateTime(DateTimeUtils.VietnamNow());
             var vaccineSchedule = await _unitOfWork.VaccineSchedules.FindByCondition(
                 vs => vs.StageId == growthStage.Id && DateOnly.FromDateTime(vs.Date.Value) == currentDate,
                 trackChanges: false
