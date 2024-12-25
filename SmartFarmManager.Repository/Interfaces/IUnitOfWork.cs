@@ -12,7 +12,6 @@ namespace SmartFarmManager.Repository.Interfaces
         IUserRepository Users { get; }
         ITaskRepository Tasks { get; }
         ITaskTypeRepository TaskTypes { get; }
-        IStatusRepository Statuses { get; }
         IStatusLogRepository StatusLogs { get; }
         ICageRepository Cages { get; }
         ICageStaffRepository CageStaffs { get; }

@@ -45,8 +45,7 @@ namespace SmartFarmManager.Service.BusinessModels.Task
 
     public class StatusLogResponseModel
     {
-        public Guid StatusId { get; set; }
-        public string StatusName { get; set; } // Map từ bảng `Status`
+        public string Status { get; set; } 
         public DateTime? UpdatedAt { get; set; }
     }
     public class SessionTaskGroupModel
