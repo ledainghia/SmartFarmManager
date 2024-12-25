@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels.HealthLog;
+using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Shared;
 using System;
@@ -39,7 +40,7 @@ namespace SmartFarmManager.Service.Services
             var newLog = new HealthLog
             {
                 PrescriptionId = prescription.Id,
-                Date = DateTime.Now,
+                Date = DateTimeUtils.VietnamNow(),
                 Notes = model.Notes,
                 Photo = model.Photo
             };

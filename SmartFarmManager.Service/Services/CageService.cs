@@ -166,7 +166,7 @@ namespace SmartFarmManager.Service.Services
                 Capacity = model.Capacity,
                 Location = model.Location,
                 AnimalType = model.AnimalType,
-                CreatedDate = DateTime.UtcNow
+                CreatedDate = DateTimeUtils.VietnamNow(),
             };
 
             var id = await _unitOfWork.Cages.CreateAsync(cage);
@@ -202,7 +202,7 @@ namespace SmartFarmManager.Service.Services
             cage.Capacity = model.Capacity;
             cage.Location = model.Location;
             cage.AnimalType = model.AnimalType;
-            cage.ModifiedDate = DateTime.UtcNow;
+            cage.ModifiedDate = DateTimeUtils.VietnamNow();
 
             await _unitOfWork.Cages.UpdateAsync(cage);
             await _unitOfWork.CommitAsync();
@@ -215,7 +215,7 @@ namespace SmartFarmManager.Service.Services
             if (cage == null) return false;
 
             cage.IsDeleted = true;
-            cage.DeletedDate = DateTime.UtcNow;
+            cage.DeletedDate = DateTimeUtils.VietnamNow();
 
             await _unitOfWork.Cages.UpdateAsync(cage);
             await _unitOfWork.CommitAsync();

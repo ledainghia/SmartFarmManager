@@ -1,6 +1,7 @@
 ﻿using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels.Farm;
+using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -28,7 +29,7 @@ namespace SmartFarmManager.Service.Services
                 Area = model.Area,
                 PhoneNumber = model.PhoneNumber,
                 Email = model.Email,
-                CreatedDate = DateTime.UtcNow
+                CreatedDate = DateTimeUtils.VietnamNow()
             };
 
             var id = await _unitOfWork.Farms.CreateAsync(farm);
@@ -77,7 +78,7 @@ namespace SmartFarmManager.Service.Services
             farm.Area = model.Area;
             farm.PhoneNumber = model.PhoneNumber;
             farm.Email = model.Email;
-            farm.ModifiedDate = DateTime.UtcNow;
+            farm.ModifiedDate = DateTimeUtils.VietnamNow();
 
             await _unitOfWork.Farms.UpdateAsync(farm);
             await _unitOfWork.CommitAsync();
@@ -90,7 +91,7 @@ namespace SmartFarmManager.Service.Services
             if (farm == null) return false;
 
             farm.IsDeleted = true;
-            farm.DeletedDate = DateTime.UtcNow;
+            farm.DeletedDate = DateTimeUtils.VietnamNow();
 
             await _unitOfWork.Farms.UpdateAsync(farm);
             await _unitOfWork.CommitAsync();

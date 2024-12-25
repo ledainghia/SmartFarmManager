@@ -95,7 +95,7 @@ namespace SmartFarmManager.Service.Services
         public async Task<bool> CreateTaskAsync(CreateTaskModel model)
         {
             // 1. Validate DueDate
-            if (model.DueDate < DateTime.UtcNow)
+            if (model.DueDate < DateTimeUtils.VietnamNow())
             {
                 throw new ArgumentException("DueDate must be in the future");
             }
@@ -203,7 +203,7 @@ namespace SmartFarmManager.Service.Services
                 Description = model.Description,
                 DueDate = model.DueDate,
                 Session = sessionValue,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTimeUtils.VietnamNow(),
                 Status = TaskStatusEnum.Pending
             };
 
@@ -916,7 +916,7 @@ namespace SmartFarmManager.Service.Services
             if (newDueDate.HasValue)
             {
                 // 4.1 Kiểm tra ngày hợp lệ (chỉ cho phép hôm nay hoặc ngày mai)
-                var currentDate = DateTime.UtcNow.Date;
+                var currentDate = DateTimeUtils.VietnamNow().Date;
                 if (newDueDate.Value.Date < currentDate || newDueDate.Value.Date > currentDate.AddDays(1))
                 {
                     throw new InvalidOperationException("You can only update tasks scheduled for today or tomorrow.");
