@@ -147,6 +147,7 @@ public partial class SmartFarmContext : DbContext
     public virtual DbSet<VaccineTemplate> VaccineTemplates { get; set; }
 
     public virtual DbSet<WaterLog> WaterLogs { get; set; }
+    public virtual DbSet<TaskDaily> TaskDailies { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -497,7 +498,6 @@ public partial class SmartFarmContext : DbContext
             entity.Property(e => e.Name).HasMaxLength(100);
             entity.Property(e => e.Species).HasMaxLength(50);
             entity.Property(e => e.StartDate)
-                .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
 
             entity.HasOne(d => d.Cage).WithMany(p => p.FarmingBatches)

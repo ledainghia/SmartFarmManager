@@ -71,7 +71,8 @@ namespace SmartFarmManager.Repository
             IPrescriptionMedicationRepository prescriptionMedications,
             IDailyFoodUsageLogRepository dailyFoodUsageLogs,
             IVaccineScheduleLogRepository vaccineScheduleLogs,
-            IVaccineScheduleRepository vaccineSchedules)
+            IVaccineScheduleRepository vaccineSchedules,
+            ITaskDailyRepository taskDailies)
         {
             _context = context;
             Users = users;
@@ -103,6 +104,7 @@ namespace SmartFarmManager.Repository
             DailyFoodUsageLogs = dailyFoodUsageLogs;
             VaccineScheduleLogs = vaccineScheduleLogs;
             VaccineSchedules = vaccineSchedules;
+            TaskDailies = taskDailies;
         }
          
 
