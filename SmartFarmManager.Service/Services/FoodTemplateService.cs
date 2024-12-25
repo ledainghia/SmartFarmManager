@@ -153,7 +153,7 @@ namespace SmartFarmManager.Service.Services
                     Id = f.Id,
                     StageTemplateId = f.StageTemplateId,
                     FoodName = f.FoodName,
-                    RecommendedWeightPerDay = f.RecommendedWeightPerSession,
+                    RecommendedWeightPerSession = f.RecommendedWeightPerSession,
                     Session = f.Session,
                     WeightBasedOnBodyMass = f.WeightBasedOnBodyMass
                 })

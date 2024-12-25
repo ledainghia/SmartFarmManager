@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SmartFarmManager.Repository.Interfaces
 {
-    public interface IVaccineScheduleRepository : IRepositoryBaseAsync<VaccineSchedule>
+    public interface IVaccineScheduleLogRepository : IRepositoryBaseAsync<VaccineScheduleLog>
     {
     }
 }
