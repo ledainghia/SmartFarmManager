@@ -317,33 +317,23 @@ namespace SmartFarmManager.Service.Services
 
        
         //change status of task by task id and status id
-        public async Task<bool> ChangeTaskStatusAsync(Guid taskId, Guid statusId)
+        public async Task<bool> ChangeTaskStatusAsync(Guid taskId, string? status)
         {
-            //var task = await _unitOfWork.Tasks.FindAsync(x => x.Id == taskId);
-            //if (task == null)
-            //{
-            //    throw new ArgumentException("Invalid TaskId");
-            //}
-
-            //var status = await _unitOfWork.Statuses.FindAsync(x => x.Id == statusId);
-            //if (status == null)
-            //{
-            //    throw new ArgumentException("Invalid StatusId");
-            //}
-            //var statusLog = new StatusLog
-            //{
-            //    TaskId = task.Id,
-            //    StatusId = status.Id,
-            //    UpdatedAt = DateTime.UtcNow
-            //};
-            //await _unitOfWork.StatusLogs.CreateAsync(statusLog);
-            //if (status.StatusName == "Done")
-            //{
-            //    task.CompletedAt = DateTime.UtcNow;
-            //}
-            //task.Status = status.StatusName;
-            //await _unitOfWork.Tasks.UpdateAsync(task);
-            //await _unitOfWork.CommitAsync();
+            var task = await _unitOfWork.Tasks.FindAsync(x => x.Id == taskId);
+            if (task == null)
+            {
+                throw new ArgumentException("Invalid TaskId");
+            }
+            if (status == null || status.Equals(TaskStatusEnum.Pending) || status.Equals(TaskStatusEnum.InProgress) || status.Equals(TaskStatusEnum.Done) || status.Equals(TaskStatusEnum.Overdue)) {
+                throw new ArgumentException("Không đúng status");
+            }
+            if (status == TaskStatusEnum.Done)
+            {
+                task.CompletedAt = DateTime.UtcNow;
+            }
+            task.Status = status;
+            await _unitOfWork.Tasks.UpdateAsync(task);
+            await _unitOfWork.CommitAsync();
 
             return true;
         }
@@ -787,8 +777,8 @@ namespace SmartFarmManager.Service.Services
                 .Include(t => t.TaskType)
                 .Include(t => t.AssignedToUser)
                 .Include(t => t.Cage)
-                .Include(t => t.StatusLogs)
-                .ThenInclude(x => x.Status)
+                //.Include(t => t.StatusLogs)
+                //.ThenInclude(x => x.Status)
                 .Select(t => new
                 {
                     t.Id,
@@ -813,13 +803,7 @@ namespace SmartFarmManager.Service.Services
                     {
                         t.TaskType.Id,
                         t.TaskType.TaskTypeName
-                    },
-                    StatusLogs = t.StatusLogs.Select(sl => new
-                    {
-                       
-                        sl.Status,
-                        sl.UpdatedAt
-                    }).ToList()
+                    }
                 });
 
             // Apply date filter if filterDate is provided
@@ -868,12 +852,7 @@ namespace SmartFarmManager.Service.Services
                                 {
                                     TaskTypeId = task.TaskType.Id,
                                     TaskTypeName = task.TaskType.TaskTypeName
-                                },
-                                StatusLogs = task.StatusLogs.Select(log => new StatusLogResponseModel
-                                {
-                                    Status = log.Status,
-                                    UpdatedAt = log.UpdatedAt
-                                }).ToList()
+                                }
                             }).ToList()
                         }).ToList()
                 }).ToList();
