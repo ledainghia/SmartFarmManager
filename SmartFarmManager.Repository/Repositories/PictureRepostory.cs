@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace SmartFarmManager.Repository.Repositories
 {
-    public class StatusRepository : RepositoryBaseAsync<Status>, IStatusRepository
+    public class PictureRepostory : RepositoryBaseAsync<Picture>, IPictureRepository
     {
-        public StatusRepository(SmartFarmContext dbContext) : base(dbContext)
+        public PictureRepostory(SmartFarmContext dbContext) : base(dbContext)
         {
         }
     }

@@ -11,7 +11,6 @@ namespace SmartFarmManager.Service.BusinessModels.FoodTemplate
         public Guid StageTemplateId { get; set; }
         public string FoodName { get; set; }
         public decimal? RecommendedWeightPerSession { get; set; }
-        public int Session { get; set; }
         public decimal? WeightBasedOnBodyMass { get; set; }
     }
 }

@@ -12,7 +12,6 @@ namespace SmartFarmManager.Repository.Interfaces
         IUserRepository Users { get; }
         ITaskRepository Tasks { get; }
         ITaskTypeRepository TaskTypes { get; }
-        IStatusRepository Statuses { get; }
         IStatusLogRepository StatusLogs { get; }
         ICageRepository Cages { get; }
         ICageStaffRepository CageStaffs { get; }
@@ -33,6 +32,11 @@ namespace SmartFarmManager.Repository.Interfaces
         ITaskDailyRepository TaskDailies { get; }
         ITemporaryCageAssignmentRepository TemporaryCageAssignments { get; }
         IVaccineScheduleRepository VaccineSchedules { get; }
+        IHealthLogRepository HealthLogs { get; }
+        IPictureRepository Pictures { get; }
+        IPrescriptionMedicationRepository PrescriptionMedications { get; }
+        IDailyFoodUsageLogRepository DailyFoodUsageLogs { get; }
+        IVaccineScheduleLogRepository VaccineScheduleLogs { get; }
         Task<int> CommitAsync();
         System.Threading.Tasks.Task BeginTransactionAsync();
         System.Threading.Tasks.Task RollbackAsync();

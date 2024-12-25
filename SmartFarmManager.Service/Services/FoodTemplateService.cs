@@ -48,7 +48,6 @@ namespace SmartFarmManager.Service.Services
                 StageTemplateId = model.StageTemplateId,
                 FoodName = model.FoodName,
                 RecommendedWeightPerSession = model.RecommendedWeightPerSession,
-                Session = model.Session,
                 WeightBasedOnBodyMass = model.WeightBasedOnBodyMass
             };
 
@@ -91,10 +90,7 @@ namespace SmartFarmManager.Service.Services
                 foodTemplate.RecommendedWeightPerSession = model.RecommendedWeightPerSession.Value;
             }
 
-            if (model.Session.HasValue)
-            {
-                foodTemplate.Session = model.Session.Value;
-            }
+          
 
             if (model.WeightBasedOnBodyMass.HasValue)
             {
@@ -139,10 +135,7 @@ namespace SmartFarmManager.Service.Services
                 query = query.Where(f => f.FoodName.Contains(filter.FoodName));
             }
 
-            if (filter.Session.HasValue)
-            {
-                query = query.Where(f => f.Session == filter.Session.Value);
-            }
+         
             var totalItems = await query.CountAsync();
             var items = await query
                 .OrderBy(f => f.FoodName)
@@ -153,8 +146,7 @@ namespace SmartFarmManager.Service.Services
                     Id = f.Id,
                     StageTemplateId = f.StageTemplateId,
                     FoodName = f.FoodName,
-                    RecommendedWeightPerDay = f.RecommendedWeightPerSession,
-                    Session = f.Session,
+                    RecommendedWeightPerSession = f.RecommendedWeightPerSession,
                     WeightBasedOnBodyMass = f.WeightBasedOnBodyMass
                 })
                 .ToListAsync();
@@ -192,7 +184,6 @@ namespace SmartFarmManager.Service.Services
                 StageTemplateId = foodTemplate.StageTemplateId,
                 FoodName = foodTemplate.FoodName,
                 RecommendedWeightPerSession = foodTemplate.RecommendedWeightPerSession,
-                Session = foodTemplate.Session,
                 WeightBasedOnBodyMass = foodTemplate.WeightBasedOnBodyMass,
                 GrowthStageTemplate = foodTemplate.StageTemplate == null ? null : new GrowthStageTemplateResponse
                 {

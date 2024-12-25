@@ -25,10 +25,7 @@ namespace SmartFarmManager.API.Payloads.Requests.FarmingBatch
         [Required]
         public int Quantity { get; set; }
 
-        [Required]
-        public int FarmId { get; set; }
 
-        public string Notes { get; set; }
 
         public CreateFarmingBatchModel MapToModel()
         {
@@ -40,8 +37,6 @@ namespace SmartFarmManager.API.Payloads.Requests.FarmingBatch
                 Species = this.Species,
                 CleaningFrequency = this.CleaningFrequency,
                 Quantity = this.Quantity,
-                FarmId = this.FarmId,
-                Notes = this.Notes
             };
         }
     }

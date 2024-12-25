@@ -122,7 +122,6 @@ public partial class SmartFarmContext : DbContext
 
     public virtual DbSet<SensorType> SensorTypes { get; set; }
 
-    public virtual DbSet<Status> Statuses { get; set; }
 
     public virtual DbSet<StatusLog> StatusLogs { get; set; }
 
@@ -147,6 +146,7 @@ public partial class SmartFarmContext : DbContext
     public virtual DbSet<VaccineTemplate> VaccineTemplates { get; set; }
 
     public virtual DbSet<WaterLog> WaterLogs { get; set; }
+    public virtual DbSet<TaskDaily> TaskDailies { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -497,7 +497,6 @@ public partial class SmartFarmContext : DbContext
             entity.Property(e => e.Name).HasMaxLength(100);
             entity.Property(e => e.Species).HasMaxLength(50);
             entity.Property(e => e.StartDate)
-                .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
 
             entity.HasOne(d => d.Cage).WithMany(p => p.FarmingBatches)
@@ -888,15 +887,6 @@ public partial class SmartFarmContext : DbContext
                 .HasDefaultValue("");
         });
 
-        modelBuilder.Entity<Status>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__Statuses__C8EE2063A8C85F92");
-
-            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.StatusName)
-                .IsRequired()
-                .HasMaxLength(50);
-        });
 
         modelBuilder.Entity<StatusLog>(entity =>
         {
@@ -907,10 +897,6 @@ public partial class SmartFarmContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
 
-            entity.HasOne(d => d.Status).WithMany(p => p.StatusLogs)
-                .HasForeignKey(d => d.StatusId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__StatusLog__Statu__03F0984C");
 
             entity.HasOne(d => d.Task).WithMany(p => p.StatusLogs)
                 .HasForeignKey(d => d.TaskId)

@@ -82,6 +82,78 @@ namespace SmartFarmManager.Service.Services
             return true;
         }
 
+        public async Task<bool> CreateTaskDailyTemplatesAsync(List<CreateTaskDailyTemplateModel> models)
+        {
+            // 1. Kiểm tra danh sách GrowthStageTemplate
+            var growthStageTemplateIds = models.Select(m => m.GrowthStageTemplateId).Distinct().ToList();
+            var growthStageTemplates = await _unitOfWork.GrowthStageTemplates
+                .FindByCondition(g => growthStageTemplateIds.Contains(g.Id))
+                .ToListAsync();
+
+            if (growthStageTemplates.Count != growthStageTemplateIds.Count)
+            {
+                throw new ArgumentException("One or more GrowthStageTemplate IDs do not exist.");
+            }
+
+            // 2. Lấy danh sách TaskTypeId để kiểm tra
+            var taskTypeIds = models.Where(m => m.TaskTypeId.HasValue)
+                .Select(m => m.TaskTypeId.Value)
+                .Distinct()
+                .ToList();
+            var taskTypes = await _unitOfWork.TaskTypes
+                .FindByCondition(t => taskTypeIds.Contains(t.Id))
+                .ToListAsync();
+
+            if (taskTypes.Count != taskTypeIds.Count)
+            {
+                throw new ArgumentException("One or more TaskType IDs do not exist.");
+            }
+
+            // 3. Kiểm tra các điều kiện trùng lặp trong cùng GrowthStageTemplate và Session
+            foreach (var model in models)
+            {
+                var duplicateTaskNameExists = await _unitOfWork.TaskDailyTemplates
+                    .FindByCondition(t => t.GrowthStageTemplateId == model.GrowthStageTemplateId &&
+                                          t.TaskName == model.TaskName)
+                    .AnyAsync();
+
+                if (duplicateTaskNameExists)
+                {
+                    throw new InvalidOperationException($"Task Name '{model.TaskName}' already exists in Growth Stage Template.");
+                }
+
+                if (model.TaskTypeId.HasValue)
+                {
+                    var duplicateTaskTypeExists = await _unitOfWork.TaskDailyTemplates
+                        .FindByCondition(t => t.GrowthStageTemplateId == model.GrowthStageTemplateId &&
+                                              t.Session == model.Session &&
+                                              t.TaskTypeId == model.TaskTypeId.Value)
+                        .AnyAsync();
+
+                    if (duplicateTaskTypeExists)
+                    {
+                        throw new InvalidOperationException($"Task Type '{model.TaskTypeId}' already exists in session {model.Session} of Growth Stage Template.");
+                    }
+                }
+            }
+
+            // 4. Tạo danh sách TaskDailyTemplates
+            var taskDailyTemplates = models.Select(model => new TaskDailyTemplate
+            {
+                GrowthStageTemplateId = model.GrowthStageTemplateId,
+                TaskTypeId = model.TaskTypeId,
+                TaskName = model.TaskName,
+                Description = model.Description,
+                Session = model.Session
+            }).ToList();
+
+            // 5. Lưu danh sách vào cơ sở dữ liệu
+            await _unitOfWork.TaskDailyTemplates.CreateListAsync(taskDailyTemplates);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
+
         public async Task<bool> UpdateTaskDailyTemplateAsync(UpdateTaskDailyTemplateModel model)
         {
             var taskDailyTemplate = await _unitOfWork.TaskDailyTemplates

@@ -12,6 +12,7 @@ namespace SmartFarmManager.Service.Interfaces
     public interface ITaskDailyTemplateService
     {
         Task<bool> CreateTaskDailyTemplateAsync(CreateTaskDailyTemplateModel model);
+        Task<bool> CreateTaskDailyTemplatesAsync(List<CreateTaskDailyTemplateModel> models);
         Task<bool> UpdateTaskDailyTemplateAsync(UpdateTaskDailyTemplateModel model);
         Task<bool> DeleteTaskDailyTemplateAsync(Guid id);
         Task<PagedResult<TaskDailyTemplateItemModel>> GetTaskDailyTemplatesAsync(TaskDailyTemplateFilterModel filter);

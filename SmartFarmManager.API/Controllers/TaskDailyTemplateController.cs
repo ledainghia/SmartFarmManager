@@ -20,6 +20,51 @@ namespace SmartFarmManager.API.Controllers
             _taskDailyTemplateService = taskDailyTemplateService;
         }
 
+        [HttpPost("bulk-create")]
+        public async Task<IActionResult> CreateTaskDailyTemplates([FromBody] List<CreateTaskDailyTemplateRequest> requests)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
+            {
+                { "Errors", errors.ToArray() }
+            }));
+            }
+
+            try
+            {
+                // Map danh sách request sang danh sách model
+                var models = requests.Select(r => r.MapToModel()).ToList();
+
+                // Gọi service để tạo danh sách TaskDailyTemplates
+                var result = await _taskDailyTemplateService.CreateTaskDailyTemplatesAsync(models);
+
+                if (!result)
+                {
+                    throw new Exception("Error while creating Task Daily Templates!");
+                }
+
+                return Ok(ApiResult<string>.Succeed("Task Daily Templates created successfully!"));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred. Please contact support."));
+            }
+        }
+
         [HttpPost("")]
         public async Task<IActionResult> CreateTaskDailyTemplate([FromBody] CreateTaskDailyTemplateRequest request)
         {

@@ -95,7 +95,7 @@ namespace SmartFarmManager.Service.Services
         public async Task<bool> CreateTaskAsync(CreateTaskModel model)
         {
             // 1. Validate DueDate
-            if (model.DueDate < DateTime.UtcNow)
+            if (model.DueDate < DateTimeUtils.VietnamNow())
             {
                 throw new ArgumentException("DueDate must be in the future");
             }
@@ -203,7 +203,7 @@ namespace SmartFarmManager.Service.Services
                 Description = model.Description,
                 DueDate = model.DueDate,
                 Session = sessionValue,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTimeUtils.VietnamNow(),
                 Status = TaskStatusEnum.Pending
             };
 
@@ -317,31 +317,21 @@ namespace SmartFarmManager.Service.Services
 
        
         //change status of task by task id and status id
-        public async Task<bool> ChangeTaskStatusAsync(Guid taskId, Guid statusId)
+        public async Task<bool> ChangeTaskStatusAsync(Guid taskId, string? status)
         {
             var task = await _unitOfWork.Tasks.FindAsync(x => x.Id == taskId);
             if (task == null)
             {
                 throw new ArgumentException("Invalid TaskId");
             }
-
-            var status = await _unitOfWork.Statuses.FindAsync(x => x.Id == statusId);
-            if (status == null)
-            {
-                throw new ArgumentException("Invalid StatusId");
+            if (status == null || status.Equals(TaskStatusEnum.Pending) || status.Equals(TaskStatusEnum.InProgress) || status.Equals(TaskStatusEnum.Done) || status.Equals(TaskStatusEnum.Overdue)) {
+                throw new ArgumentException("Không đúng status");
             }
-            var statusLog = new StatusLog
-            {
-                TaskId = task.Id,
-                StatusId = status.Id,
-                UpdatedAt = DateTime.UtcNow
-            };
-            await _unitOfWork.StatusLogs.CreateAsync(statusLog);
-            if (status.StatusName == "Done")
+            if (status == TaskStatusEnum.Done)
             {
                 task.CompletedAt = DateTime.UtcNow;
             }
-            task.Status = status.StatusName;
+            task.Status = status;
             await _unitOfWork.Tasks.UpdateAsync(task);
             await _unitOfWork.CommitAsync();
 
@@ -539,7 +529,7 @@ namespace SmartFarmManager.Service.Services
         public async Task<PagedResult<TaskDetailModel>> GetFilteredTasksAsync(TaskFilterModel filter)
         {
             // Query từ repository
-            var query = _unitOfWork.Tasks.FindAll(false, x => x.AssignedToUser, x => x.TaskType, x => x.StatusLogs).Include(x=>x.Cage).Include(x=>x.StatusLogs).ThenInclude(x=>x.Status).AsQueryable();
+            var query = _unitOfWork.Tasks.FindAll(false, x => x.AssignedToUser, x => x.TaskType, x => x.StatusLogs).Include(x=>x.Cage).Include(x=>x.StatusLogs).AsQueryable();
 
             // Áp dụng bộ lọc
             if (!string.IsNullOrEmpty(filter.TaskName))
@@ -637,8 +627,7 @@ namespace SmartFarmManager.Service.Services
                     },
                     StatusLogs = t.StatusLogs.Select(s => new StatusLogResponseModel
                     {
-                        StatusId = s.StatusId,
-                        StatusName = s.Status.StatusName,
+                        Status = s.Status,
                         UpdatedAt = s.UpdatedAt
                     }).ToList()
                 })
@@ -695,8 +684,8 @@ namespace SmartFarmManager.Service.Services
                 },
                 StatusLogs = task.StatusLogs.Select(sl => new StatusLogResponseModel
                 {
-                    StatusId = sl.StatusId,
-                    StatusName = sl.Status.StatusName, // Tên status từ bảng Status
+                    
+                    Status = sl.Status, // Tên status từ bảng Status
                     UpdatedAt = sl.UpdatedAt
                 }).ToList()
             };
@@ -788,8 +777,8 @@ namespace SmartFarmManager.Service.Services
                 .Include(t => t.TaskType)
                 .Include(t => t.AssignedToUser)
                 .Include(t => t.Cage)
-                .Include(t => t.StatusLogs)
-                .ThenInclude(x => x.Status)
+                //.Include(t => t.StatusLogs)
+                //.ThenInclude(x => x.Status)
                 .Select(t => new
                 {
                     t.Id,
@@ -814,13 +803,7 @@ namespace SmartFarmManager.Service.Services
                     {
                         t.TaskType.Id,
                         t.TaskType.TaskTypeName
-                    },
-                    StatusLogs = t.StatusLogs.Select(sl => new
-                    {
-                        sl.StatusId,
-                        sl.Status.StatusName,
-                        sl.UpdatedAt
-                    }).ToList()
+                    }
                 });
 
             // Apply date filter if filterDate is provided
@@ -869,13 +852,7 @@ namespace SmartFarmManager.Service.Services
                                 {
                                     TaskTypeId = task.TaskType.Id,
                                     TaskTypeName = task.TaskType.TaskTypeName
-                                },
-                                StatusLogs = task.StatusLogs.Select(log => new StatusLogResponseModel
-                                {
-                                    StatusId = log.StatusId,
-                                    StatusName = log.StatusName,
-                                    UpdatedAt = log.UpdatedAt
-                                }).ToList()
+                                }
                             }).ToList()
                         }).ToList()
                 }).ToList();
@@ -918,7 +895,7 @@ namespace SmartFarmManager.Service.Services
             if (newDueDate.HasValue)
             {
                 // 4.1 Kiểm tra ngày hợp lệ (chỉ cho phép hôm nay hoặc ngày mai)
-                var currentDate = DateTime.UtcNow.Date;
+                var currentDate = DateTimeUtils.VietnamNow().Date;
                 if (newDueDate.Value.Date < currentDate || newDueDate.Value.Date > currentDate.AddDays(1))
                 {
                     throw new InvalidOperationException("You can only update tasks scheduled for today or tomorrow.");

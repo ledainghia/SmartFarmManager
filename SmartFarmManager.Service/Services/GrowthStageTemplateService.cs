@@ -40,6 +40,30 @@ namespace SmartFarmManager.Service.Services
                 throw new ArgumentException($"StageName '{model.StageName}' already exists in the Animal Template.");
             }
 
+            var existingStages = await _unitOfWork.GrowthStageTemplates
+      .FindByCondition(s => s.TemplateId == model.TemplateId)
+      .OrderBy(s => s.AgeStart)
+      .ToListAsync();
+
+            if (!existingStages.Any())
+            {
+                // 4. Nếu không có GrowthStage nào, AgeStart phải bắt đầu từ 1
+                if (model.AgeStart != 1)
+                {
+                    throw new ArgumentException("The first GrowthStageTemplate must have an AgeStart of 1.");
+                }
+            }
+            else
+            {
+                // 5. Kiểm tra tính liên tục của AgeStart
+                var lastStage = existingStages.Last();
+                if (model.AgeStart != (lastStage.AgeEnd + 1))
+                {
+                    throw new ArgumentException($"The AgeStart of the new GrowthStageTemplate must be {lastStage.AgeEnd + 1}.");
+                }
+            }
+
+
             var growthStageTemplate = new GrowthStageTemplate
             {
                 TemplateId = model.TemplateId,
@@ -226,7 +250,6 @@ namespace SmartFarmManager.Service.Services
                     Id = f.Id,
                     FoodName = f.FoodName,
                     RecommendedWeightPerSession = f.RecommendedWeightPerSession,
-                    Session = f.Session,
                     WeightBasedOnBodyMass = f.WeightBasedOnBodyMass
                 }).ToList(),
                 TaskDailyTemplates = growthStageTemplate.TaskDailyTemplates.Select(td => new TaskDailyTemplateResponse

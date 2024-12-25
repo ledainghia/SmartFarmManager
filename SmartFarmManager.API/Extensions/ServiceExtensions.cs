@@ -162,7 +162,6 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<ITaskRepository, TaskRepository>();
             services.AddScoped<ITaskTypeRepository, TaskTypeRepository>();
-            services.AddScoped<IStatusRepository, StatusRepository>();
             services.AddScoped<IStatusLogRepository, StatusLogRepository>();
             services.AddScoped<ICageRepository, CageRepository>();
             services.AddScoped<ICageStaffRepository, CageStaffRepository>();
@@ -183,6 +182,11 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<ITaskDailyRepository, TaskDailyRepository>();
             services.AddScoped<ITemporaryCageAssignmentRepository, TemporaryCageAssignmentRepository>();
             services.AddScoped<IVaccineScheduleRepository, VaccineScheduleRepository>();
+            services.AddScoped<IHealthLogRepository, HealthLogRepository>();
+            services.AddScoped<IPictureRepository, PictureRepostory>();
+            services.AddScoped<IPrescriptionMedicationRepository, PrescriptionMedicationRepository>();
+            services.AddScoped<IDailyFoodUsageLogRepository, DailyFoodUsageLogRepository>();
+            services.AddScoped<IVaccineScheduleLogRepository, VaccineScheduleLogRepository>();
 
             return services;
         }
@@ -209,6 +213,12 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<ITaskDailyTemplateService, TaskDailyTemplateService>();
             services.AddScoped<IFoodTemplateService, FoodTemplateService>();
             services.AddScoped<IFarmingBatchService, FarmingBatchService>();
+            services.AddScoped<IHealthLogService, HealthLogService>();
+            services.AddScoped<IDailyFoodUsageLogService, DailyFoodUsageLogService>();
+            services.AddScoped<IVaccineScheduleLogService, VaccineScheduleLogService>();
+            services.AddScoped<IVaccineTemplateService, VaccineTemplateService>();
+
+
             return services;
         }
 

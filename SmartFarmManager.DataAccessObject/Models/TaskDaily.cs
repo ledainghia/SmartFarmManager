@@ -22,7 +22,7 @@ namespace SmartFarmManager.DataAccessObject.Models
 
         [MaxLength(255)]
         public string Description { get; set; }
-
+            
         [Required]
         public int Session { get; set; }
 

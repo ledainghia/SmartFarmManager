@@ -8,8 +8,9 @@ namespace SmartFarmManager.Service.Shared
 {
     public static class GrowthStageStatusEnum
     {
-        public const string Upcoming = "Upcoming";    // Chưa bắt đầu
-        public const string Active = "Active";        // Đang trong giai đoạn
-        public const string Completed = "Completed";  // Giai đoạn đã kết thúc
+        public const string Planning = "Planning";
+        public const string Upcoming = "Upcoming";
+        public const string Active = "Active";
+        public const string Completed = "Completed";  
     }
 }
