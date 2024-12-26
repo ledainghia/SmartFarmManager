@@ -2,7 +2,11 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.FarmingBatch;
+using SmartFarmManager.Service.BusinessModels.Task;
+using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.Interfaces;
+using Sprache;
+using SmartFarmManager.Service.BusinessModels.FarmingBatch;
 
 namespace SmartFarmManager.API.Controllers
 {
@@ -101,5 +105,42 @@ namespace SmartFarmManager.API.Controllers
                 return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred. Please contact support."));
             }
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetFarmingBatches([FromQuery] FarmingBatchFilterPagingRequest request)
+        {
+            
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
+            {
+                { "Errors", errors.ToArray() }
+            }));
+            }
+
+            try
+            {
+                var response = await _farmingBatchService.GetFarmingBatchesAsync(request.Status, request.CageName, request.Name, request.Species, request.StartDateFrom, request.StartDateTo, request.PageNumber, request.PageSize);
+                return Ok(ApiResult<PagedResult<FarmingBatchModel>>.Succeed(response));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred. Please contact support."));
+            }
+        }
+
     }
 }
