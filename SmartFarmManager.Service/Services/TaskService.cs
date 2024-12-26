@@ -651,7 +651,11 @@ namespace SmartFarmManager.Service.Services
         public async Task<TaskDetailModel> GetTaskDetailAsync(Guid taskId)
         {
             var task = await _unitOfWork.Tasks
-            .FindByCondition(t => t.Id == taskId, false, x => x.AssignedToUser, x => x.TaskType, x => x.StatusLogs).Include(x=>x.StatusLogs).ThenInclude(sl=>sl.Status).FirstOrDefaultAsync();
+                            .FindByCondition(t => t.Id == taskId)
+                            .Include(t => t.AssignedToUser)
+                            .Include(t => t.TaskType)
+                            .Include(t => t.StatusLogs)
+                            .FirstOrDefaultAsync();
             if (task == null)
             {
                 return null; 
