@@ -276,6 +276,7 @@ namespace SmartFarmManager.Service.Services
         {
             var query = _unitOfWork.FarmingBatches.FindAll()
                 .Include(fb => fb.Cage) // Include related Cage
+                .Include(fb => fb.Template)
                 .AsQueryable();
 
             // Apply Filters
@@ -334,6 +335,15 @@ namespace SmartFarmManager.Service.Services
                         AnimalType = fb.Cage.AnimalType,
                         Area = fb.Cage.Area
 
+                    },
+                    Template = fb.Template == null ? null : new BusinessModels.AnimalTemplate.AnimalTemplateItemModel
+                    {
+                        Id = fb.Template.Id,
+                        Name = fb.Template.Name,
+                        Species = fb.Template.Species,
+                        Status = fb.Template.Status,
+                        DefaultCapacity = fb.Template.DefaultCapacity,
+                        Notes = fb.Template.Notes
                     }
                 })
     .ToListAsync();
