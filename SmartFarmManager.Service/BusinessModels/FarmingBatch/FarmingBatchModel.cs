@@ -1,4 +1,5 @@
-﻿using SmartFarmManager.Service.BusinessModels.Cages;
+﻿using SmartFarmManager.Service.BusinessModels.AnimalTemplate;
+using SmartFarmManager.Service.BusinessModels.Cages;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,5 +19,6 @@ namespace SmartFarmManager.Service.BusinessModels.FarmingBatch
         public int CleaningFrequency { get; set; }
         public int? Quantity { get; set; }
         public CageModel Cage { get; set; }
+        public AnimalTemplateItemModel Template { get; set; }
     }
 }
