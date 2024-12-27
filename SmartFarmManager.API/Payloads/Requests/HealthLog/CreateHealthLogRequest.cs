@@ -2,7 +2,6 @@
 {
     public class CreateHealthLogRequest
     {
-        public Guid? PrescriptionId { get; set; }
         public DateTime Date { get; set; }
         public string Notes { get; set; }
         public string Photo { get; set; }
