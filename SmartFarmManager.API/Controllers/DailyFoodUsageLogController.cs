@@ -30,7 +30,8 @@ namespace SmartFarmManager.API.Controllers
                 RecommendedWeight = request.RecommendedWeight,
                 ActualWeight = request.ActualWeight,
                 Notes = request.Notes,
-                Photo = request.Photo
+                Photo = request.Photo,
+                TaskId = request.TaskId
             });
 
             if (result == null)

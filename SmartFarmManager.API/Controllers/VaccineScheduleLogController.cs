@@ -28,7 +28,8 @@ namespace SmartFarmManager.API.Controllers
             var result = await _vaccineScheduleLogService.CreateVaccineScheduleLogAsync(cageId, new VaccineScheduleLogModel
             {
                 Notes = request.Notes,
-                Photo = request.Photo
+                Photo = request.Photo,
+                TaskId = request.TaskId
             });
 
             if (result == null)

@@ -8,6 +8,6 @@
         public string Notes { get; set; }
         public DateTime? LogTime { get; set; }
         public string Photo { get; set; }
-        public int? TaskId { get; set; }
+        public Guid TaskId { get; set; }
     }
 }
