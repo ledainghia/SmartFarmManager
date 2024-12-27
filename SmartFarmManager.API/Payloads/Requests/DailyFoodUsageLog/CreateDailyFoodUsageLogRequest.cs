@@ -2,7 +2,6 @@
 {
     public class CreateDailyFoodUsageLogRequest
     {
-        public Guid StageId { get; set; }
         public decimal? RecommendedWeight { get; set; }
         public decimal? ActualWeight { get; set; }
         public string Notes { get; set; }
