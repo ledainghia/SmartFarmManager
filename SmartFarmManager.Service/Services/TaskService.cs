@@ -654,7 +654,6 @@ namespace SmartFarmManager.Service.Services
                             .FindByCondition(t => t.Id == taskId)
                             .Include(t => t.Cage)
                             .Include(t => t.AssignedToUser)
-                            .Include(t=>t.Cage)
                             .Include(t => t.TaskType)
                             .Include(t => t.StatusLogs)
                             .FirstOrDefaultAsync();
@@ -670,7 +669,6 @@ namespace SmartFarmManager.Service.Services
                 CageId=task.CageId,
                 CageName = task.Cage.Name,
                 TaskName = task.TaskName,
-                CageName=task.Cage.Name,
                 Description = task.Description,
                 PriorityNum = task.PriorityNum,
                 DueDate = task.DueDate,
