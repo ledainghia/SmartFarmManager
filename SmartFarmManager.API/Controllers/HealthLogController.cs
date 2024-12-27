@@ -30,7 +30,8 @@ namespace SmartFarmManager.API.Controllers
             {
                 Date = request.Date,
                 Notes = request.Notes,
-                Photo = request.Photo
+                Photo = request.Photo,
+                TaskId = request.TaskId
             });
 
             if (result == null)

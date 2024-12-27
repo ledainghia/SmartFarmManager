@@ -16,7 +16,7 @@ public partial class VaccineScheduleLog : EntityBase
 
     public string Photo { get; set; }
 
-    public int? TaskId { get; set; }
+    public Guid? TaskId { get; set; }
 
     public virtual VaccineSchedule Schedule { get; set; }
 }

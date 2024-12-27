@@ -16,7 +16,7 @@ public partial class HealthLog : EntityBase
 
     public string Photo { get; set; }
 
-    public int? TaskId { get; set; }
+    public Guid? TaskId { get; set; }
 
     public virtual Prescription Prescription { get; set; }
 }

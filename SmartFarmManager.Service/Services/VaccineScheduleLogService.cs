@@ -61,7 +61,8 @@ namespace SmartFarmManager.Service.Services
                 ScheduleId = vaccineSchedule.Id,
                 Notes = model.Notes,
                 Photo = model.Photo,
-                Date = currentDate
+                Date = currentDate,
+                TaskId = model.TaskId
             };
 
             await _unitOfWork.VaccineScheduleLogs.CreateAsync(newLog);

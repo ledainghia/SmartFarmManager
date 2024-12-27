@@ -652,6 +652,7 @@ namespace SmartFarmManager.Service.Services
         {
             var task = await _unitOfWork.Tasks
                             .FindByCondition(t => t.Id == taskId)
+                            .Include(t => t.Cage)
                             .Include(t => t.AssignedToUser)
                             .Include(t => t.TaskType)
                             .Include(t => t.StatusLogs)
@@ -666,6 +667,7 @@ namespace SmartFarmManager.Service.Services
             {
                 Id = task.Id,
                 CageId=task.CageId,
+                CageName = task.Cage.Name,
                 TaskName = task.TaskName,
                 Description = task.Description,
                 PriorityNum = task.PriorityNum,

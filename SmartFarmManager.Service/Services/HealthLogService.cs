@@ -42,7 +42,8 @@ namespace SmartFarmManager.Service.Services
                 PrescriptionId = prescription.Id,
                 Date = DateTimeUtils.VietnamNow(),
                 Notes = model.Notes,
-                Photo = model.Photo
+                Photo = model.Photo,
+                TaskId = model.TaskId
             };
 
             await _unitOfWork.HealthLogs.CreateAsync(newLog);
