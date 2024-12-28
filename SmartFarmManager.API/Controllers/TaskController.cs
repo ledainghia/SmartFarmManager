@@ -223,6 +223,26 @@ namespace SmartFarmManager.API.Controllers
         //        return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred."));
         //    }
         //}
+        [HttpPost("generate-tasks")]
+        public async Task<IActionResult> GenerateTasksForToday()
+        {
+            try
+            {
+                var result = await _taskService.GenerateTasksForTodayAsync();
+
+                if (!result)
+                {
+                    return StatusCode(500, ApiResult<string>.Fail("Failed to generate tasks for today."));
+                }
+
+                return Ok(ApiResult<string>.Succeed("Tasks generated successfully for today."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+            }
+        }
+
 
         [HttpGet("user-tasks-with-priority")]
         public async Task<IActionResult> GetUserTasksWithPriority([FromQuery] Guid userId, [FromQuery] Guid cageId, [FromQuery] DateTime? specificDate = null)

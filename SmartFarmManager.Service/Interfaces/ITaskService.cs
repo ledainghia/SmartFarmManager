@@ -25,5 +25,6 @@ namespace SmartFarmManager.Service.Interfaces
         Task<List<SessionTaskGroupModel>> GetUserTasksAsync(Guid userId, DateTime? filterDate = null, Guid? cageId = null);
         Task<bool> UpdateTaskAsync(TaskDetailUpdateModel model);
         Task<bool> CreateTaskRecurringAsync(CreateTaskRecurringModel model);
+        Task<bool> GenerateTasksForTodayAsync();
     }
 }
