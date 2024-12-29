@@ -2,7 +2,11 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.FarmingBatch;
+using SmartFarmManager.Service.BusinessModels.Task;
+using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.Interfaces;
+using Sprache;
+using SmartFarmManager.Service.BusinessModels.FarmingBatch;
 
 namespace SmartFarmManager.API.Controllers
 {
@@ -101,8 +105,7 @@ namespace SmartFarmManager.API.Controllers
                 return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred. Please contact support."));
             }
         }
-<<<<<<< Updated upstream
-=======
+
 
         [HttpGet]
         public async Task<IActionResult> GetFarmingBatches([FromQuery] FarmingBatchFilterPagingRequest request)
@@ -124,6 +127,7 @@ namespace SmartFarmManager.API.Controllers
             try
             {
                 var response = await _farmingBatchService.GetFarmingBatchesAsync(request.Status, request.CageName, request.Name, request.Species, request.StartDateFrom, request.StartDateTo, request.PageNumber, request.PageSize, request.CageId);
+
                 return Ok(ApiResult<PagedResult<FarmingBatchModel>>.Succeed(response));
             }
             catch (ArgumentException ex)
@@ -139,7 +143,5 @@ namespace SmartFarmManager.API.Controllers
                 return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred. Please contact support."));
             }
         }
-
->>>>>>> Stashed changes
     }
 }

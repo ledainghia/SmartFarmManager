@@ -1,10 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
+using SmartFarmManager.Service.BusinessModels;
+using SmartFarmManager.Service.BusinessModels.Cages;
 using SmartFarmManager.Service.BusinessModels.FarmingBatch;
+using SmartFarmManager.Service.BusinessModels.Task;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Shared;
+using Sprache;
 
 namespace SmartFarmManager.Service.Services
 {
@@ -268,21 +272,28 @@ namespace SmartFarmManager.Service.Services
             return true;
         }
 
-<<<<<<< Updated upstream
-=======
         public async Task<PagedResult<FarmingBatchModel>> GetFarmingBatchesAsync(string? status, string? cageName, string? name, string? species, DateTime? startDateFrom, DateTime? startDateTo, int pageNumber, int pageSize, Guid? cageId)
         {
             var query = _unitOfWork.FarmingBatches.FindAll()
                 .Include(fb => fb.Cage) // Include related Cage
                 .Include(fb => fb.Template)
                 .AsQueryable();
->>>>>>> Stashed changes
 
+            // Apply Filters
+            if (!string.IsNullOrEmpty(status))
+            {
+                query = query.Where(x => x.Status == status);
+            }
 
+            if (!string.IsNullOrEmpty(cageName))
+            {
+                query = query.Where(x => x.Cage.Name.Contains(cageName));
+            }
 
-
-<<<<<<< Updated upstream
-=======
+            if (!string.IsNullOrEmpty(name))
+            {
+                query = query.Where(x => x.Name.Contains(name));
+            }
             if (!string.IsNullOrEmpty(species))
             {
                 query = query.Where(x => x.Species.Contains(species));
@@ -353,6 +364,5 @@ namespace SmartFarmManager.Service.Services
             };
 
         }
->>>>>>> Stashed changes
     }
 }

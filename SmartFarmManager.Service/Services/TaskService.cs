@@ -317,31 +317,21 @@ namespace SmartFarmManager.Service.Services
 
        
         //change status of task by task id and status id
-        public async Task<bool> ChangeTaskStatusAsync(Guid taskId, Guid statusId)
+        public async Task<bool> ChangeTaskStatusAsync(Guid taskId, string? status)
         {
             var task = await _unitOfWork.Tasks.FindAsync(x => x.Id == taskId);
             if (task == null)
             {
                 throw new ArgumentException("Invalid TaskId");
             }
-
-            var status = await _unitOfWork.Statuses.FindAsync(x => x.Id == statusId);
-            if (status == null)
-            {
-                throw new ArgumentException("Invalid StatusId");
+            if (status == null || status.Equals(TaskStatusEnum.Pending) || status.Equals(TaskStatusEnum.InProgress) || status.Equals(TaskStatusEnum.Done) || status.Equals(TaskStatusEnum.Overdue)) {
+                throw new ArgumentException("Không đúng status");
             }
-            var statusLog = new StatusLog
+            if (status == TaskStatusEnum.Done)
             {
-                TaskId = task.Id,
-                StatusId = status.Id,
-                UpdatedAt = DateTimeUtils.VietnamNow()
-            };
-            await _unitOfWork.StatusLogs.CreateAsync(statusLog);
-            if (status.StatusName == "Done")
-            {
-                task.CompletedAt = DateTimeUtils.VietnamNow();
+                task.CompletedAt = DateTime.UtcNow;
             }
-            task.Status = status.StatusName;
+            task.Status = status;
             await _unitOfWork.Tasks.UpdateAsync(task);
             await _unitOfWork.CommitAsync();
 
@@ -539,7 +529,7 @@ namespace SmartFarmManager.Service.Services
         public async Task<PagedResult<TaskDetailModel>> GetFilteredTasksAsync(TaskFilterModel filter)
         {
             // Query từ repository
-            var query = _unitOfWork.Tasks.FindAll(false, x => x.AssignedToUser, x => x.TaskType, x => x.StatusLogs).Include(x=>x.Cage).Include(x=>x.StatusLogs).ThenInclude(x=>x.Status).AsQueryable();
+            var query = _unitOfWork.Tasks.FindAll(false, x => x.AssignedToUser, x => x.TaskType, x => x.StatusLogs).Include(x=>x.Cage).Include(x=>x.StatusLogs).AsQueryable();
 
             // Áp dụng bộ lọc
             if (!string.IsNullOrEmpty(filter.TaskName))
@@ -637,8 +627,7 @@ namespace SmartFarmManager.Service.Services
                     },
                     StatusLogs = t.StatusLogs.Select(s => new StatusLogResponseModel
                     {
-                        StatusId = s.StatusId,
-                        StatusName = s.Status.StatusName,
+                        Status = s.Status,
                         UpdatedAt = s.UpdatedAt
                     }).ToList()
                 })
@@ -662,7 +651,12 @@ namespace SmartFarmManager.Service.Services
         public async Task<TaskDetailModel> GetTaskDetailAsync(Guid taskId)
         {
             var task = await _unitOfWork.Tasks
-            .FindByCondition(t => t.Id == taskId, false, x => x.AssignedToUser, x => x.TaskType, x => x.StatusLogs).Include(x=>x.StatusLogs).ThenInclude(sl=>sl.Status).FirstOrDefaultAsync();
+                            .FindByCondition(t => t.Id == taskId)
+                            .Include(t => t.Cage)
+                            .Include(t => t.AssignedToUser)
+                            .Include(t => t.TaskType)
+                            .Include(t => t.StatusLogs)
+                            .FirstOrDefaultAsync();
             if (task == null)
             {
                 return null; 
@@ -673,6 +667,7 @@ namespace SmartFarmManager.Service.Services
             {
                 Id = task.Id,
                 CageId=task.CageId,
+                CageName = task.Cage.Name,
                 TaskName = task.TaskName,
                 Description = task.Description,
                 PriorityNum = task.PriorityNum,
@@ -695,8 +690,8 @@ namespace SmartFarmManager.Service.Services
                 },
                 StatusLogs = task.StatusLogs.Select(sl => new StatusLogResponseModel
                 {
-                    StatusId = sl.StatusId,
-                    StatusName = sl.Status.StatusName, // Tên status từ bảng Status
+                    
+                    Status = sl.Status, // Tên status từ bảng Status
                     UpdatedAt = sl.UpdatedAt
                 }).ToList()
             };
@@ -788,8 +783,8 @@ namespace SmartFarmManager.Service.Services
                 .Include(t => t.TaskType)
                 .Include(t => t.AssignedToUser)
                 .Include(t => t.Cage)
-                .Include(t => t.StatusLogs)
-                .ThenInclude(x => x.Status)
+                //.Include(t => t.StatusLogs)
+                //.ThenInclude(x => x.Status)
                 .Select(t => new
                 {
                     t.Id,
@@ -814,13 +809,7 @@ namespace SmartFarmManager.Service.Services
                     {
                         t.TaskType.Id,
                         t.TaskType.TaskTypeName
-                    },
-                    StatusLogs = t.StatusLogs.Select(sl => new
-                    {
-                        sl.StatusId,
-                        sl.Status.StatusName,
-                        sl.UpdatedAt
-                    }).ToList()
+                    }
                 });
 
             // Apply date filter if filterDate is provided
@@ -869,13 +858,7 @@ namespace SmartFarmManager.Service.Services
                                 {
                                     TaskTypeId = task.TaskType.Id,
                                     TaskTypeName = task.TaskType.TaskTypeName
-                                },
-                                StatusLogs = task.StatusLogs.Select(log => new StatusLogResponseModel
-                                {
-                                    StatusId = log.StatusId,
-                                    StatusName = log.StatusName,
-                                    UpdatedAt = log.UpdatedAt
-                                }).ToList()
+                                }
                             }).ToList()
                         }).ToList()
                 }).ToList();

@@ -162,7 +162,6 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<ITaskRepository, TaskRepository>();
             services.AddScoped<ITaskTypeRepository, TaskTypeRepository>();
-            services.AddScoped<IStatusRepository, StatusRepository>();
             services.AddScoped<IStatusLogRepository, StatusLogRepository>();
             services.AddScoped<ICageRepository, CageRepository>();
             services.AddScoped<ICageStaffRepository, CageStaffRepository>();
@@ -218,6 +217,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IDailyFoodUsageLogService, DailyFoodUsageLogService>();
             services.AddScoped<IVaccineScheduleLogService, VaccineScheduleLogService>();
             services.AddScoped<IVaccineTemplateService, VaccineTemplateService>();
+            services.AddScoped<IGrowthStageService,GrowthStageService>();
 
 
             return services;

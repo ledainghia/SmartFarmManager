@@ -17,7 +17,6 @@ namespace SmartFarmManager.Repository
         public IUserRepository Users { get;}
         public ITaskRepository Tasks { get;}
         public ITaskTypeRepository TaskTypes { get;}
-        public IStatusRepository Statuses { get; }
         public IStatusLogRepository StatusLogs { get; }
         public ICageRepository Cages { get; }
         public ICageStaffRepository CageStaffs { get; }
@@ -47,7 +46,6 @@ namespace SmartFarmManager.Repository
         public UnitOfWork(SmartFarmContext context, IUserRepository users,
             ITaskTypeRepository taskTypes,
             ITaskRepository tasks,
-            IStatusRepository statuses,
             IStatusLogRepository statusLogs,
             ICageRepository cages,
             ICageStaffRepository cageStaffs,
@@ -78,7 +76,6 @@ namespace SmartFarmManager.Repository
             Users = users;
             TaskTypes = taskTypes;
             Tasks = tasks;
-            Statuses = statuses;
             StatusLogs = statusLogs;
             Cages = cages;
             CageStaffs = cageStaffs;
