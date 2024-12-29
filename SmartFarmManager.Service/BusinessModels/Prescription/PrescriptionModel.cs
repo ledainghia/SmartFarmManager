@@ -10,6 +10,7 @@ namespace SmartFarmManager.Service.BusinessModels.Prescription
     public class PrescriptionModel
     {
         public Guid Id { get; set; }
+        public Guid CageId { get; set; }
         public Guid RecordId { get; set; }
         public DateTime PrescribedDate { get; set; }
         public int QuantityAnimal { get; set; }

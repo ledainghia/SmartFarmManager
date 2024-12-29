@@ -6,6 +6,7 @@
         public DateTime PrescribedDate { get; set; }
         public string CaseType { get; set; }
         public string Notes { get; set; }
+        public Guid CageId { get; set; }
         public List<PrescriptionMedicationRequest> Medications { get; set; }
     }
     public class PrescriptionMedicationRequest

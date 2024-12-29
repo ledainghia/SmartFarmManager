@@ -59,6 +59,7 @@ namespace SmartFarmManager.API.Controllers
                 RecordId = symptomId,
                 PrescribedDate = request.PrescribedDate,
                 Notes = request.Notes,
+                CageId = request.CageId,
                 Medications = request.Medications.Select(m => new PrescriptionMedicationModel
                 {
                     MedicationId = m.MedicationId,

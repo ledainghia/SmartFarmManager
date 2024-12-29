@@ -268,9 +268,91 @@ namespace SmartFarmManager.Service.Services
             return true;
         }
 
+<<<<<<< Updated upstream
+=======
+        public async Task<PagedResult<FarmingBatchModel>> GetFarmingBatchesAsync(string? status, string? cageName, string? name, string? species, DateTime? startDateFrom, DateTime? startDateTo, int pageNumber, int pageSize, Guid? cageId)
+        {
+            var query = _unitOfWork.FarmingBatches.FindAll()
+                .Include(fb => fb.Cage) // Include related Cage
+                .Include(fb => fb.Template)
+                .AsQueryable();
+>>>>>>> Stashed changes
 
 
 
 
+<<<<<<< Updated upstream
+=======
+            if (!string.IsNullOrEmpty(species))
+            {
+                query = query.Where(x => x.Species.Contains(species));
+            }
+
+            if (startDateFrom.HasValue)
+            {
+                query = query.Where(x => x.StartDate >= startDateFrom.Value);
+            }
+
+            if (startDateTo.HasValue)
+            {
+                query = query.Where(x => x.StartDate <= startDateTo.Value);
+            }
+            if (cageId.HasValue)
+            {
+                query = query.Where(x => x.CageId == cageId);
+            }
+
+            // Pagination
+            var totalItems = await query.CountAsync();
+            var items = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(fb => new FarmingBatchModel
+                {
+                    Id = fb.Id,
+                    Name = fb.Name,
+                    Species = fb.Species,
+                    StartDate = fb.StartDate,
+                    CompleteAt = fb.CompleteAt,
+                    Status = fb.Status,
+                    CleaningFrequency = fb.CleaningFrequency,
+                    Quantity = fb.Quantity,
+                    Cage = fb.Cage == null ? null : new CageModel
+                    {
+                        Id = fb.Cage.Id,
+                        Name = fb.Cage.Name,
+                        Capacity = fb.Cage.Capacity,
+                        FarmId = fb.Cage.FarmId,
+                        Location = fb.Cage.Location,
+                        AnimalType = fb.Cage.AnimalType,
+                        Area = fb.Cage.Area
+
+                    },
+                    Template = fb.Template == null ? null : new BusinessModels.AnimalTemplate.AnimalTemplateItemModel
+                    {
+                        Id = fb.Template.Id,
+                        Name = fb.Template.Name,
+                        Species = fb.Template.Species,
+                        Status = fb.Template.Status,
+                        DefaultCapacity = fb.Template.DefaultCapacity,
+                        Notes = fb.Template.Notes
+                    }
+                })
+    .ToListAsync();
+
+            var resultPaging = new PaginatedList<FarmingBatchModel>(items, totalItems, pageNumber, pageSize);
+            return new PagedResult<FarmingBatchModel>
+            {
+                Items = resultPaging.Items,
+                TotalItems = resultPaging.TotalCount,
+                PageSize = resultPaging.PageSize,
+                CurrentPage = resultPaging.CurrentPage,
+                TotalPages = resultPaging.TotalPages,
+                HasNextPage = resultPaging.HasNextPage,
+                HasPreviousPage = resultPaging.HasPreviousPage
+            };
+
+        }
+>>>>>>> Stashed changes
     }
 }

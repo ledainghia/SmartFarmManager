@@ -50,6 +50,7 @@ namespace SmartFarmManager.Service.Services
                 QuantityAnimal = model.QuantityAnimal,
                 Status = model.Status,
                 Price = totalPrice,
+                CageId = model.CageId,
                 PrescriptionMedications = model.Medications.Select(m => new PrescriptionMedication
                 {
                     MedicationId = m.MedicationId,
@@ -85,6 +86,7 @@ namespace SmartFarmManager.Service.Services
                 QuantityAnimal = prescription.QuantityAnimal,
                 Status = prescription.Status,
                 Price = prescription.Price,
+                CageId = prescription.CageId,
                 Medications = prescription.PrescriptionMedications.Select(pm => new PrescriptionMedicationModel
                 {
                     MedicationId = pm.MedicationId,
