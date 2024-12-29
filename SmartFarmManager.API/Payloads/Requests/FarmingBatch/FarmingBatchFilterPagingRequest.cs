@@ -10,5 +10,6 @@
         public string? Species { get; set; } // Filter by Species
         public DateTime? StartDateFrom { get; set; } // Filter by Start Date Range
         public DateTime? StartDateTo { get; set; }
+        public Guid? CageId { get; set; }
     }
 }

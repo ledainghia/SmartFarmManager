@@ -272,7 +272,7 @@ namespace SmartFarmManager.Service.Services
             return true;
         }
 
-        public async Task<PagedResult<FarmingBatchModel>> GetFarmingBatchesAsync(string? status, string? cageName, string? name, string? species, DateTime? startDateFrom, DateTime? startDateTo, int pageNumber, int pageSize)
+        public async Task<PagedResult<FarmingBatchModel>> GetFarmingBatchesAsync(string? status, string? cageName, string? name, string? species, DateTime? startDateFrom, DateTime? startDateTo, int pageNumber, int pageSize, Guid? cageId)
         {
             var query = _unitOfWork.FarmingBatches.FindAll()
                 .Include(fb => fb.Cage) // Include related Cage
@@ -294,7 +294,6 @@ namespace SmartFarmManager.Service.Services
             {
                 query = query.Where(x => x.Name.Contains(name));
             }
-
             if (!string.IsNullOrEmpty(species))
             {
                 query = query.Where(x => x.Species.Contains(species));
@@ -308,6 +307,10 @@ namespace SmartFarmManager.Service.Services
             if (startDateTo.HasValue)
             {
                 query = query.Where(x => x.StartDate <= startDateTo.Value);
+            }
+            if (cageId.HasValue)
+            {
+                query = query.Where(x => x.CageId == cageId);
             }
 
             // Pagination
