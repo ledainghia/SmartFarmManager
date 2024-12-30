@@ -310,6 +310,20 @@ namespace SmartFarmManager.API.Controllers
                 return BadRequest(new { Error = ex.Message });
             }
         }
+        [HttpPost("update-task-status")]
+        public async Task<IActionResult> UpdateAllTaskStatuses()
+        {
+            try
+            {
+                await _taskService.UpdateAllTaskStatusesAsync();
+                return Ok(ApiResult<string>.Succeed("Task statuses updated successfully."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+            }
+        }
+
 
     }
 }

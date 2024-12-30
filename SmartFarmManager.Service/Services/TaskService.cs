@@ -98,47 +98,37 @@ namespace SmartFarmManager.Service.Services
             // 1. Validate DueDate
             if (model.DueDate < DateTimeUtils.VietnamNow())
             {
-                throw new ArgumentException("DueDate must be in the future");
+                throw new ArgumentException("DueDate must be in the future.");
             }
 
             // 2. Validate TaskTypeId
             var taskType = await _unitOfWork.TaskTypes.FindAsync(x => x.Id == model.TaskTypeId);
             if (taskType == null)
             {
-                throw new ArgumentException("Invalid TaskTypeId");
+                throw new ArgumentException("Invalid TaskTypeId.");
             }
 
-            // 3. Validate Session
-            if (!Enum.TryParse<SessionTypeEnum>(model.Session, true, out var sessionEnum))
+            // 3. Lấy FarmingBatch đang hoạt động liên quan đến Cage
+            var farmingBatch = await _unitOfWork.FarmingBatches
+                .FindByCondition(fb => fb.CageId == model.CageId && fb.Status == FarmingBatchStatusEnum.Active)
+                .Include(fb => fb.GrowthStages)
+                .FirstOrDefaultAsync();
+
+            if (farmingBatch == null)
             {
-                throw new ArgumentException("Invalid session value provided.");
+                throw new ArgumentException($"No active FarmingBatch found for Cage {model.CageId}.");
             }
 
-            int sessionValue = (int)sessionEnum;
+            // 4. Lấy GrowthStage phù hợp với ngày
+            var validGrowthStage = farmingBatch.GrowthStages
+                .FirstOrDefault(gs => gs.AgeStartDate <= model.DueDate && gs.AgeEndDate >= model.DueDate);
 
-            // 4. Check if a task with the same TaskType exists for the same cage, session, and day
-            var taskWithSameTypeExists = await _unitOfWork.Tasks
-                .FindByCondition(t => t.DueDate.HasValue &&
-                                      t.DueDate.Value.Date == model.DueDate.Date &&
-                                      t.Session == sessionValue &&
-                                      t.CageId == model.CageId &&
-                                      t.TaskTypeId == model.TaskTypeId &&
-                                      t.CompletedAt == null)
-                .AnyAsync();
-
-            if (taskWithSameTypeExists)
+            if (validGrowthStage == null)
             {
-                throw new InvalidOperationException($"A task of type {taskType.TaskTypeName} already exists in cage {model.CageId} on {model.DueDate.Date.ToShortDateString()} during session {model.Session}.");
+                throw new ArgumentException($"No valid GrowthStage found for the specified date {model.DueDate.ToShortDateString()}.");
             }
 
-            // 5. Ensure CageId is valid and active
-            var cage = await _unitOfWork.Cages.FindAsync(x => x.Id == model.CageId);
-            if (cage == null || cage.IsDeleted)
-            {
-                throw new ArgumentException("Invalid or inactive CageId.");
-            }
-
-            // 6. Get Assigned User for the Cage
+            // 5. Get Assigned User for the Cage
             Guid? assignedUserId = null;
 
             // Check if there is a temporary staff assigned to the cage
@@ -171,51 +161,85 @@ namespace SmartFarmManager.Service.Services
                 throw new InvalidOperationException($"No staff is assigned to the cage {model.CageId}.");
             }
 
-            // 7. Ensure AssignedToUserId is valid and active
+            // 6. Ensure AssignedToUserId is valid and active
             var assignedUser = await _unitOfWork.Users.FindAsync(x => x.Id == assignedUserId);
             if (assignedUser == null || assignedUser.IsActive == null || (bool)assignedUser.IsActive == false)
             {
                 throw new ArgumentException("Invalid or inactive AssignedToUserId.");
             }
 
-            // 8. Prevent duplicate task names within the same session for a cage
-            var duplicateTaskNameExists = await _unitOfWork.Tasks
-                .FindByCondition(t => t.DueDate.HasValue &&
-                                      t.DueDate.Value.Date == model.DueDate.Date &&
-                                      t.Session == sessionValue &&
-                                      t.CageId == model.CageId &&
-                                      t.TaskName == model.TaskName)
-                .AnyAsync();
+            var tasksToCreate = new List<DataAccessObject.Models.Task>();
 
-            if (duplicateTaskNameExists)
+            foreach (var session in model.Session)
             {
-                throw new InvalidOperationException($"A task with the name '{model.TaskName}' already exists in cage {model.CageId} during session {model.Session}.");
+                // 7. Validate Session
+                if (!Enum.IsDefined(typeof(SessionTypeEnum), session))
+                {
+                    throw new ArgumentException($"Invalid session value '{session}'.");
+                }
+
+                // 8. Check for duplicate TaskTypeId in the same session within TaskDaily
+                var duplicateTaskDailyExists = await _unitOfWork.TaskDailies
+                    .FindByCondition(td => td.GrowthStageId == validGrowthStage.Id &&
+                                           td.Session == session &&
+                                           td.TaskTypeId == model.TaskTypeId)
+                    .AnyAsync();
+
+                if (duplicateTaskDailyExists)
+                {
+                    throw new InvalidOperationException($"A TaskDaily with TaskTypeId '{model.TaskTypeId}' already exists in session '{session}'.");
+                }
+
+                // 9. Check if a task with the same TaskType exists for the same cage, session, and day
+                var taskWithSameTypeExists = await _unitOfWork.Tasks
+                    .FindByCondition(t => t.DueDate.HasValue &&
+                                          t.DueDate.Value.Date == model.DueDate.Date &&
+                                          t.Session == session &&
+                                          t.CageId == model.CageId &&
+                                          t.TaskTypeId == model.TaskTypeId &&
+                                          t.CompletedAt == null)
+                    .AnyAsync();
+
+                if (taskWithSameTypeExists)
+                {
+                    throw new InvalidOperationException($"A task of type '{taskType.TaskTypeName}' already exists in cage {model.CageId} on {model.DueDate.Date.ToShortDateString()} during session '{session}'.");
+                }
+
+                // 10. Create Task
+                var task = new DataAccessObject.Models.Task
+                {
+                    Id = Guid.NewGuid(),
+                    TaskTypeId = model.TaskTypeId,
+                    CageId = model.CageId,
+                    AssignedToUserId = assignedUserId.Value,
+                    CreatedByUserId = model.CreatedByUserId,
+                    TaskName = model.TaskName,
+                    PriorityNum = (int)taskType.PriorityNum,
+                    Description = model.Description,
+                    DueDate = model.DueDate,
+                    Session = session,
+                    CreatedAt = DateTimeUtils.VietnamNow(),
+                    Status = TaskStatusEnum.Pending
+                };
+
+                tasksToCreate.Add(task);
             }
 
-            // 9. Create and Save Task
-            var task = new DataAccessObject.Models.Task
-            {
-                TaskTypeId = model.TaskTypeId,
-                CageId = model.CageId,
-                AssignedToUserId = assignedUserId.Value,
-                CreatedByUserId = model.CreatedByUserId,
-                TaskName = model.TaskName,
-                PriorityNum = (int)taskType.PriorityNum,
-                Description = model.Description,
-                DueDate = model.DueDate,
-                Session = sessionValue,
-                CreatedAt = DateTimeUtils.VietnamNow(),
-                Status = TaskStatusEnum.Pending
-            };
-
-            await _unitOfWork.Tasks.CreateAsync(task);
+            // Save all tasks
+            await _unitOfWork.Tasks.CreateListAsync(tasksToCreate);
             await _unitOfWork.CommitAsync();
 
-            var message = $"Task '{task.TaskName}' has been created and assigned to {assignedUser.FullName}.";
-            await _notificationService.SendNotificationToUser(task.AssignedToUserId.ToString(), message);
+            // Send Notifications
+            foreach (var task in tasksToCreate)
+            {
+                var message = $"Task '{task.TaskName}' has been created and assigned to {assignedUser.FullName}.";
+                await _notificationService.SendNotificationToUser(task.AssignedToUserId.ToString(), message);
+            }
 
             return true;
         }
+
+
 
 
         public async Task<bool> UpdateTaskPriorityAsync(Guid taskId, UpdateTaskPriorityModel model)
@@ -1175,6 +1199,50 @@ namespace SmartFarmManager.Service.Services
             return taskType?.Id;
         }
 
+        public async Task<bool> UpdateAllTaskStatusesAsync()
+        {
+            var today = DateTimeUtils.VietnamNow().Date; // Lấy ngày hôm nay
+            var currentTime = DateTimeUtils.VietnamNow().TimeOfDay; // Lấy giờ hiện tại
+
+            // Lấy session hiện tại
+            var currentSession = SessionTime.GetCurrentSession(currentTime);
+
+            if (currentSession == -1)
+            {
+                throw new Exception("Current time is not within any defined session.");
+            }
+
+            // Lấy tất cả các task trong ngày hôm nay
+            var tasks = await _unitOfWork.Tasks
+                .FindByCondition(t => t.DueDate == today)
+                .ToListAsync();
+
+            foreach (var task in tasks)
+            {
+                if (task.Session < currentSession) // Session đã qua
+                {
+                    if (task.Status == TaskStatusTypeEnum.Pending || task.Status == TaskStatusTypeEnum.InProgress)
+                    {
+                        task.Status = TaskStatusTypeEnum.OverSchedules; // Chuyển sang OverSchedules
+                        await _unitOfWork.Tasks.UpdateAsync(task);
+                    }
+                }
+                else if (task.Session == currentSession) // Session hiện tại
+                {
+                    if (task.Status == TaskStatusTypeEnum.Pending)
+                    {
+                        task.Status = TaskStatusTypeEnum.InProgress; // Chuyển sang InProgress
+                        await _unitOfWork.Tasks.UpdateAsync(task);
+                    }
+                }
+            }
+
+            
+                await _unitOfWork.CommitAsync();
+            
+
+            return true;
+        }
 
 
 
