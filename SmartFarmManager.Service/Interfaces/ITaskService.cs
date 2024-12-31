@@ -27,5 +27,6 @@ namespace SmartFarmManager.Service.Interfaces
         Task<bool> CreateTaskRecurringAsync(CreateTaskRecurringModel model);
         Task<bool> GenerateTasksForTodayAsync();
         Task<bool> UpdateAllTaskStatusesAsync();
+        Task<bool> GenerateTasksForFarmingBatchAsync(Guid farmingBatchId);
     }
 }
