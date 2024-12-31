@@ -190,7 +190,7 @@ namespace SmartFarmManager.Service.Services
 
             if (!string.IsNullOrEmpty(filter.Status))
             {
-                query = query.Where(t => t.Status.Equals(filter.Status, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(t => t.Status.Equals(filter.Status));
             }
 
             // Tổng số phần tử

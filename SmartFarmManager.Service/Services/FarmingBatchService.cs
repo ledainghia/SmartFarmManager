@@ -15,10 +15,12 @@ namespace SmartFarmManager.Service.Services
     public class FarmingBatchService : IFarmingBatchService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ITaskService _taskService;
 
-        public FarmingBatchService(IUnitOfWork unitOfWork)
+        public FarmingBatchService(IUnitOfWork unitOfWork, ITaskService taskService)
         {
             _unitOfWork = unitOfWork;
+            _taskService = taskService;
         }
 
         public async Task<bool> CreateFarmingBatchAsync(CreateFarmingBatchModel model)
@@ -187,10 +189,13 @@ namespace SmartFarmManager.Service.Services
 
             if (farmingBatch.Status == FarmingBatchStatusEnum.Planning && newStatus == FarmingBatchStatusEnum.Active)
             {
+                // Chuyển trạng thái sang Active
                 farmingBatch.Status = FarmingBatchStatusEnum.Active;
                 farmingBatch.StartDate = DateTimeUtils.VietnamNow();
 
-                var currentStartDate = farmingBatch.StartDate;
+                var currentStartDate = farmingBatch.StartDate;  
+
+                // Cập nhật GrowthStages
                 foreach (var stage in farmingBatch.GrowthStages.OrderBy(gs => gs.AgeStart))
                 {
                     stage.AgeStartDate = currentStartDate;
@@ -202,6 +207,7 @@ namespace SmartFarmManager.Service.Services
 
                     currentStartDate = stage.AgeEndDate.Value.AddDays(1);
 
+                    // Cập nhật TaskDaily
                     foreach (var taskDaily in stage.TaskDailies)
                     {
                         taskDaily.StartAt = stage.AgeStartDate;
@@ -209,6 +215,7 @@ namespace SmartFarmManager.Service.Services
                         await _unitOfWork.TaskDailies.UpdateAsync(taskDaily);
                     }
 
+                    // Cập nhật VaccineSchedule
                     foreach (var vaccineSchedule in stage.VaccineSchedules)
                     {
                         if (stage.AgeStartDate.HasValue)
@@ -236,22 +243,23 @@ namespace SmartFarmManager.Service.Services
 
                     await _unitOfWork.GrowthStages.UpdateAsync(stage);
                 }
+
+                // Lưu thay đổi
+                await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatch);
+                await _unitOfWork.CommitAsync();
+
+                // Gọi hàm generate task
+                await _taskService.GenerateTasksForFarmingBatchAsync(farmingBatchId);
             }
             else if (newStatus == FarmingBatchStatusEnum.Completed)
             {
+                // Chuyển trạng thái sang Completed
                 farmingBatch.Status = FarmingBatchStatusEnum.Completed;
                 farmingBatch.CompleteAt = DateTimeUtils.VietnamNow();
 
                 foreach (var stage in farmingBatch.GrowthStages)
                 {
                     stage.Status = GrowthStageStatusEnum.Completed;
-
-                    foreach (var taskDaily in stage.TaskDailies)
-                    {
-                        taskDaily.StartAt = stage.AgeStartDate;
-                        taskDaily.EndAt = stage.AgeEndDate;
-                        await _unitOfWork.TaskDailies.UpdateAsync(taskDaily);
-                    }
 
                     foreach (var vaccineSchedule in stage.VaccineSchedules)
                     {
@@ -264,13 +272,15 @@ namespace SmartFarmManager.Service.Services
 
                     await _unitOfWork.GrowthStages.UpdateAsync(stage);
                 }
-            }
 
-            await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatch);
-            await _unitOfWork.CommitAsync();
+                // Lưu thay đổi
+                await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatch);
+                await _unitOfWork.CommitAsync();
+            }
 
             return true;
         }
+
 
         public async Task<PagedResult<FarmingBatchModel>> GetFarmingBatchesAsync(string? status, string? cageName, string? name, string? species, DateTime? startDateFrom, DateTime? startDateTo, int pageNumber, int pageSize)
         {
@@ -361,5 +371,9 @@ namespace SmartFarmManager.Service.Services
             };
 
         }
+
+        //////////////
+        ///
+
     }
 }

@@ -13,6 +13,7 @@ using SmartFarmManager.Repository.Repositories;
 using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Shared;
+using Task = SmartFarmManager.DataAccessObject.Models.Task;
 
 namespace SmartFarmManager.Service.Services
 {
@@ -97,47 +98,37 @@ namespace SmartFarmManager.Service.Services
             // 1. Validate DueDate
             if (model.DueDate < DateTimeUtils.VietnamNow())
             {
-                throw new ArgumentException("DueDate must be in the future");
+                throw new ArgumentException("DueDate must be in the future.");
             }
 
             // 2. Validate TaskTypeId
             var taskType = await _unitOfWork.TaskTypes.FindAsync(x => x.Id == model.TaskTypeId);
             if (taskType == null)
             {
-                throw new ArgumentException("Invalid TaskTypeId");
+                throw new ArgumentException("Invalid TaskTypeId.");
             }
 
-            // 3. Validate Session
-            if (!Enum.TryParse<SessionTypeEnum>(model.Session, true, out var sessionEnum))
+            // 3. Lấy FarmingBatch đang hoạt động liên quan đến Cage
+            var farmingBatch = await _unitOfWork.FarmingBatches
+                .FindByCondition(fb => fb.CageId == model.CageId && fb.Status == FarmingBatchStatusEnum.Active)
+                .Include(fb => fb.GrowthStages)
+                .FirstOrDefaultAsync();
+
+            if (farmingBatch == null)
             {
-                throw new ArgumentException("Invalid session value provided.");
+                throw new ArgumentException($"No active FarmingBatch found for Cage {model.CageId}.");
             }
 
-            int sessionValue = (int)sessionEnum;
+            // 4. Lấy GrowthStage phù hợp với ngày
+            var validGrowthStage = farmingBatch.GrowthStages
+                .FirstOrDefault(gs => gs.AgeStartDate <= model.DueDate && gs.AgeEndDate >= model.DueDate);
 
-            // 4. Check if a task with the same TaskType exists for the same cage, session, and day
-            var taskWithSameTypeExists = await _unitOfWork.Tasks
-                .FindByCondition(t => t.DueDate.HasValue &&
-                                      t.DueDate.Value.Date == model.DueDate.Date &&
-                                      t.Session == sessionValue &&
-                                      t.CageId == model.CageId &&
-                                      t.TaskTypeId == model.TaskTypeId &&
-                                      t.CompletedAt == null)
-                .AnyAsync();
-
-            if (taskWithSameTypeExists)
+            if (validGrowthStage == null)
             {
-                throw new InvalidOperationException($"A task of type {taskType.TaskTypeName} already exists in cage {model.CageId} on {model.DueDate.Date.ToShortDateString()} during session {model.Session}.");
+                throw new ArgumentException($"No valid GrowthStage found for the specified date {model.DueDate.ToShortDateString()}.");
             }
 
-            // 5. Ensure CageId is valid and active
-            var cage = await _unitOfWork.Cages.FindAsync(x => x.Id == model.CageId);
-            if (cage == null || cage.IsDeleted)
-            {
-                throw new ArgumentException("Invalid or inactive CageId.");
-            }
-
-            // 6. Get Assigned User for the Cage
+            // 5. Get Assigned User for the Cage
             Guid? assignedUserId = null;
 
             // Check if there is a temporary staff assigned to the cage
@@ -170,51 +161,85 @@ namespace SmartFarmManager.Service.Services
                 throw new InvalidOperationException($"No staff is assigned to the cage {model.CageId}.");
             }
 
-            // 7. Ensure AssignedToUserId is valid and active
+            // 6. Ensure AssignedToUserId is valid and active
             var assignedUser = await _unitOfWork.Users.FindAsync(x => x.Id == assignedUserId);
             if (assignedUser == null || assignedUser.IsActive == null || (bool)assignedUser.IsActive == false)
             {
                 throw new ArgumentException("Invalid or inactive AssignedToUserId.");
             }
 
-            // 8. Prevent duplicate task names within the same session for a cage
-            var duplicateTaskNameExists = await _unitOfWork.Tasks
-                .FindByCondition(t => t.DueDate.HasValue &&
-                                      t.DueDate.Value.Date == model.DueDate.Date &&
-                                      t.Session == sessionValue &&
-                                      t.CageId == model.CageId &&
-                                      t.TaskName == model.TaskName)
-                .AnyAsync();
+            var tasksToCreate = new List<DataAccessObject.Models.Task>();
 
-            if (duplicateTaskNameExists)
+            foreach (var session in model.Session)
             {
-                throw new InvalidOperationException($"A task with the name '{model.TaskName}' already exists in cage {model.CageId} during session {model.Session}.");
+                // 7. Validate Session
+                if (!Enum.IsDefined(typeof(SessionTypeEnum), session))
+                {
+                    throw new ArgumentException($"Invalid session value '{session}'.");
+                }
+
+                // 8. Check for duplicate TaskTypeId in the same session within TaskDaily
+                var duplicateTaskDailyExists = await _unitOfWork.TaskDailies
+                    .FindByCondition(td => td.GrowthStageId == validGrowthStage.Id &&
+                                           td.Session == session &&
+                                           td.TaskTypeId == model.TaskTypeId)
+                    .AnyAsync();
+
+                if (duplicateTaskDailyExists)
+                {
+                    throw new InvalidOperationException($"A TaskDaily with TaskTypeId '{model.TaskTypeId}' already exists in session '{session}'.");
+                }
+
+                // 9. Check if a task with the same TaskType exists for the same cage, session, and day
+                var taskWithSameTypeExists = await _unitOfWork.Tasks
+                    .FindByCondition(t => t.DueDate.HasValue &&
+                                          t.DueDate.Value.Date == model.DueDate.Date &&
+                                          t.Session == session &&
+                                          t.CageId == model.CageId &&
+                                          t.TaskTypeId == model.TaskTypeId &&
+                                          t.CompletedAt == null)
+                    .AnyAsync();
+
+                if (taskWithSameTypeExists)
+                {
+                    throw new InvalidOperationException($"A task of type '{taskType.TaskTypeName}' already exists in cage {model.CageId} on {model.DueDate.Date.ToShortDateString()} during session '{session}'.");
+                }
+
+                // 10. Create Task
+                var task = new DataAccessObject.Models.Task
+                {
+                    Id = Guid.NewGuid(),
+                    TaskTypeId = model.TaskTypeId,
+                    CageId = model.CageId,
+                    AssignedToUserId = assignedUserId.Value,
+                    CreatedByUserId = model.CreatedByUserId,
+                    TaskName = model.TaskName,
+                    PriorityNum = (int)taskType.PriorityNum,
+                    Description = model.Description,
+                    DueDate = model.DueDate,
+                    Session = session,
+                    CreatedAt = DateTimeUtils.VietnamNow(),
+                    Status = TaskStatusEnum.Pending
+                };
+
+                tasksToCreate.Add(task);
             }
 
-            // 9. Create and Save Task
-            var task = new DataAccessObject.Models.Task
-            {
-                TaskTypeId = model.TaskTypeId,
-                CageId = model.CageId,
-                AssignedToUserId = assignedUserId.Value,
-                CreatedByUserId = model.CreatedByUserId,
-                TaskName = model.TaskName,
-                PriorityNum = (int)taskType.PriorityNum,
-                Description = model.Description,
-                DueDate = model.DueDate,
-                Session = sessionValue,
-                CreatedAt = DateTimeUtils.VietnamNow(),
-                Status = TaskStatusEnum.Pending
-            };
-
-            await _unitOfWork.Tasks.CreateAsync(task);
+            // Save all tasks
+            await _unitOfWork.Tasks.CreateListAsync(tasksToCreate);
             await _unitOfWork.CommitAsync();
 
-            var message = $"Task '{task.TaskName}' has been created and assigned to {assignedUser.FullName}.";
-            await _notificationService.SendNotificationToUser(task.AssignedToUserId.ToString(), message);
+            // Send Notifications
+            foreach (var task in tasksToCreate)
+            {
+                var message = $"Task '{task.TaskName}' has been created and assigned to {assignedUser.FullName}.";
+                await _notificationService.SendNotificationToUser(task.AssignedToUserId.ToString(), message);
+            }
 
             return true;
         }
+
+
 
 
         public async Task<bool> UpdateTaskPriorityAsync(Guid taskId, UpdateTaskPriorityModel model)
@@ -979,6 +1004,425 @@ namespace SmartFarmManager.Service.Services
         }
 
 
+        public async Task<bool> GenerateTasksForTodayAsync()
+        {
+            var today = DateTimeUtils.VietnamNow().Date;
+
+            // Lấy tất cả các FarmingBatch đang ở trạng thái Active
+            var activeBatches = await _unitOfWork.FarmingBatches
+                .FindByCondition(fb => fb.Status == FarmingBatchStatusEnum.Active)
+                .Include(fb => fb.GrowthStages)
+                .ThenInclude(gs => gs.TaskDailies)
+                .Include(fb => fb.GrowthStages)
+                .ThenInclude(gs => gs.VaccineSchedules)
+                .Include(fb => fb.Cage)
+                .ToListAsync();
+
+            var tasksToCreate = new List<Task>();
+
+            foreach (var batch in activeBatches)
+            {
+                // Lấy AdminId của Farm liên quan đến Cage
+                var adminId = await GetFarmAdminIdByCageId(batch.CageId);
+
+                foreach (var growthStage in batch.GrowthStages)
+                {
+                    // Kiểm tra nếu ngày hôm nay nằm trong khoảng thời gian của GrowthStage
+                    if (growthStage.AgeStartDate <= today && growthStage.AgeEndDate >= today)
+                    {
+                        // Generate Task từ TaskDaily
+                        foreach (var taskDaily in growthStage.TaskDailies)
+                        {
+                            var existingTask = await _unitOfWork.Tasks
+                                .FindByCondition(t =>
+                                    t.CageId == batch.CageId &&
+                                    t.TaskName == taskDaily.TaskName &&
+                                    t.DueDate == today &&
+                                    t.Session == taskDaily.Session)
+                                .AnyAsync();
+
+                            if (!existingTask)
+                            {
+                                var assignedStaff = await GetAssignedStaffForCage(batch.CageId, today);
+
+                                if (assignedStaff == null)
+                                {
+                                    throw new Exception($"No staff assigned for Cage {batch.CageId} on {today}.");
+                                }
+
+                                tasksToCreate.Add(new Task
+                                {
+                                    TaskTypeId = taskDaily.TaskTypeId,
+                                    CageId = batch.CageId,
+                                    AssignedToUserId = (Guid)assignedStaff,
+                                    CreatedByUserId = (Guid)adminId,
+                                    TaskName = taskDaily.TaskName,
+                                    PriorityNum = taskDaily.TaskTypeId.HasValue
+                                        ? (await _unitOfWork.TaskTypes.FindByCondition(tt => tt.Id == taskDaily.TaskTypeId).FirstOrDefaultAsync())?.PriorityNum ?? 0
+                                        : 0,
+                                    Description = taskDaily.Description,
+                                    DueDate = today,
+                                    Session = taskDaily.Session,
+                                    Status = TaskStatusTypeEnum.Pending,
+                                    CreatedAt = DateTimeUtils.VietnamNow()
+                                });
+                            }
+                        }
+
+                        // Generate Task từ VaccineSchedule
+                        foreach (var vaccineSchedule in growthStage.VaccineSchedules)
+                        {
+                            if (vaccineSchedule.Date == today && vaccineSchedule.Status == VaccineScheduleStatusEnum.Upcoming)
+                            {
+                                var assignedStaff = await GetAssignedStaffForCage(batch.CageId, today);
+
+                                if (assignedStaff == null)
+                                {
+                                    throw new Exception($"No staff assigned for Cage {batch.CageId} on {today}.");
+                                }
+
+                                var vaccineTaskTypeId = await GetTaskTypeIdByName("Tiêm vắc xin");
+                                var vaccineTaskType = await _unitOfWork.TaskTypes.FindByCondition(tt => tt.Id == vaccineTaskTypeId).FirstOrDefaultAsync();
+
+                                tasksToCreate.Add(new Task
+                                {
+                                    TaskTypeId = vaccineTaskTypeId,
+                                    CageId = batch.CageId,
+                                    AssignedToUserId = (Guid)assignedStaff,
+                                    CreatedByUserId = (Guid)adminId,
+                                    TaskName = $"Tiêm vắc xin: {vaccineSchedule.Vaccine.Name}",
+                                    PriorityNum = (int)vaccineTaskType?.PriorityNum,
+                                    Description = $"Tiêm vắc xin {vaccineSchedule.Vaccine.Name} cho giai đoạn {growthStage.Name}.",
+                                    DueDate = today,
+                                    Session = 1, 
+                                    Status = TaskStatusTypeEnum.Pending,
+                                    CreatedAt = DateTimeUtils.VietnamNow()
+                                });
+
+                                // Cập nhật trạng thái của VaccineSchedule
+                                vaccineSchedule.Status = VaccineScheduleStatusEnum.Completed;
+                                await _unitOfWork.VaccineSchedules.UpdateAsync(vaccineSchedule);
+                            }
+                        }
+                    }
+                }
+
+                // Generate Task dọn dẹp (Cleaning Task)
+                if (batch.CleaningFrequency > 0 && (today - batch.StartDate.Value.Date).Days % batch.CleaningFrequency == 0)
+                {
+                    var assignedStaff = await GetAssignedStaffForCage(batch.CageId, today);
+
+                    if (assignedStaff == null)
+                    {
+                        throw new Exception($"No staff assigned for Cage {batch.CageId} on {today}.");
+                    }
+
+                    var cleaningTaskTypeId = await GetTaskTypeIdByName("Dọn chuồng");
+
+                    tasksToCreate.Add(new Task
+                    {
+                        TaskTypeId = cleaningTaskTypeId,
+                        CageId = batch.CageId,
+                        AssignedToUserId = (Guid)assignedStaff,
+                        CreatedByUserId = (Guid)adminId,
+                        TaskName = "Dọn dẹp chuồng",
+                        PriorityNum = cleaningTaskTypeId.HasValue
+                            ? (await _unitOfWork.TaskTypes.FindByCondition(tt => tt.Id == cleaningTaskTypeId).FirstOrDefaultAsync())?.PriorityNum ?? 1
+                            : 1,
+                        Description = "Task dọn dẹp chuồng theo lịch định kỳ.",
+                        DueDate = today,
+                        Session = 1,
+                        Status = TaskStatusTypeEnum.Pending,
+                        CreatedAt = DateTimeUtils.VietnamNow()
+                    });
+                }
+            }
+
+            // Lưu các task vào database
+            if (tasksToCreate.Any())
+            {
+                await _unitOfWork.Tasks.CreateListAsync(tasksToCreate);
+                await _unitOfWork.CommitAsync();
+            }
+
+            return true;
+        }
+
+
+
+        private async Task<Guid?> GetAssignedStaffForCage(Guid cageId, DateTime date)
+        {
+            // Kiểm tra TemporaryCageAssignment
+            var tempAssignment = await _unitOfWork.TemporaryCageAssignments
+                .FindByCondition(tca => tca.CageId == cageId && tca.StartDate <= date && tca.EndDate >= date)
+                .FirstOrDefaultAsync();
+
+            if (tempAssignment != null)
+            {
+                return tempAssignment.TemporaryStaffId;
+            }
+
+            // Nếu không có Temporary Assignment, lấy Staff mặc định
+            var defaultStaff = await _unitOfWork.CageStaffs
+                .FindByCondition(cs => cs.CageId == cageId)
+                .FirstOrDefaultAsync();
+
+            return defaultStaff?.StaffFarmId;
+        }
+        private async Task<Guid?> GetFarmAdminIdByCageId(Guid cageId)
+        {
+            // Tìm Cage để lấy FarmId
+            var cage = await _unitOfWork.Cages
+                .FindByCondition(c => c.Id == cageId)
+                .FirstOrDefaultAsync();
+
+            if (cage == null)
+            {
+                throw new Exception($"Cage with ID {cageId} does not exist.");
+            }
+
+            // Tìm AdminId từ bảng FarmAdmin dựa trên FarmId
+            var farmAdmin = await _unitOfWork.FarmsAdmins
+                .FindByCondition(fa => fa.FarmId == cage.FarmId)
+                .FirstOrDefaultAsync();
+
+            return farmAdmin?.AdminId;
+        }
+
+
+        private async Task<Guid?> GetTaskTypeIdByName(string taskTypeName)
+        {
+            var taskType = await _unitOfWork.TaskTypes
+                .FindByCondition(tt => tt.TaskTypeName == taskTypeName)
+                .FirstOrDefaultAsync();
+
+            return taskType?.Id;
+        }
+
+        public async Task<bool> UpdateAllTaskStatusesAsync()
+        {
+            var today = DateTimeUtils.VietnamNow().Date; // Lấy ngày hôm nay
+            var currentTime = DateTimeUtils.VietnamNow().TimeOfDay; // Lấy giờ hiện tại
+
+            // Lấy session hiện tại
+            var currentSession = SessionTime.GetCurrentSession(currentTime);
+
+            if (currentSession == -1)
+            {
+                throw new Exception("Current time is not within any defined session.");
+            }
+
+            // Lấy tất cả các task trong ngày hôm nay
+            var tasks = await _unitOfWork.Tasks
+                .FindByCondition(t => t.DueDate == today)
+                .ToListAsync();
+
+            foreach (var task in tasks)
+            {
+                if (task.Session < currentSession) // Session đã qua
+                {
+                    if (task.Status == TaskStatusTypeEnum.Pending || task.Status == TaskStatusTypeEnum.InProgress)
+                    {
+                        task.Status = TaskStatusTypeEnum.OverSchedules; // Chuyển sang OverSchedules
+                        await _unitOfWork.Tasks.UpdateAsync(task);
+                    }
+                }
+                else if (task.Session == currentSession) // Session hiện tại
+                {
+                    if (task.Status == TaskStatusTypeEnum.Pending)
+                    {
+                        task.Status = TaskStatusTypeEnum.InProgress; // Chuyển sang InProgress
+                        await _unitOfWork.Tasks.UpdateAsync(task);
+                    }
+                }
+            }
+
+            
+                await _unitOfWork.CommitAsync();
+            
+
+            return true;
+        }
+        public async Task<bool> GenerateTasksForFarmingBatchAsync(Guid farmingBatchId)
+        {
+            var today = DateTimeUtils.VietnamNow().Date;
+            var currentTime = DateTimeUtils.VietnamNow().TimeOfDay;
+            var tomorrow = today.AddDays(1);
+
+            // Lấy FarmingBatch
+            var farmingBatch = await _unitOfWork.FarmingBatches
+                .FindByCondition(fb => fb.Id == farmingBatchId && fb.Status == FarmingBatchStatusEnum.Active)
+                .Include(fb => fb.GrowthStages)
+                .ThenInclude(gs => gs.TaskDailies)
+                .Include(fb => fb.GrowthStages)
+                .ThenInclude(gs => gs.VaccineSchedules)
+                .Include(fb => fb.Cage)
+                .FirstOrDefaultAsync();
+
+            if (farmingBatch == null)
+            {
+                throw new ArgumentException($"FarmingBatch with ID {farmingBatchId} is not active or does not exist.");
+            }
+
+            var tasksToCreate = new List<Task>();
+
+            // Generate tasks for today
+            tasksToCreate.AddRange(await GenerateTasksForDate(farmingBatch, today, currentTime));
+
+            // Generate tasks for tomorrow
+            tasksToCreate.AddRange(await GenerateTasksForDate(farmingBatch, tomorrow, null)); // Không cần kiểm tra thời gian
+
+            // Lưu các task vào database
+            if (tasksToCreate.Any())
+            {
+                await _unitOfWork.Tasks.CreateListAsync(tasksToCreate);
+                await _unitOfWork.CommitAsync();
+            }
+
+            return true;
+        }
+
+
+        private async Task<List<Task>> GenerateTasksForDate(FarmingBatch farmingBatch, DateTime date, TimeSpan? currentTime)
+        {
+            var tasks = new List<Task>();
+            var adminId = await GetFarmAdminIdByCageId(farmingBatch.CageId);
+
+            foreach (var growthStage in farmingBatch.GrowthStages)
+            {
+                // Kiểm tra nếu ngày nằm trong khoảng thời gian của GrowthStage
+                if (growthStage.AgeStartDate <= date && growthStage.AgeEndDate >= date)
+                {
+                    var currentSession = currentTime.HasValue ? SessionTime.GetCurrentSession(currentTime.Value) : 1;
+
+                    // Generate Task từ TaskDaily
+                    foreach (var taskDaily in growthStage.TaskDailies)
+                    {
+                        if (currentTime.HasValue && taskDaily.Session < currentSession)
+                        {
+                            continue; // Bỏ qua các session đã qua nếu là ngày hôm nay
+                        }
+
+                        var existingTask = await _unitOfWork.Tasks
+                            .FindByCondition(t =>
+                                t.CageId == farmingBatch.CageId &&
+                                t.TaskName == taskDaily.TaskName &&
+                                t.DueDate.Value.Date == date &&
+                                t.Session == taskDaily.Session)
+                            .AnyAsync();
+
+                        if (!existingTask)
+                        {
+                            var assignedStaff = await GetAssignedStaffForCage(farmingBatch.CageId, date);
+
+                            if (assignedStaff == null)
+                            {
+                                throw new Exception($"No staff assigned for Cage {farmingBatch.CageId} on {date}.");
+                            }
+
+                            var sessionEndTime = GetSessionEndTime(taskDaily.Session);
+
+                            tasks.Add(new Task
+                            {
+                                TaskTypeId = taskDaily.TaskTypeId,
+                                CageId = farmingBatch.CageId,
+                                AssignedToUserId = (Guid)assignedStaff,
+                                CreatedByUserId = (Guid)adminId,
+                                TaskName = taskDaily.TaskName,
+                                PriorityNum = taskDaily.TaskTypeId.HasValue
+                                    ? (await _unitOfWork.TaskTypes.FindByCondition(tt => tt.Id == taskDaily.TaskTypeId).FirstOrDefaultAsync())?.PriorityNum ?? 0
+                                    : 0,
+                                Description = taskDaily.Description,
+                                DueDate = date.Add(sessionEndTime),
+                                Session = taskDaily.Session,
+                                Status = TaskStatusTypeEnum.Pending,
+                                CreatedAt = DateTimeUtils.VietnamNow()
+                            });
+                        }
+                    }
+
+                    // Generate Task từ VaccineSchedule
+                    foreach (var vaccineSchedule in growthStage.VaccineSchedules)
+                    {
+                        if (vaccineSchedule.Date == date && vaccineSchedule.Status == VaccineScheduleStatusEnum.Upcoming)
+                        {
+                            var assignedStaff = await GetAssignedStaffForCage(farmingBatch.CageId, date);
+
+                            if (assignedStaff == null)
+                            {
+                                throw new Exception($"No staff assigned for Cage {farmingBatch.CageId} on {date}.");
+                            }
+
+                            var vaccineTaskTypeId = await GetTaskTypeIdByName("Tiêm vắc xin");
+                            var vaccineTaskType = await _unitOfWork.TaskTypes.FindByCondition(tt => tt.Id == vaccineTaskTypeId).FirstOrDefaultAsync();
+
+                            tasks.Add(new Task
+                            {
+                                TaskTypeId = vaccineTaskTypeId,
+                                CageId = farmingBatch.CageId,
+                                AssignedToUserId = (Guid)assignedStaff,
+                                CreatedByUserId = (Guid)adminId,
+                                TaskName = $"Tiêm vắc xin: {vaccineSchedule.Vaccine.Name}",
+                                PriorityNum = (int)vaccineTaskType?.PriorityNum,
+                                Description = $"Tiêm vắc xin {vaccineSchedule.Vaccine.Name} cho giai đoạn {growthStage.Name}.",
+                                DueDate = date.Add(GetSessionEndTime(1)),
+                                Session = 1,
+                                Status = TaskStatusTypeEnum.Pending,
+                                CreatedAt = DateTimeUtils.VietnamNow()
+                            });
+
+                            // Cập nhật trạng thái của VaccineSchedule
+                            vaccineSchedule.Status = VaccineScheduleStatusEnum.Completed;
+                            await _unitOfWork.VaccineSchedules.UpdateAsync(vaccineSchedule);
+                        }
+                    }
+                }
+            }
+
+            // Generate Cleaning Task
+            if (farmingBatch.CleaningFrequency > 0 && (date - farmingBatch.StartDate.Value.Date).Days % farmingBatch.CleaningFrequency == 0)
+            {
+                var assignedStaff = await GetAssignedStaffForCage(farmingBatch.CageId, date);
+
+                if (assignedStaff == null)
+                {
+                    throw new Exception($"No staff assigned for Cage {farmingBatch.CageId} on {date}.");
+                }
+
+                var cleaningTaskTypeId = await GetTaskTypeIdByName("Dọn chuồng");
+
+                tasks.Add(new Task
+                {
+                    TaskTypeId = cleaningTaskTypeId,
+                    CageId = farmingBatch.CageId,
+                    AssignedToUserId = (Guid)assignedStaff,
+                    CreatedByUserId = (Guid)adminId,
+                    TaskName = "Dọn dẹp chuồng",
+                    PriorityNum = cleaningTaskTypeId.HasValue
+                        ? (await _unitOfWork.TaskTypes.FindByCondition(tt => tt.Id == cleaningTaskTypeId).FirstOrDefaultAsync())?.PriorityNum ?? 1
+                        : 1,
+                    Description = "Task dọn dẹp chuồng theo lịch định kỳ.",
+                    DueDate = date.Add(GetSessionEndTime(1)),
+                    Session = 1,
+                    Status = TaskStatusTypeEnum.Pending,
+                    CreatedAt = DateTimeUtils.VietnamNow()
+                });
+            }
+
+            return tasks;
+        }
+
+
+        private TimeSpan GetSessionEndTime(int session)
+        {
+            return session switch
+            {
+                1 => SessionTime.Morning.End, // Giờ kết thúc buổi sáng
+                2 => SessionTime.Afternoon.End, // Giờ kết thúc buổi chiều
+                3 => SessionTime.Evening.End, // Giờ kết thúc buổi tối
+                _ => throw new ArgumentException($"Invalid session value '{session}'.")
+            };
+        }
 
 
     }
