@@ -26,8 +26,7 @@ namespace SmartFarmManager.API.Payloads.Requests.Task
         [Required]
         public DateTime DueDate { get; set; }
         [Required]
-        [SessionValidator]
-        public string Session { get; set; }
+        public List<int> Session { get; set; }
         public  CreateTaskModel MapToModel()
         {
             return new CreateTaskModel

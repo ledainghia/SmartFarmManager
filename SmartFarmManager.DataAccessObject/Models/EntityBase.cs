@@ -11,6 +11,6 @@ namespace SmartFarmManager.DataAccessObject.Models
     public abstract class EntityBase : IEntityBase
     {
         [Key]
-        public Guid Id { get; set; }
+        public Guid Id { get; set; }= Guid.NewGuid();
     }
 }
