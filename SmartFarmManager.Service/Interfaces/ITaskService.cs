@@ -29,5 +29,6 @@ namespace SmartFarmManager.Service.Interfaces
         Task<bool> UpdateAllTaskStatusesAsync();
         Task<bool> GenerateTasksForFarmingBatchAsync(Guid farmingBatchId);
         Task<bool> GenerateTasksForTomorrowAsync();
+        Task<bool> UpdateEveningTaskStatusesAsync();
     }
 }
