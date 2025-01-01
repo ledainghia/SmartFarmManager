@@ -1,0 +1,12 @@
+﻿namespace SmartFarmManager.API.Payloads.Responses.Vaccine
+{
+    public class VaccineResponse
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; }
+        public string Method { get; set; }
+        public int? AgeStart { get; set; }
+        public int? AgeEnd { get; set; }
+    }
+
+}

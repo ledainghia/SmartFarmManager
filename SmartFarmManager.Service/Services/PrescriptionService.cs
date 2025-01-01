@@ -5,6 +5,7 @@ using SmartFarmManager.Service.BusinessModels.Medication;
 using SmartFarmManager.Service.BusinessModels.Prescription;
 using SmartFarmManager.Service.BusinessModels.PrescriptionMedication;
 using SmartFarmManager.Service.Interfaces;
+using SmartFarmManager.Service.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +25,10 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<Guid> CreatePrescriptionAsync(PrescriptionModel model)
         {
+            if (model.Status != PrescriptionStatusEnum.Active)
+            {
+                throw new ArgumentException($"Invalid status value: {model.Status}");
+            }
             // Lấy danh sách thuốc từ cơ sở dữ liệu
             var medicationIds = model.Medications.Select(m => m.MedicationId).Distinct();
             var medications = await _unitOfWork.Medication
@@ -51,6 +56,7 @@ namespace SmartFarmManager.Service.Services
                 Status = model.Status,
                 Price = totalPrice,
                 CageId = model.CageId,
+                DaysToTake = model.DaysToTake,
                 PrescriptionMedications = model.Medications.Select(m => new PrescriptionMedication
                 {
                     MedicationId = m.MedicationId,
@@ -87,6 +93,7 @@ namespace SmartFarmManager.Service.Services
                 Status = prescription.Status,
                 Price = prescription.Price,
                 CageId = prescription.CageId,
+                DaysToTake = prescription.DaysToTake,
                 Medications = prescription.PrescriptionMedications.Select(pm => new PrescriptionMedicationModel
                 {
                     MedicationId = pm.MedicationId,
@@ -105,5 +112,51 @@ namespace SmartFarmManager.Service.Services
                 }).ToList()
             };
         }
+
+        public async Task<IEnumerable<PrescriptionModel>> GetActivePrescriptionsByCageIdAsync(Guid cageId)
+        {
+            var today = DateTime.UtcNow.Date;
+
+            // Lấy danh sách đơn thuốc phù hợp
+            var prescriptions = await _unitOfWork.Prescription
+                .FindByCondition(p => p.CageId == cageId &&
+                                      p.Status == "Đang sử dụng" &&
+                                      p.PrescribedDate.HasValue &&
+                                      p.DaysToTake.HasValue &&
+                                      today >= p.PrescribedDate.Value.Date &&
+                                      today <= p.PrescribedDate.Value.Date.AddDays(p.DaysToTake.Value),
+                                      true, p => p.PrescriptionMedications, p => p.PrescriptionMedications.Select(pm => pm.Medication))
+                .ToListAsync();
+
+            // Trả về dữ liệu theo chuẩn
+            return prescriptions.Select(p => new PrescriptionModel
+            {
+                Id = p.Id,
+                CageId = p.CageId,
+                PrescribedDate = p.PrescribedDate.Value,
+                Notes = p.Notes,
+                QuantityAnimal = p.QuantityAnimal,
+                Status = p.Status,
+                Price = p.Price,
+                DaysToTake = p.DaysToTake,
+                Medications = p.PrescriptionMedications.Select(pm => new PrescriptionMedicationModel
+                {
+                    MedicationId = pm.MedicationId,
+                    Dosage = pm.Dosage.Value,
+                    Morning = pm.Morning,
+                    Afternoon = pm.Afternoon,
+                    Evening = pm.Evening,
+                    Night = pm.Night,
+                    Medication = new MedicationModel
+                    {
+                        Name = pm.Medication.Name,
+                        UsageInstructions = pm.Medication.UsageInstructions,
+                        Price = pm.Medication.Price,
+                        DoseQuantity = pm.Medication.DoseQuantity
+                    }
+                }).ToList()
+            }).ToList();
+        }
+
     }
 }
