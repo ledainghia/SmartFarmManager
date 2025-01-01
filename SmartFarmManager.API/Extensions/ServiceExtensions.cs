@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Quartz;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository;
 using SmartFarmManager.Repository.Interfaces;
@@ -14,6 +15,9 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Xml.Linq;
+using Quartz;
+using Quartz.Spi;
+
 
 namespace SmartFarmManager.API.Extensions
 {
@@ -151,6 +155,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddRepositories();
             services.AddApplicationServices();
             services.AddConfigurations();
+            services.AddQuartzServices();
 
             return services;
         }
@@ -230,6 +235,28 @@ namespace SmartFarmManager.API.Extensions
             services.AddSingleton<JwtSecurityTokenHandler>();
             return services;
         }
+
+
+        public static IServiceCollection AddQuartzServices(this IServiceCollection services)
+        {
+            // Cấu hình Quartz
+            services.AddQuartz(config =>
+            { 
+                SmartFarmManager.API.BackgroundJobs.QuartzConfigurations.QuartzScheduler.ConfigureJobs(config);
+            });
+
+            // Thêm Quartz Hosted Service
+            services.AddQuartzHostedService(options =>
+            {
+                options.WaitForJobsToComplete = true; // Đợi các job hoàn tất trước khi tắt ứng dụng
+            });
+
+            return services;
+        }
+
+
+
+
 
 
     }

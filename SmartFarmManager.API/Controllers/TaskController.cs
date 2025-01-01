@@ -228,7 +228,7 @@ namespace SmartFarmManager.API.Controllers
         {
             try
             {
-                var result = await _taskService.GenerateTasksForTodayAsync();
+                var result = await _taskService.GenerateTasksForTomorrowAsync();
 
                 if (!result)
                 {
