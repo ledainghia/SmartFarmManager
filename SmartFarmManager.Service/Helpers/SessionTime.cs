@@ -10,7 +10,7 @@ namespace SmartFarmManager.Service.Helpers
     {
         public static readonly (TimeSpan Start, TimeSpan End) Morning = (TimeSpan.FromHours(6), TimeSpan.FromHours(11));  // 6:00 - 11:59
         public static readonly (TimeSpan Start, TimeSpan End) Afternoon = (TimeSpan.FromHours(12), TimeSpan.FromHours(17));  // 12:00 - 17:59
-        public static readonly (TimeSpan Start, TimeSpan End) Evening = (TimeSpan.FromHours(18), TimeSpan.FromHours(23));  // 18:00 - 23:59
+        public static readonly (TimeSpan Start, TimeSpan End) Evening = (TimeSpan.FromHours(18), TimeSpan.FromHours(23));  // 18:00 - 22:59
 
         public static int GetCurrentSession(TimeSpan currentTime)
         {

@@ -18,8 +18,8 @@ public partial class Prescription : EntityBase
     public string Notes { get; set; }
     public int QuantityAnimal { get; set; }
 
-    public string Status { get; set; } 
-
+    public string Status { get; set; }
+    public int? DaysToTake { get; set; }
     public decimal? Price { get; set; }
     public int? DaysToTake { get; set; }
 
