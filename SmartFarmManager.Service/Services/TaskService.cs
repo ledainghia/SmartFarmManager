@@ -1521,6 +1521,26 @@ namespace SmartFarmManager.Service.Services
                 _ => throw new ArgumentException($"Invalid session value '{session}'.")
             };
         }
+        public async Task<bool> UpdateEveningTaskStatusesAsync()
+        {
+            var today = DateTimeUtils.VietnamNow().Date; // Lấy ngày hôm nay
+            var tasks = await _unitOfWork.Tasks
+                .FindByCondition(t => t.DueDate == today && t.Session == 3) 
+                .ToListAsync();
+
+            foreach (var task in tasks)
+            {
+                if (task.Status == TaskStatusTypeEnum.Pending || task.Status == TaskStatusTypeEnum.InProgress)
+                {
+                    task.Status = TaskStatusTypeEnum.OverSchedules; 
+                    await _unitOfWork.Tasks.UpdateAsync(task);
+                }
+            }
+
+            await _unitOfWork.CommitAsync();
+            return true;
+        }
+
 
 
     }

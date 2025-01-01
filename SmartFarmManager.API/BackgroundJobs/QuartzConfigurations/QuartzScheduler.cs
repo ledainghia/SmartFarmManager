@@ -20,6 +20,26 @@ namespace SmartFarmManager.API.BackgroundJobs.QuartzConfigurations
                     .InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")) // Múi giờ Việt Nam
                 )
             );
+            // Job chạy vào đầu các buổi
+            quartzConfig.ScheduleJob<Jobs.UpdateTaskStatusesJob>(trigger => trigger
+                .WithIdentity("UpdateTaskStatusesJob-Morning")
+                .WithCronSchedule("0 0 6 * * ?", x => x.InTimeZone(vietnamTimeZone)) // 6:00 sáng
+            );
+
+            quartzConfig.ScheduleJob<Jobs.UpdateTaskStatusesJob>(trigger => trigger
+                .WithIdentity("UpdateTaskStatusesJob-Afternoon")
+                .WithCronSchedule("0 0 12 * * ?", x => x.InTimeZone(vietnamTimeZone)) // 12:00 trưa
+            );
+
+            quartzConfig.ScheduleJob<Jobs.UpdateTaskStatusesJob>(trigger => trigger
+                .WithIdentity("UpdateTaskStatusesJob-Evening")
+                .WithCronSchedule("0 0 18 * * ?", x => x.InTimeZone(vietnamTimeZone)) // 18:00 tối
+            );
+
+            quartzConfig.ScheduleJob<Jobs.UpdateEveningTaskStatusesJob>(trigger => trigger
+                .WithIdentity("UpdateEveningTaskStatusesJob")
+                .WithCronSchedule("0 59 23 * * ?", x => x.InTimeZone(vietnamTimeZone)) // 23:59 đêm
+            );
         }
     }
 }
