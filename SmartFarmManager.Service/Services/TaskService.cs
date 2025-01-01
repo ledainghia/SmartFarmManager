@@ -1291,7 +1291,7 @@ namespace SmartFarmManager.Service.Services
             foreach (var growthStage in farmingBatch.GrowthStages)
             {
                 // Kiểm tra nếu ngày nằm trong khoảng thời gian của GrowthStage
-                if (growthStage.AgeStartDate <= date && growthStage.AgeEndDate >= date)
+                if (growthStage.AgeStartDate.Value.Date <= date.Date && growthStage.AgeEndDate.Value >= date.Date)
                 {
                     var currentSession = currentTime.HasValue ? SessionTime.GetCurrentSession(currentTime.Value) : 1;
 
