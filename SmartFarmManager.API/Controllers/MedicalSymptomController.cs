@@ -102,6 +102,7 @@ namespace SmartFarmManager.API.Controllers
                 Status = ms.Status,
                 AffectedQuantity = ms.AffectedQuantity,
                 Notes = ms.Notes,
+                Quantity = ms.Quantity,
                 Pictures = ms.Pictures.Select(p => new PictureResponse
                 {
                     Id = p.Id,
