@@ -11,5 +11,6 @@ namespace SmartFarmManager.Service.Interfaces
     {
         Task<Guid?> CreateVaccineScheduleLogAsync(Guid cageId, VaccineScheduleLogModel model);
         Task<VaccineScheduleLogModel> GetVaccineScheduleLogByIdAsync(Guid id);
+        Task<VaccineScheduleLogModel> GetVaccineScheduleLogByTaskIdAsync(Guid taskId);
     }
 }

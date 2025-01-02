@@ -77,5 +77,28 @@ namespace SmartFarmManager.Service.Services
             var log = await _unitOfWork.VaccineScheduleLogs.GetByIdAsync(id);
             return _mapper.Map<VaccineScheduleLogModel>(log);
         }
+
+        public async Task<VaccineScheduleLogModel> GetVaccineScheduleLogByTaskIdAsync(Guid taskId)
+        {
+            // Tìm VaccineScheduleLog dựa trên TaskId
+            var log = await _unitOfWork.VaccineScheduleLogs.FindByCondition(
+                log => log.TaskId == taskId,
+                trackChanges: false
+            ).FirstOrDefaultAsync();
+
+            if (log == null)
+                return null;
+
+            return new VaccineScheduleLogModel
+            {
+                Id = log.Id,
+                ScheduleId = log.ScheduleId,
+                Date = log.Date,
+                Notes = log.Notes,
+                Photo = log.Photo,
+                TaskId = log.TaskId
+            };
+        }
+
     }
 }

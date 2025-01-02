@@ -13,6 +13,6 @@ namespace SmartFarmManager.Service.BusinessModels.HealthLog
         public DateTime? Date { get; set; }
         public string Notes { get; set; }
         public string Photo { get; set; }
-        public Guid TaskId { get; set; }
+        public Guid? TaskId { get; set; }
     }
 }

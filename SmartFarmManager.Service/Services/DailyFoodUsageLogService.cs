@@ -70,7 +70,29 @@ namespace SmartFarmManager.Service.Services
             var log = await _unitOfWork.DailyFoodUsageLogs.GetByIdAsync(id);
             return _mapper.Map<DailyFoodUsageLogModel>(log);
         }
-    }
+        public async Task<DailyFoodUsageLogModel> GetDailyFoodUsageLogByTaskIdAsync(Guid taskId)
+        {
+            // Tìm log DailyFoodUsage dựa trên TaskId
+            var log = await _unitOfWork.DailyFoodUsageLogs.FindByCondition(
+                log => log.TaskId == taskId,
+                trackChanges: false
+            ).FirstOrDefaultAsync();
 
-    
+            if (log == null)
+                return null;
+
+            return new DailyFoodUsageLogModel
+            {
+                Id = log.Id,
+                StageId = log.StageId,
+                RecommendedWeight = log.RecommendedWeight,
+                ActualWeight = log.ActualWeight,
+                Notes = log.Notes,
+                LogTime = log.LogTime,
+                Photo = log.Photo,
+                TaskId = log.TaskId
+            };
+        }
+
+    }
 }
