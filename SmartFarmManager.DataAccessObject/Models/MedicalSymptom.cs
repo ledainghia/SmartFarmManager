@@ -14,14 +14,13 @@ public partial class MedicalSymptom : EntityBase
 
     public string Diagnosis { get; set; }
 
-    public string Treatment { get; set; }
 
     public string Status { get; set; }
 
     public int? AffectedQuantity { get; set; }
 
     public string Notes { get; set; }
-
+    public DateTime? CreateAt {get;set;}
     public virtual FarmingBatch FarmingBatch { get; set; }
 
     public virtual ICollection<Picture> Pictures { get; set; } = new List<Picture>();

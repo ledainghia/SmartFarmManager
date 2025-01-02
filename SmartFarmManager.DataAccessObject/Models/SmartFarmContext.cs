@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
@@ -674,7 +675,7 @@ public partial class SmartFarmContext : DbContext
                 .HasMaxLength(50)
                 .HasDefaultValue("Ðang di?u tr?");
             entity.Property(e => e.Symptoms).HasMaxLength(200);
-            entity.Property(e => e.Treatment).HasMaxLength(100);
+
 
             entity.HasOne(d => d.FarmingBatch).WithMany(p => p.MedicalSymptoms)
                 .HasForeignKey(d => d.FarmingBatchId)
