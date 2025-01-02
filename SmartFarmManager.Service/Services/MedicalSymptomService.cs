@@ -37,6 +37,7 @@ namespace SmartFarmManager.Service.Services
                 AffectedQuantity = ms.AffectedQuantity,
                 Notes = ms.Notes,
                 Quantity = ms.FarmingBatch?.Quantity ?? 0,
+                NameAnimal = ms.FarmingBatch.Species,
                 Pictures = ms.Pictures.Select(p => new PictureModel
                 {
                     Id = p.Id,
@@ -109,6 +110,7 @@ namespace SmartFarmManager.Service.Services
                 AffectedQuantity = medicalSymptom.AffectedQuantity,
                 Notes = medicalSymptom.Notes,
                 Quantity = medicalSymptom.FarmingBatch.Quantity,
+                NameAnimal = medicalSymptom.FarmingBatch.Species,
                 Pictures = medicalSymptom.Pictures.Select(p => new PictureModel
                 {
                     Id = p.Id,
