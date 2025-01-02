@@ -1315,7 +1315,7 @@ namespace SmartFarmManager.Service.Services
 
             // Lấy tất cả các task trong ngày hôm nay
             var tasks = await _unitOfWork.Tasks
-                .FindByCondition(t => t.DueDate == today)
+                .FindByCondition(t => t.DueDate.Value.Date == today.Date)
                 .ToListAsync();
 
             foreach (var task in tasks)
