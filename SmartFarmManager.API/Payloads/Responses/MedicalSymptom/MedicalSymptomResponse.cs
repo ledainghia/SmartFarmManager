@@ -12,6 +12,7 @@ namespace SmartFarmManager.API.Payloads.Responses.MedicalSymptom
         public string Status { get; set; }
         public int? AffectedQuantity { get; set; }
         public int? Quantity { get; set; }
+        public string NameAnimal { get; set; }
         public string Notes { get; set; }
         public List<PictureResponse> Pictures { get; set; } = new List<PictureResponse>();
     }

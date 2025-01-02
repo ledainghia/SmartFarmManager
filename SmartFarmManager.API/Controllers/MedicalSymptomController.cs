@@ -70,6 +70,7 @@ namespace SmartFarmManager.API.Controllers
                 Status = medicalSymptom.Status,
                 AffectedQuantity = medicalSymptom.AffectedQuantity,
                 Notes = medicalSymptom.Notes,
+                NameAnimal = medicalSymptom.NameAnimal,
                 Pictures = medicalSymptom.Pictures.Select(p => new PictureResponse
                 {
                     Id = p.Id,
@@ -103,6 +104,7 @@ namespace SmartFarmManager.API.Controllers
                 AffectedQuantity = ms.AffectedQuantity,
                 Notes = ms.Notes,
                 Quantity = ms.Quantity,
+                NameAnimal = ms.NameAnimal,
                 Pictures = ms.Pictures.Select(p => new PictureResponse
                 {
                     Id = p.Id,
