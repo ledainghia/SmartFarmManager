@@ -374,8 +374,35 @@ namespace SmartFarmManager.Service.Services
 
         }
 
-        //////////////
-        ///
+        public async Task<FarmingBatchModel> GetActiveFarmingBatchByCageIdAsync(Guid cageId)
+        {
+            var currentDate = DateOnly.FromDateTime(DateTimeUtils.VietnamNow());
+
+            // Tìm FarmingBatch theo CageId và các điều kiện
+            var farmingBatch = await _unitOfWork.FarmingBatches.FindByCondition(
+                fb => fb.CageId == cageId
+                      && fb.Status == FarmingBatchStatusEnum.Active
+                      && fb.StartDate.HasValue
+                      && DateOnly.FromDateTime(fb.StartDate.Value) <= currentDate,
+                trackChanges: false
+            ).FirstOrDefaultAsync();
+
+            if (farmingBatch == null)
+                return null;
+
+            return new FarmingBatchModel
+            {
+                Id = farmingBatch.Id,
+                Name = farmingBatch.Name,
+                Species = farmingBatch.Species,
+                StartDate = farmingBatch.StartDate,
+                CompleteAt = farmingBatch.CompleteAt,
+                Status = farmingBatch.Status,
+                CleaningFrequency = farmingBatch.CleaningFrequency,
+                Quantity = farmingBatch.Quantity,
+            };
+        }
+
 
     }
 }
