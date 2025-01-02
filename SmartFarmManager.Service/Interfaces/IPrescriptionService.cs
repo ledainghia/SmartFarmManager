@@ -10,7 +10,7 @@ namespace SmartFarmManager.Service.Interfaces
 {
     public interface IPrescriptionService
     {
-        Task<Guid> CreatePrescriptionAsync(PrescriptionModel model);
+        Task<Guid?> CreatePrescriptionAsync(PrescriptionModel model);
         Task<PrescriptionModel> GetPrescriptionByIdAsync(Guid id);
         Task<IEnumerable<PrescriptionModel>> GetActivePrescriptionsByCageIdAsync(Guid cageId);
     }
