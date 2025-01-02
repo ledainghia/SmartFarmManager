@@ -21,6 +21,7 @@ namespace SmartFarmManager.Service.BusinessModels.MedicalSymptom
         public string Status { get; set; }
 
         public int? AffectedQuantity { get; set; }
+        public int? Quantity { get; set; }
 
         public string Notes { get; set; }
 
