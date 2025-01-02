@@ -16,6 +16,7 @@ namespace SmartFarmManager.Service.Interfaces
         Task<GrowthStageDetailModel> GetGrowthStageDetailAsync(Guid id);
         Task<PagedResult<TaskDailyModel>> GetTaskDailiesByGrowthStageIdAsync(TaskDailyFilterModel filter);
         Task<PagedResult<VaccineScheduleModel>> GetVaccineSchedulesByGrowthStageIdAsync(VaccineScheduleFilterModel filter);
+        Task<GrowthStageDetailModel> GetActiveGrowthStageByCageIdAsync(Guid cageId);
     }
       
 }

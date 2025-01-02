@@ -24,7 +24,7 @@ namespace SmartFarmManager.Service.Services
         public async Task<IEnumerable<MedicalSymptomModel>> GetMedicalSymptomsAsync(string? status)
         {
             var symptoms = await _unitOfWork.MedicalSymptom
-                .FindAll().Where(ms => string.IsNullOrEmpty(status) || ms.Status == status).Include(p => p.Pictures).ToListAsync();
+                .FindAll().Where(ms => string.IsNullOrEmpty(status) || ms.Status == status).Include(p => p.Pictures).Include(p => p.FarmingBatch).ToListAsync();
 
             return symptoms.Select(ms => new MedicalSymptomModel
             {
@@ -36,6 +36,8 @@ namespace SmartFarmManager.Service.Services
                 Status = ms.Status,
                 AffectedQuantity = ms.AffectedQuantity,
                 Notes = ms.Notes,
+                Quantity = ms.FarmingBatch?.Quantity ?? 0,
+                NameAnimal = ms.FarmingBatch.Species,
                 Pictures = ms.Pictures.Select(p => new PictureModel
                 {
                     Id = p.Id,
@@ -90,7 +92,7 @@ namespace SmartFarmManager.Service.Services
         public async Task<MedicalSymptomModel?> GetMedicalSymptomByIdAsync(Guid id)
         {
             var medicalSymptom = await _unitOfWork.MedicalSymptom.FindAll()
-                .Where(m => m.Id == id).Include(p => p.Pictures).FirstOrDefaultAsync();
+                .Where(m => m.Id == id).Include(p => p.Pictures).Include(p => p.FarmingBatch).FirstOrDefaultAsync();
 
             if (medicalSymptom == null)
             {
@@ -107,6 +109,8 @@ namespace SmartFarmManager.Service.Services
                 Status = medicalSymptom.Status,
                 AffectedQuantity = medicalSymptom.AffectedQuantity,
                 Notes = medicalSymptom.Notes,
+                Quantity = medicalSymptom.FarmingBatch.Quantity,
+                NameAnimal = medicalSymptom.FarmingBatch.Species,
                 Pictures = medicalSymptom.Pictures.Select(p => new PictureModel
                 {
                     Id = p.Id,
@@ -150,6 +154,7 @@ namespace SmartFarmManager.Service.Services
                 Treatment = ms.Treatment,
                 Status = ms.Status,
                 AffectedQuantity = ms.AffectedQuantity,
+                Quantity = farmingBatch.Quantity,
                 Notes = ms.Notes
             });
         }

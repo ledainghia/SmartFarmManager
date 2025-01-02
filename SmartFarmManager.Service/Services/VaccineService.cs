@@ -1,8 +1,6 @@
-﻿using AutoMapper;
-using Microsoft.EntityFrameworkCore;
-using SmartFarmManager.DataAccessObject.Models;
+﻿using Microsoft.EntityFrameworkCore;
 using SmartFarmManager.Repository.Interfaces;
-using SmartFarmManager.Service.BusinessModels.VaccineScheduleLog;
+using SmartFarmManager.Service.BusinessModels.Vaccine;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Shared;
@@ -14,18 +12,16 @@ using System.Threading.Tasks;
 
 namespace SmartFarmManager.Service.Services
 {
-    public class VaccineScheduleLogService : IVaccineScheduleLogService
+    public class VaccineService : IVaccineService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IMapper _mapper;
 
-        public VaccineScheduleLogService(IUnitOfWork unitOfWork, IMapper mapper)
+        public VaccineService(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
-            _mapper = mapper;
         }
 
-        public async Task<Guid?> CreateVaccineScheduleLogAsync(Guid cageId, VaccineScheduleLogModel model)
+        public async Task<VaccineModel> GetActiveVaccineByCageIdAsync(Guid cageId)
         {
             // Tìm FarmingBatch với trạng thái "đang diễn ra"
             var farmingBatch = await _unitOfWork.FarmingBatches.FindByCondition(
@@ -55,48 +51,23 @@ namespace SmartFarmManager.Service.Services
             if (vaccineSchedule == null)
                 return null;
 
-            // Tạo log
-            var newLog = new VaccineScheduleLog
-            {
-                ScheduleId = vaccineSchedule.Id,
-                Notes = model.Notes,
-                Photo = model.Photo,
-                Date = currentDate,
-                TaskId = model.TaskId
-            };
-
-            await _unitOfWork.VaccineScheduleLogs.CreateAsync(newLog);
-            await _unitOfWork.CommitAsync();
-
-            return newLog.Id;
-        }
-
-
-        public async Task<VaccineScheduleLogModel> GetVaccineScheduleLogByIdAsync(Guid id)
-        {
-            var log = await _unitOfWork.VaccineScheduleLogs.GetByIdAsync(id);
-            return _mapper.Map<VaccineScheduleLogModel>(log);
-        }
-
-        public async Task<VaccineScheduleLogModel> GetVaccineScheduleLogByTaskIdAsync(Guid taskId)
-        {
-            // Tìm VaccineScheduleLog dựa trên TaskId
-            var log = await _unitOfWork.VaccineScheduleLogs.FindByCondition(
-                log => log.TaskId == taskId,
+            // Lấy Vaccine dựa trên VaccineSchedule
+            var vaccine = await _unitOfWork.Vaccines.FindByCondition(
+                v => v.Id == vaccineSchedule.VaccineId,
                 trackChanges: false
             ).FirstOrDefaultAsync();
 
-            if (log == null)
+            if (vaccine == null)
                 return null;
 
-            return new VaccineScheduleLogModel
+            // Map Vaccine sang VaccineModel
+            return new VaccineModel
             {
-                Id = log.Id,
-                ScheduleId = log.ScheduleId,
-                Date = log.Date,
-                Notes = log.Notes,
-                Photo = log.Photo,
-                TaskId = log.TaskId
+                Id = vaccine.Id,
+                Name = vaccine.Name,
+                Method = vaccine.Method,
+                AgeStart = vaccine.AgeStart,
+                AgeEnd = vaccine.AgeEnd
             };
         }
 

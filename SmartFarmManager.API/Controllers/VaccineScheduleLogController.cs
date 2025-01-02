@@ -58,5 +58,27 @@ namespace SmartFarmManager.API.Controllers
 
             return Ok(ApiResult<VaccineScheduleLogResponse>.Succeed(response));
         }
+
+        [HttpGet("task/{taskId:guid}")]
+        public async Task<IActionResult> GetVaccineScheduleLogByTaskId(Guid taskId)
+        {
+            var log = await _vaccineScheduleLogService.GetVaccineScheduleLogByTaskIdAsync(taskId);
+
+            if (log == null)
+                return NotFound(ApiResult<string>.Fail("Không tìm thấy log tiêm vắc-xin cho TaskId này"));
+
+            var response = new VaccineScheduleLogResponse
+            {
+                Id = log.Id,
+                ScheduleId = log.ScheduleId.Value,
+                Date = log.Date,
+                Notes = log.Notes,
+                Photo = log.Photo,
+                TaskId = log.TaskId
+            };
+
+            return Ok(ApiResult<VaccineScheduleLogResponse>.Succeed(response));
+        }
+
     }
 }

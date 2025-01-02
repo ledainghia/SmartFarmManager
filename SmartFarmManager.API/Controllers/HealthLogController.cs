@@ -80,5 +80,26 @@ namespace SmartFarmManager.API.Controllers
 
             return Ok(ApiResult<IEnumerable<HealthLogResponse>>.Succeed(responses));
         }
+        [HttpGet("task/{taskId:guid}")]
+        public async Task<IActionResult> GetHealthLogByTaskId(Guid taskId)
+        {
+            var healthLog = await _healthLogService.GetHealthLogByTaskIdAsync(taskId);
+
+            if (healthLog == null)
+                return NotFound(ApiResult<string>.Fail("Health log not found for the given TaskId"));
+
+            var response = new HealthLogResponse
+            {
+                Id = healthLog.Id,
+                PrescriptionId = healthLog.PrescriptionId.Value,
+                Date = healthLog.Date.Value,
+                Notes = healthLog.Notes,
+                Photo = healthLog.Photo,
+                TaskId = healthLog.TaskId
+            };
+
+            return Ok(ApiResult<HealthLogResponse>.Succeed(response));
+        }
+
     }
 }

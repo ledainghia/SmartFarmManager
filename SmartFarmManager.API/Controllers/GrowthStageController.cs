@@ -108,7 +108,7 @@ namespace SmartFarmManager.API.Controllers
                     GrowthStageId = id,
                     TaskName = filterRequest.TaskName,
                     Session = filterRequest.Session,
-                    PageNumber =(int) filterRequest.PageNumber,
+                    PageNumber = (int)filterRequest.PageNumber,
                     PageSize = (int)filterRequest.PageSize
                 };
 
@@ -157,6 +157,37 @@ namespace SmartFarmManager.API.Controllers
             }
         }
 
+        [HttpGet("cage/{cageId:guid}/active-growth-stage")]
+        public async Task<IActionResult> GetActiveGrowthStageByCageId(Guid cageId)
+        {
+            if (!ModelState.IsValid)
+            {
+                // Collect validation errors
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                                               .Select(e => e.ErrorMessage)
+                                               .ToList();
+
+                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
+{
+    { "Errors", errors.ToArray() }
+}));
+            }
+
+
+            try
+            {
+                var growthStage = await _growthStageService.GetActiveGrowthStageByCageIdAsync(cageId);
+
+                if (growthStage == null)
+                    return NotFound(ApiResult<string>.Fail("No active growth stage found for this cage"));
+
+                return Ok(ApiResult<GrowthStageDetailModel>.Succeed(growthStage));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+            }
+        }
 
     }
 }

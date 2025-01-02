@@ -61,5 +61,28 @@ namespace SmartFarmManager.API.Controllers
 
             return Ok(ApiResult<DailyFoodUsageLogResponse>.Succeed(response));
         }
+        [HttpGet("task/{taskId:guid}")]
+        public async Task<IActionResult> GetDailyFoodUsageLogByTaskId(Guid taskId)
+        {
+            var log = await _dailyFoodUsageLogService.GetDailyFoodUsageLogByTaskIdAsync(taskId);
+
+            if (log == null)
+                return NotFound(ApiResult<string>.Fail("Không tìm thấy log cho ăn hàng ngày cho TaskId này"));
+
+            var response = new DailyFoodUsageLogResponse
+            {
+                Id = log.Id,
+                StageId = log.StageId,
+                RecommendedWeight = log.RecommendedWeight,
+                ActualWeight = log.ActualWeight,
+                Notes = log.Notes,
+                LogTime = log.LogTime,
+                Photo = log.Photo,
+                TaskId = log.TaskId
+            };
+
+            return Ok(ApiResult<DailyFoodUsageLogResponse>.Succeed(response));
+        }
+
     }
 }

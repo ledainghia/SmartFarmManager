@@ -70,5 +70,28 @@ namespace SmartFarmManager.Service.Services
             var healthLogs = await query.ToListAsync();
             return _mapper.Map<IEnumerable<HealthLogModel>>(healthLogs);
         }
+
+        public async Task<HealthLogModel> GetHealthLogByTaskIdAsync(Guid taskId)
+        {
+            // Tìm log Health dựa trên TaskId
+            var healthLog = await _unitOfWork.HealthLogs.FindByCondition(
+                log => log.TaskId == taskId,
+                trackChanges: false
+            ).FirstOrDefaultAsync();
+
+            if (healthLog == null)
+                return null;
+
+            return new HealthLogModel
+            {
+                Id = healthLog.Id,
+                PrescriptionId = healthLog.PrescriptionId,
+                Date = healthLog.Date,
+                Notes = healthLog.Notes,
+                Photo = healthLog.Photo,
+                TaskId = healthLog.TaskId
+            };
+        }
+
     }
 }
