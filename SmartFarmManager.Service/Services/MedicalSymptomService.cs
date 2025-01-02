@@ -32,12 +32,12 @@ namespace SmartFarmManager.Service.Services
                 FarmingBatchId = ms.FarmingBatchId,
                 Symptoms = ms.Symptoms,
                 Diagnosis = ms.Diagnosis,
-                Treatment = ms.Treatment,
                 Status = ms.Status,
                 AffectedQuantity = ms.AffectedQuantity,
                 Notes = ms.Notes,
                 Quantity = ms.FarmingBatch?.Quantity ?? 0,
                 NameAnimal = ms.FarmingBatch.Species,
+                CreateAt = ms.CreateAt, 
                 Pictures = ms.Pictures.Select(p => new PictureModel
                 {
                     Id = p.Id,
@@ -58,7 +58,6 @@ namespace SmartFarmManager.Service.Services
 
             // Cập nhật thông tin
             existingSymptom.Diagnosis = updatedModel.Diagnosis;
-            existingSymptom.Treatment = updatedModel.Treatment;
             existingSymptom.Status = updatedModel.Status;
             existingSymptom.Notes = updatedModel.Notes;
 
@@ -76,6 +75,7 @@ namespace SmartFarmManager.Service.Services
                 Status = medicalSymptomModel.Status,
                 AffectedQuantity = medicalSymptomModel.AffectedQuantity,
                 Notes = medicalSymptomModel.Notes,
+                CreateAt = DateTime.UtcNow,
                 Pictures = medicalSymptomModel.Pictures.Select(p => new DataAccessObject.Models.Picture
                 {
                     Image = p.Image,
@@ -105,12 +105,12 @@ namespace SmartFarmManager.Service.Services
                 FarmingBatchId = medicalSymptom.FarmingBatchId,
                 Symptoms = medicalSymptom.Symptoms,
                 Diagnosis = medicalSymptom.Diagnosis,
-                Treatment = medicalSymptom.Treatment,
                 Status = medicalSymptom.Status,
                 AffectedQuantity = medicalSymptom.AffectedQuantity,
                 Notes = medicalSymptom.Notes,
                 Quantity = medicalSymptom.FarmingBatch.Quantity,
                 NameAnimal = medicalSymptom.FarmingBatch.Species,
+                CreateAt = medicalSymptom.CreateAt,
                 Pictures = medicalSymptom.Pictures.Select(p => new PictureModel
                 {
                     Id = p.Id,
@@ -151,11 +151,11 @@ namespace SmartFarmManager.Service.Services
                 FarmingBatchId = ms.FarmingBatchId,
                 Symptoms = ms.Symptoms,
                 Diagnosis = ms.Diagnosis,
-                Treatment = ms.Treatment,
                 Status = ms.Status,
                 AffectedQuantity = ms.AffectedQuantity,
                 Quantity = farmingBatch.Quantity,
-                Notes = ms.Notes
+                Notes = ms.Notes,
+                CreateAt = ms.CreateAt,
             });
         }
     }
