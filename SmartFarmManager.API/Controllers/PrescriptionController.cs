@@ -99,12 +99,13 @@ namespace SmartFarmManager.API.Controllers
                 var id = await _prescriptionService.CreatePrescriptionAsync(new PrescriptionModel
                 {
                     RecordId = symptomId,
-                    PrescribedDate = request.PrescribedDate,
+                    PrescribedDate = DateTime.UtcNow,
                     Notes = request.Notes,
                     CageId = request.CageId,
                     DaysToTake = request.DaysToTake,
                     QuantityAnimal = request.QuantityAnimal,
                     CaseType = request.CaseType,
+                    Status = request.Status,
                     Medications = request.Medications.Select(m => new PrescriptionMedicationModel
                     {
                         MedicationId = m.MedicationId,
