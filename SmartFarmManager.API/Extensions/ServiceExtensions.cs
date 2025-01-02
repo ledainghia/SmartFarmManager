@@ -223,6 +223,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IVaccineScheduleLogService, VaccineScheduleLogService>();
             services.AddScoped<IVaccineTemplateService, VaccineTemplateService>();
             services.AddScoped<IGrowthStageService,GrowthStageService>();
+            services.AddScoped<IVaccineService, VaccineService>();
 
 
             return services;

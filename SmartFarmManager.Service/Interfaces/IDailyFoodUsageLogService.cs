@@ -11,5 +11,6 @@ namespace SmartFarmManager.Service.Interfaces
     {
         Task<DailyFoodUsageLogModel> GetDailyFoodUsageLogByIdAsync(Guid id);
         Task<Guid?> CreateDailyFoodUsageLogAsync(Guid cageId, DailyFoodUsageLogModel model);
+        Task<DailyFoodUsageLogModel> GetDailyFoodUsageLogByTaskIdAsync(Guid taskId);
     }
 }

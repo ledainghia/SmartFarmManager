@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SmartFarmManager.Service.BusinessModels.TaskDaily;
 using SmartFarmManager.Service.BusinessModels.VaccineSchedule;
+using SmartFarmManager.Service.Shared;
 
 namespace SmartFarmManager.Service.Services
 {
@@ -253,6 +254,42 @@ namespace SmartFarmManager.Service.Services
         }
 
 
+        public async Task<GrowthStageDetailModel> GetActiveGrowthStageByCageIdAsync(Guid cageId)
+        {
+            // Tìm FarmingBatch với trạng thái "đang diễn ra"
+            var farmingBatch = await _unitOfWork.FarmingBatches.FindByCondition(
+                fb => fb.CageId == cageId && fb.Status == FarmingBatchStatusEnum.Active,
+                trackChanges: false
+            ).FirstOrDefaultAsync();
+
+            if (farmingBatch == null)
+                return null;
+
+            // Tìm GrowthStage với trạng thái "đang diễn ra"
+            var growthStage = await _unitOfWork.GrowthStages.FindByCondition(
+                gs => gs.FarmingBatchId == farmingBatch.Id && gs.Status == GrowthStageStatusEnum.Active,
+                trackChanges: false
+            ).FirstOrDefaultAsync();
+
+            if (growthStage == null)
+                return null;
+
+            // Map GrowthStage sang GrowthStageModel
+            return new GrowthStageDetailModel
+            {
+                Id = growthStage.Id,
+                Name = growthStage.Name,
+                WeightAnimal = growthStage.WeightAnimal,
+                Quantity = growthStage.Quantity,
+                AgeStart = growthStage.AgeStart,
+                AgeEnd = growthStage.AgeEnd,
+                AgeStartDate = growthStage.AgeStartDate,
+                AgeEndDate = growthStage.AgeEndDate,
+                Status = growthStage.Status,
+                RecommendedWeightPerSession = growthStage.RecommendedWeightPerSession,
+                WeightBasedOnBodyMass = growthStage.WeightBasedOnBodyMass
+            };
+        }
 
     }
 }

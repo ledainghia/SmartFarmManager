@@ -8,6 +8,8 @@
         public int QuantityAnimal { get; set; }
         public string Status { get; set; }
         public decimal? Price { get; set; }
+        public Guid CageId { get; set; }
+        public int? DaysToTake { get; set; }
         public List<PrescriptionMedicationResponse> Medications { get; set; }
     }
 
