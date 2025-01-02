@@ -10,6 +10,7 @@
         public int DaysToTake { get; set; }
         public int QuantityAnimal { get; set; }
         public List<PrescriptionMedicationRequest> Medications { get; set; }
+        public string Status { get; set; }
     }
     public class PrescriptionMedicationRequest
     {

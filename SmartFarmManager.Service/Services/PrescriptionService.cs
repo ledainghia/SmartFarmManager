@@ -76,13 +76,17 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<PrescriptionModel> GetPrescriptionByIdAsync(Guid id)
         {
+            // Load the prescription along with PrescriptionMedications and their Medication
             var prescription = await _unitOfWork.Prescription
-                .FindByCondition(p => p.Id == id, true, p => p.PrescriptionMedications, p => p.PrescriptionMedications.Select(pm => pm.Medication))
+                .FindByCondition(p => p.Id == id)
+                .Include(p => p.PrescriptionMedications)
+                .ThenInclude(pm => pm.Medication)
                 .FirstOrDefaultAsync();
 
             if (prescription == null)
                 return null;
 
+            // Map the data to the PrescriptionModel
             return new PrescriptionModel
             {
                 Id = prescription.Id,
@@ -112,6 +116,7 @@ namespace SmartFarmManager.Service.Services
                 }).ToList()
             };
         }
+
 
         public async Task<IEnumerable<PrescriptionModel>> GetActivePrescriptionsByCageIdAsync(Guid cageId)
         {
