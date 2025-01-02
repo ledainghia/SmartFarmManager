@@ -244,8 +244,8 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<bool> UpdateTaskPriorityAsync(Guid taskId, UpdateTaskPriorityModel model)
         {
-            
-            var task = await _unitOfWork.Tasks.FindAsync(x=>x.Id==taskId);
+
+            var task = await _unitOfWork.Tasks.FindAsync(x => x.Id == taskId);
             if (task == null)
             {
                 throw new KeyNotFoundException("Task not found.");
@@ -332,7 +332,7 @@ namespace SmartFarmManager.Service.Services
                 }
                 task.PriorityNum = model.NewPriority;
 
-                await _unitOfWork.Tasks.UpdateAsync(task);    
+                await _unitOfWork.Tasks.UpdateAsync(task);
                 await _unitOfWork.CommitAsync();
                 return true;
 
@@ -340,18 +340,21 @@ namespace SmartFarmManager.Service.Services
         }
 
 
-       
+
         //change status of task by task id and status id
         public async Task<bool> ChangeTaskStatusAsync(Guid taskId, string? status)
         {
             var task = await _unitOfWork.Tasks.FindAsync(x => x.Id == taskId);
-            if (task == null)
+            if (status == null ||
+    (status != TaskStatusEnum.Pending &&
+     status != TaskStatusEnum.InProgress &&
+     status != TaskStatusEnum.Done &&
+     status != TaskStatusEnum.Overdue))
             {
-                throw new ArgumentException("Invalid TaskId");
-            }
-            if (status == null || status.Equals(TaskStatusEnum.Pending) || status.Equals(TaskStatusEnum.InProgress) || status.Equals(TaskStatusEnum.Done) || status.Equals(TaskStatusEnum.Overdue)) {
                 throw new ArgumentException("Không đúng status");
             }
+
+
             if (status == TaskStatusEnum.Done)
             {
                 task.CompletedAt = DateTime.UtcNow;
@@ -409,7 +412,7 @@ namespace SmartFarmManager.Service.Services
             return taskModel;
         }
 
-        public async Task<List<TaskResponse>> GetTasksForUserWithStateAsync(Guid userId,Guid cageId, DateTime? specificDate = null)
+        public async Task<List<TaskResponse>> GetTasksForUserWithStateAsync(Guid userId, Guid cageId, DateTime? specificDate = null)
         {
             // Ngày hiện tại và ngày mặc định
             //chỉ ngày nay với mai?????????????????
@@ -554,7 +557,7 @@ namespace SmartFarmManager.Service.Services
         public async Task<PagedResult<TaskDetailModel>> GetFilteredTasksAsync(TaskFilterModel filter)
         {
             // Query từ repository
-            var query = _unitOfWork.Tasks.FindAll(false, x => x.AssignedToUser, x => x.TaskType, x => x.StatusLogs).Include(x=>x.Cage).Include(x=>x.StatusLogs).AsQueryable();
+            var query = _unitOfWork.Tasks.FindAll(false, x => x.AssignedToUser, x => x.TaskType, x => x.StatusLogs).Include(x => x.Cage).Include(x => x.StatusLogs).AsQueryable();
 
             // Áp dụng bộ lọc
             if (!string.IsNullOrEmpty(filter.TaskName))
@@ -628,7 +631,7 @@ namespace SmartFarmManager.Service.Services
                 .Select(t => new TaskDetailModel
                 {
                     Id = t.Id,
-                    CageId=t.CageId,
+                    CageId = t.CageId,
                     CageName = t.Cage.Name,
                     TaskName = t.TaskName,
                     Description = t.Description,
@@ -684,14 +687,14 @@ namespace SmartFarmManager.Service.Services
                             .FirstOrDefaultAsync();
             if (task == null)
             {
-                return null; 
+                return null;
             }
 
             // Map Task sang TaskDetailResponse
             return new TaskDetailModel
             {
                 Id = task.Id,
-                CageId=task.CageId,
+                CageId = task.CageId,
                 CageName = task.Cage.Name,
                 TaskName = task.TaskName,
                 Description = task.Description,
@@ -715,7 +718,7 @@ namespace SmartFarmManager.Service.Services
                 },
                 StatusLogs = task.StatusLogs.Select(sl => new StatusLogResponseModel
                 {
-                    
+
                     Status = sl.Status, // Tên status từ bảng Status
                     UpdatedAt = sl.UpdatedAt
                 }).ToList()
@@ -861,7 +864,7 @@ namespace SmartFarmManager.Service.Services
                         .Select(cageGroup => new CageTaskGroupModel
                         {
                             CageId = cageGroup.Key.CageId,
-                            CageName = cageGroup.Key.CageName, 
+                            CageName = cageGroup.Key.CageName,
                             Tasks = cageGroup.Select(task => new TaskDetailModel
                             {
                                 Id = task.Id,
@@ -994,7 +997,7 @@ namespace SmartFarmManager.Service.Services
                 task.Description = model.Description;
             }
 
-          
+
 
             // 8. Lưu thay đổi
             await _unitOfWork.Tasks.UpdateAsync(task);
@@ -1094,7 +1097,7 @@ namespace SmartFarmManager.Service.Services
                                     PriorityNum = (int)vaccineTaskType?.PriorityNum,
                                     Description = $"Tiêm vắc xin {vaccineSchedule.Vaccine.Name} cho giai đoạn {growthStage.Name}.",
                                     DueDate = today,
-                                    Session = 1, 
+                                    Session = 1,
                                     Status = TaskStatusTypeEnum.Pending,
                                     CreatedAt = DateTimeUtils.VietnamNow()
                                 });
@@ -1335,9 +1338,9 @@ namespace SmartFarmManager.Service.Services
                 }
             }
 
-            
-                await _unitOfWork.CommitAsync();
-            
+
+            await _unitOfWork.CommitAsync();
+
 
             return true;
         }
@@ -1525,14 +1528,14 @@ namespace SmartFarmManager.Service.Services
         {
             var today = DateTimeUtils.VietnamNow().Date; // Lấy ngày hôm nay
             var tasks = await _unitOfWork.Tasks
-                .FindByCondition(t => t.DueDate == today && t.Session == 3) 
+                .FindByCondition(t => t.DueDate == today && t.Session == 3)
                 .ToListAsync();
 
             foreach (var task in tasks)
             {
                 if (task.Status == TaskStatusTypeEnum.Pending || task.Status == TaskStatusTypeEnum.InProgress)
                 {
-                    task.Status = TaskStatusTypeEnum.OverSchedules; 
+                    task.Status = TaskStatusTypeEnum.OverSchedules;
                     await _unitOfWork.Tasks.UpdateAsync(task);
                 }
             }
