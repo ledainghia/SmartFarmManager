@@ -6,6 +6,7 @@ using SmartFarmManager.Service.BusinessModels.MedicalSymptom;
 using SmartFarmManager.Service.BusinessModels.Picture;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
+using SmartFarmManager.Service.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,7 +40,7 @@ namespace SmartFarmManager.Service.Services
                 Notes = ms.Notes,
                 Quantity = ms.FarmingBatch?.Quantity ?? 0,
                 NameAnimal = ms.FarmingBatch.Species,
-                CreateAt = ms.CreateAt, 
+                CreateAt = ms.CreateAt,
                 Pictures = ms.Pictures.Select(p => new PictureModel
                 {
                     Id = p.Id,
@@ -57,7 +58,18 @@ namespace SmartFarmManager.Service.Services
             {
                 return false;
             }
+            // Danh sách trạng thái hợp lệ
+            var validStatuses = new[]
+            {
+        MedicalSymptomStatuseEnum.Normal,
+        MedicalSymptomStatuseEnum.Diagnosed
+    };
 
+            // Kiểm tra trạng thái có hợp lệ không
+            if (!validStatuses.Contains(updatedModel.Status))
+            {
+                throw new ArgumentException($"Trạng thái không hợp lệ: {updatedModel.Status}");
+            }
             // Cập nhật thông tin
             existingSymptom.Diagnosis = updatedModel.Diagnosis;
             existingSymptom.Status = updatedModel.Status;
