@@ -49,7 +49,7 @@ namespace SmartFarmManager.Service.Services
             });
             var prescription = new Prescription
             {
-                RecordId = model.RecordId,
+                MedicalSymtomId = model.RecordId,
                 PrescribedDate = model.PrescribedDate,
                 Notes = model.Notes,
                 QuantityAnimal = model.QuantityAnimal,
@@ -90,7 +90,7 @@ namespace SmartFarmManager.Service.Services
             return new PrescriptionModel
             {
                 Id = prescription.Id,
-                RecordId = prescription.RecordId,
+                RecordId = prescription.MedicalSymtomId,
                 PrescribedDate = prescription.PrescribedDate.Value,
                 Notes = prescription.Notes,
                 QuantityAnimal = prescription.QuantityAnimal,

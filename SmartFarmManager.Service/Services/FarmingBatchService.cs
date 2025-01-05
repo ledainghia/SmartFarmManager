@@ -354,7 +354,6 @@ namespace SmartFarmManager.Service.Services
                         Name = fb.Template.Name,
                         Species = fb.Template.Species,
                         Status = fb.Template.Status,
-                        DefaultCapacity = fb.Template.DefaultCapacity,
                         Notes = fb.Template.Notes
                     }
                 })

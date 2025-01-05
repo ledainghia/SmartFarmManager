@@ -36,6 +36,7 @@ namespace SmartFarmManager.Repository.Interfaces
         IPrescriptionMedicationRepository PrescriptionMedications { get; }
         IDailyFoodUsageLogRepository DailyFoodUsageLogs { get; }
         IVaccineScheduleLogRepository VaccineScheduleLogs { get; }
+        ILeaveRequestRepository LeaveRequests { get; }
         Task<int> CommitAsync();
         System.Threading.Tasks.Task BeginTransactionAsync();
         System.Threading.Tasks.Task RollbackAsync();
