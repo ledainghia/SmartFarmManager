@@ -43,6 +43,8 @@ namespace SmartFarmManager.Repository
         public IVaccineScheduleRepository VaccineSchedules { get; }
         public ILeaveRequestRepository LeaveRequests { get; }
         public ISaleTypeRepository SaleTypes { get; }
+        public IMedicalSymptomDetailRepository MedicalSymptomDetails { get; }
+        public ISymptomRepository Symptoms { get; }
 
         public UnitOfWork(SmartFarmContext context, IUserRepository users,
             ITaskTypeRepository taskTypes,
@@ -72,7 +74,9 @@ namespace SmartFarmManager.Repository
             IVaccineScheduleRepository vaccineSchedules,
             ITaskDailyRepository taskDailies,
             ILeaveRequestRepository leaveRequests,
-            ISaleTypeRepository saleTypes)
+            ISaleTypeRepository saleTypes,
+            IMedicalSymptomDetailRepository medicalSymptomDetails,
+            ISymptomRepository symptoms)
         {
             _context = context;
             Users = users;
@@ -105,6 +109,8 @@ namespace SmartFarmManager.Repository
             TaskDailies = taskDailies;
             LeaveRequests=leaveRequests;
             SaleTypes = saleTypes;
+            MedicalSymptomDetails = medicalSymptomDetails;
+            Symptoms = symptoms;
         }
          
 

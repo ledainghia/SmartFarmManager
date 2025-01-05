@@ -1,9 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Utilities.Date;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels.MedicalSymptom;
 using SmartFarmManager.Service.BusinessModels.Picture;
+using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
+using SmartFarmManager.Service.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,7 +40,7 @@ namespace SmartFarmManager.Service.Services
                 Notes = ms.Notes,
                 Quantity = ms.FarmingBatch?.Quantity ?? 0,
                 NameAnimal = ms.FarmingBatch.Species,
-                CreateAt = ms.CreateAt, 
+                CreateAt = ms.CreateAt,
                 Pictures = ms.Pictures.Select(p => new PictureModel
                 {
                     Id = p.Id,
@@ -55,7 +58,18 @@ namespace SmartFarmManager.Service.Services
             {
                 return false;
             }
+            // Danh sách trạng thái hợp lệ
+            var validStatuses = new[]
+            {
+        MedicalSymptomStatuseEnum.Normal,
+        MedicalSymptomStatuseEnum.Diagnosed
+    };
 
+            // Kiểm tra trạng thái có hợp lệ không
+            if (!validStatuses.Contains(updatedModel.Status))
+            {
+                throw new ArgumentException($"Trạng thái không hợp lệ: {updatedModel.Status}");
+            }
             // Cập nhật thông tin
             existingSymptom.Diagnosis = updatedModel.Diagnosis;
             existingSymptom.Status = updatedModel.Status;
@@ -68,6 +82,7 @@ namespace SmartFarmManager.Service.Services
         }
         public async Task<Guid> CreateMedicalSymptomAsync(MedicalSymptomModel medicalSymptomModel)
         {
+            // Bước 1: Tạo đối tượng MedicalSymptom mà chưa có MedicalSymptomDetails và Pictures
             var medicalSymptom = new DataAccessObject.Models.MedicalSymptom
             {
                 FarmingBatchId = medicalSymptomModel.FarmingBatchId,
@@ -76,19 +91,48 @@ namespace SmartFarmManager.Service.Services
                 Status = medicalSymptomModel.Status,
                 AffectedQuantity = medicalSymptomModel.AffectedQuantity,
                 Notes = medicalSymptomModel.Notes,
-                CreateAt = DateTime.UtcNow,
-                Pictures = medicalSymptomModel.Pictures.Select(p => new DataAccessObject.Models.Picture
-                {
-                    Image = p.Image,
-                    DateCaptured = p.DateCaptured
-                }).ToList()
+                CreateAt = medicalSymptomModel.CreateAt
             };
 
+            // Bước 2: Lưu đối tượng MedicalSymptom vào cơ sở dữ liệu
             await _unitOfWork.MedicalSymptom.CreateAsync(medicalSymptom);
+            await _unitOfWork.CommitAsync();
+
+            // Bước 3: Tạo MedicalSymptomDetails và Pictures với MedicalSymptomId
+            var medicalSymptomDetails = medicalSymptomModel.MedicalSymptomDetails.Select(d => new DataAccessObject.Models.MedicalSymtomDetail
+            {
+                SymptomId = d.SymptomId,
+                MedicalSymptomId = medicalSymptom.Id, // Gán ID sau khi lưu
+                Notes = d.Notes,
+                CreateAt = DateTimeUtils.VietnamNow()
+            }).ToList();
+
+            var pictures = medicalSymptomModel.Pictures.Select(p => new DataAccessObject.Models.Picture
+            {
+                RecordId = medicalSymptom.Id, // Gán ID sau khi lưu
+                Image = p.Image,
+                DateCaptured = p.DateCaptured
+            }).ToList();
+
+            // Bước 4: Thêm từng MedicalSymptomDetail vào ICollection
+            foreach (var detail in medicalSymptomDetails)
+            {
+                medicalSymptom.MedicalSymptomDetails.Add(detail);
+            }
+
+            // Bước 5: Thêm từng Picture vào ICollection
+            foreach (var picture in pictures)
+            {
+                medicalSymptom.Pictures.Add(picture);
+            }
+
+            // Bước 6: Cập nhật lại MedicalSymptom
+            await _unitOfWork.MedicalSymptom.UpdateAsync(medicalSymptom);
             await _unitOfWork.CommitAsync();
 
             return medicalSymptom.Id;
         }
+
 
         public async Task<MedicalSymptomModel?> GetMedicalSymptomByIdAsync(Guid id)
         {

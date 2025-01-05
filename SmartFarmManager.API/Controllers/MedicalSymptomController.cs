@@ -6,6 +6,7 @@ using SmartFarmManager.API.Payloads.Responses.MedicalSymptom;
 using SmartFarmManager.API.Payloads.Responses.Picture;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Service.BusinessModels.MedicalSymptom;
+using SmartFarmManager.Service.BusinessModels.MedicalSymptomDetail;
 using SmartFarmManager.Service.BusinessModels.Picture;
 using SmartFarmManager.Service.Interfaces;
 
@@ -39,10 +40,16 @@ namespace SmartFarmManager.API.Controllers
                 Status = request.Status,
                 AffectedQuantity = request.AffectedQuantity,
                 Notes = request.Notes,
+                CreateAt = DateTime.UtcNow,
                 Pictures = request.Pictures.Select(p => new PictureModel
                 {
                     Image = p.Image,
                     DateCaptured = p.DateCaptured
+                }).ToList(),
+                MedicalSymptomDetails = request.MedicalSymptomDetails.Select(d => new MedicalSymptomDetailModel
+                {
+                    SymptomId = d.SymptomId,
+                    Notes = d.Notes
                 }).ToList()
             };
 
@@ -121,27 +128,55 @@ namespace SmartFarmManager.API.Controllers
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> UpdateMedicalSymptom(Guid id, [FromBody] UpdateMedicalSymptomRequest request)
         {
-            if (request == null)
+            if (!ModelState.IsValid)
             {
-                return BadRequest(ApiResult<object>.Fail("Invalid request data."));
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
+            {
+                { "Errors", errors.ToArray() }
+            }));
             }
 
-            var updatedModel = new MedicalSymptomModel
+            try
             {
-                Id = id,
-                Diagnosis = request.Diagnosis,
-                Status = request.Status,
-                Notes = request.Notes
-            };
+                if (request == null)
+                {
+                    return BadRequest(ApiResult<object>.Fail("Invalid request data."));
+                }
 
-            var result = await _medicalSymptomService.UpdateMedicalSymptomAsync(updatedModel);
+                var updatedModel = new MedicalSymptomModel
+                {
+                    Id = id,
+                    Diagnosis = request.Diagnosis,
+                    Status = request.Status,
+                    Notes = request.Notes
+                };
 
-            if (!result)
-            {
-                return NotFound(ApiResult<object>.Fail($"MedicalSymptom with ID {id} not found."));
+                var result = await _medicalSymptomService.UpdateMedicalSymptomAsync(updatedModel);
+
+                if (!result)
+                {
+                    return NotFound(ApiResult<object>.Fail($"MedicalSymptom with ID {id} not found."));
+                }
+
+                return Ok(ApiResult<object>.Succeed("MedicalSymptom updated successfully."));
             }
-
-            return Ok(ApiResult<object>.Succeed("MedicalSymptom updated successfully."));
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ApiResult<string>.Fail(ex.Message)); // Trả về lỗi Conflict nếu trùng lặp
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred. Please contact support."));
+            }
         }
         // GET: api/medical-symptoms/by-staff-and-batch
         [HttpGet("by-staff-and-batch")]

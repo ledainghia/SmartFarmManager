@@ -1,4 +1,5 @@
-﻿using SmartFarmManager.API.Payloads.Requests.Picture;
+﻿using SmartFarmManager.API.Payloads.Requests.MedicalSymptomDetail;
+using SmartFarmManager.API.Payloads.Requests.Picture;
 
 namespace SmartFarmManager.API.Payloads.Requests.MedicalSymptom
 {
@@ -11,5 +12,6 @@ namespace SmartFarmManager.API.Payloads.Requests.MedicalSymptom
         public int? AffectedQuantity { get; set; }
         public string Notes { get; set; }
         public List<PictureRequest> Pictures { get; set; } = new List<PictureRequest>();
+        public List<MedicalSymptomDetailRequest> MedicalSymptomDetails { get; set; }
     }
 }
