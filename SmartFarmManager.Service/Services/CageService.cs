@@ -4,6 +4,7 @@ using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Cages;
+using SmartFarmManager.Service.BusinessModels.FarmingBatch;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using System;
@@ -29,6 +30,7 @@ namespace SmartFarmManager.Service.Services
             var query = _unitOfWork.Cages.FindAll(false, x => x.Farm)
                 .Include(c => c.CageStaffs)
                 .ThenInclude(cs => cs.StaffFarm)
+                .Include(c => c.FarmingBatches)
                 .AsQueryable();
 
             // Áp dụng các bộ lọc
@@ -51,7 +53,6 @@ namespace SmartFarmManager.Service.Services
             {
                 query = query.Where(c => c.BoardStatus == request.BoardStatus.Value);
             }
-
             // Đếm tổng số bản ghi (chạy trên SQL)
             var totalCount = await query.CountAsync();
 
@@ -74,7 +75,24 @@ namespace SmartFarmManager.Service.Services
                     CreatedDate = c.CreatedDate,
                     CameraUrl = c.CameraUrl,
                     StaffId = c.CageStaffs.FirstOrDefault().StaffFarmId, // Lấy StaffId từ CageStaff
-                    StaffName = c.CageStaffs.FirstOrDefault().StaffFarm.FullName
+                    StaffName = c.CageStaffs.FirstOrDefault().StaffFarm.FullName,
+                    // Lấy thông tin FarmingBatch phù hợp
+                    FarmingBatch = c.FarmingBatches
+                .Where(fb => fb.StartDate < DateTime.Now && fb.CompleteAt == null)
+                .Select(fb => new FarmingBatchModel
+                {
+                    Id = fb.Id,
+                    Name = fb.Name,
+                    StartDate = fb.StartDate,
+                    CompleteAt = fb.CompleteAt,
+                    Species = fb.Species,
+                    Status = fb.Status,
+                    CleaningFrequency = fb.CleaningFrequency,
+                    Quantity = fb.Quantity,
+                    AffectedQuantity = fb.AffectedQuantity,
+                })
+                .FirstOrDefault()
+
                 })
                 .ToListAsync();
 
