@@ -35,7 +35,6 @@ namespace SmartFarmManager.Repository
         public IGrowthStageRepository GrowthStages { get; }
         public IVaccineRepository Vaccines { get; }
         public ITaskDailyRepository TaskDailies { get; }
-        public ITemporaryCageAssignmentRepository TemporaryCageAssignments { get; }
         public IHealthLogRepository HealthLogs { get; }
         public IPictureRepository Pictures { get; }
         public IPrescriptionMedicationRepository PrescriptionMedications { get; }
@@ -63,7 +62,6 @@ namespace SmartFarmManager.Repository
             IGrowthStageRepository growthStages,
             IVaccineTemplateRepository vaccineTemplates,
             IVaccineRepository vaccines,
-            ITemporaryCageAssignmentRepository temporaryCageAssignments,
             IHealthLogRepository healthLogs,
             IPictureRepository pictures,
             IPrescriptionMedicationRepository prescriptionMedications,
@@ -93,7 +91,6 @@ namespace SmartFarmManager.Repository
             GrowthStages = growthStages;
             VaccineTemplates = vaccineTemplates;
             Vaccines= vaccines;
-            TemporaryCageAssignments= temporaryCageAssignments;
             VaccineSchedules= vaccineSchedules;
             HealthLogs = healthLogs;
             Pictures = pictures;
