@@ -56,6 +56,8 @@ namespace SmartFarmManager.Service.Services
                     Status = model.Status,
                     CageId = model.CageId.Value,
                     DaysToTake = model.DaysToTake,
+                    DoctorApproval = DoctorApprovalEnum.Pending,
+                    StatusAnimal = StatusAnimalEnum.UnderTreatment,
                     PrescriptionMedications = model.Medications.Select(m => new PrescriptionMedication
                     {
                         MedicationId = m.MedicationId,
