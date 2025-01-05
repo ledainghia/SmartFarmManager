@@ -12,6 +12,7 @@ public partial class Prescription : EntityBase
     public Guid CageId { get; set; }
 
     public DateTime? PrescribedDate { get; set; }
+    public DateTime? EndDate { get; set; }
 
     public string CaseType { get; set; }
 
