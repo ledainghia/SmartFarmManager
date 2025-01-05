@@ -34,6 +34,7 @@ namespace SmartFarmManager.API.Controllers
             var medicalSymptomModel = new MedicalSymptomModel
             {
                 FarmingBatchId = request.FarmingBatchId,
+                PrescriptionId = request.PrescriptionId,
                 Symptoms = request.Symptoms,
                 Status = request.Status,
                 AffectedQuantity = request.AffectedQuantity,

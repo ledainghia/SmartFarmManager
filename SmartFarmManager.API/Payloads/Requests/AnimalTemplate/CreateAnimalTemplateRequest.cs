@@ -24,7 +24,6 @@ namespace SmartFarmManager.API.Payloads.Requests.AnimalTemplate
             {
                 Name = this.Name,
                 Species = this.Species,
-                DefaultCapacity = this.DefaultCapacity,
                 Notes = this.Notes
             };
         }

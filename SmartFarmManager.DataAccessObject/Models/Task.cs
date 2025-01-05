@@ -13,7 +13,7 @@ public partial class Task : EntityBase
 
     public Guid AssignedToUserId { get; set; }
 
-    public Guid CreatedByUserId { get; set; }
+    public Guid? CreatedByUserId { get; set; }
 
     public string TaskName { get; set; }
 

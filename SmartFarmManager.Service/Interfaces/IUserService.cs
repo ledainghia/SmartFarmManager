@@ -18,6 +18,7 @@ namespace SmartFarmManager.Service.Interfaces
         Task<Guid> CreateUserAsync(CreateUserModel userModel);
         Task<UserDetailsModel> GetUserDetailsAsync(Guid userId);
         Task<PagedResult<FarmModel>> GetFarmsByAdminStaffIdAsync(Guid userId, int pageIndex, int pageSize);
+        Task<Guid?> GetAssignedUserForCageAsync(Guid cageId, DateOnly date);
 
     }
 }
