@@ -15,6 +15,7 @@ namespace SmartFarmManager.Service.BusinessModels.FarmingBatch
         public string Species { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? CompleteAt { get; set; }
+        public DateTime? EndDate { get; set; }
         public string Status { get; set; }
         public int CleaningFrequency { get; set; }
         public int? Quantity { get; set; }

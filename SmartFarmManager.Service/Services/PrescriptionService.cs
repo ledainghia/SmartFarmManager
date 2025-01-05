@@ -45,6 +45,8 @@ namespace SmartFarmManager.Service.Services
 
                 if (medications == null || medications.Count == 0)
                     throw new Exception("One or more medications not found.");
+                var medicalSymptom = await _unitOfWork.MedicalSymptom.FindByCondition(ms => ms.Id == model.RecordId.Value).FirstOrDefaultAsync();
+                medicalSymptom.Status = MedicalSymptomStatuseEnum.Prescribed;
 
                 // Tạo đơn thuốc
                 var prescription = new Prescription
@@ -58,6 +60,7 @@ namespace SmartFarmManager.Service.Services
                     DaysToTake = model.DaysToTake,
                     DoctorApproval = DoctorApprovalEnum.Pending,
                     StatusAnimal = StatusAnimalEnum.UnderTreatment,
+                    EndDate = model.PrescribedDate.Value.AddDays((double)model.DaysToTake),
                     PrescriptionMedications = model.Medications.Select(m => new PrescriptionMedication
                     {
                         MedicationId = m.MedicationId,
@@ -70,6 +73,7 @@ namespace SmartFarmManager.Service.Services
                 };
 
                 await _unitOfWork.Prescription.CreateAsync(prescription);
+                await _unitOfWork.MedicalSymptom.UpdateAsync(medicalSymptom);
 
                 // Lấy thời gian hiện tại và buổi hiện tại
                 var currentTime = DateTimeUtils.VietnamNow().TimeOfDay;

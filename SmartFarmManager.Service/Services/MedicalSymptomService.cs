@@ -88,10 +88,10 @@ namespace SmartFarmManager.Service.Services
                 FarmingBatchId = medicalSymptomModel.FarmingBatchId,
                 PrescriptionId = medicalSymptomModel.PrescriptionId,
                 Symptoms = medicalSymptomModel.Symptoms,
-                Status = medicalSymptomModel.Status,
+                Status = MedicalSymptomStatuseEnum.Pending,
                 AffectedQuantity = medicalSymptomModel.AffectedQuantity,
                 Notes = medicalSymptomModel.Notes,
-                CreateAt = medicalSymptomModel.CreateAt
+                CreateAt = DateTimeUtils.VietnamNow()
             };
 
             // Bước 2: Lưu đối tượng MedicalSymptom vào cơ sở dữ liệu
@@ -114,20 +114,11 @@ namespace SmartFarmManager.Service.Services
                 DateCaptured = p.DateCaptured
             }).ToList();
 
-            // Bước 4: Thêm từng MedicalSymptomDetail vào ICollection
-            foreach (var detail in medicalSymptomDetails)
-            {
-                medicalSymptom.MedicalSymptomDetails.Add(detail);
-            }
-
-            // Bước 5: Thêm từng Picture vào ICollection
-            foreach (var picture in pictures)
-            {
-                medicalSymptom.Pictures.Add(picture);
-            }
+            
 
             // Bước 6: Cập nhật lại MedicalSymptom
-            await _unitOfWork.MedicalSymptom.UpdateAsync(medicalSymptom);
+            await _unitOfWork.Pictures.CreateListAsync(pictures);
+            await _unitOfWork.MedicalSymptomDetails.CreateListAsync(medicalSymptomDetails);
             await _unitOfWork.CommitAsync();
 
             return medicalSymptom.Id;

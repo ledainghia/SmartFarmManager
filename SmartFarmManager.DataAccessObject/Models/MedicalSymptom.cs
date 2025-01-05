@@ -15,7 +15,6 @@ public partial class MedicalSymptom : EntityBase
 
     public string Diagnosis { get; set; }
 
-
     public string Status { get; set; }
 
     public int? AffectedQuantity { get; set; }

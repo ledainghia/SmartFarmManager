@@ -20,7 +20,7 @@ namespace SmartFarmManager.Service.BusinessModels.MedicalSymptom
         public string Diagnosis { get; set; }
 
         public DateTime? CreateAt { get; set; }
-        public string Status { get; set; }
+        public string? Status { get; set; }
 
         public int? AffectedQuantity { get; set; }
         public int? Quantity { get; set; }
