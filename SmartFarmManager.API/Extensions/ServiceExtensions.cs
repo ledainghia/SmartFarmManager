@@ -192,6 +192,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IDailyFoodUsageLogRepository, DailyFoodUsageLogRepository>();
             services.AddScoped<IVaccineScheduleLogRepository, VaccineScheduleLogRepository>();
             services.AddScoped<ILeaveRequestRepository, LeaveRequestRepository>();
+            services.AddScoped<ISaleTypeRepository, SaleTypeRepository>();
             return services;
         }
 

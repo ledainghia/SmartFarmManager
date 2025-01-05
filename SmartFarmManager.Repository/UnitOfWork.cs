@@ -42,6 +42,7 @@ namespace SmartFarmManager.Repository
         public IDailyFoodUsageLogRepository DailyFoodUsageLogs { get; }
         public IVaccineScheduleRepository VaccineSchedules { get; }
         public ILeaveRequestRepository LeaveRequests { get; }
+        public ISaleTypeRepository SaleTypes { get; }
 
         public UnitOfWork(SmartFarmContext context, IUserRepository users,
             ITaskTypeRepository taskTypes,
@@ -70,7 +71,8 @@ namespace SmartFarmManager.Repository
             IVaccineScheduleLogRepository vaccineScheduleLogs,
             IVaccineScheduleRepository vaccineSchedules,
             ITaskDailyRepository taskDailies,
-            ILeaveRequestRepository leaveRequests)
+            ILeaveRequestRepository leaveRequests,
+            ISaleTypeRepository saleTypes)
         {
             _context = context;
             Users = users;
@@ -102,6 +104,7 @@ namespace SmartFarmManager.Repository
             VaccineSchedules = vaccineSchedules;
             TaskDailies = taskDailies;
             LeaveRequests=leaveRequests;
+            SaleTypes = saleTypes;
         }
          
 

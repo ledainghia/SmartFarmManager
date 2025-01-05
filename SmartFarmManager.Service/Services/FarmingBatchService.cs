@@ -85,6 +85,7 @@ namespace SmartFarmManager.Service.Services
                         Status = GrowthStageStatusEnum.Planning,
                         AgeStartDate = null, // Sẽ được cập nhật khi trạng thái chuyển sang Active
                         AgeEndDate = null,
+                        SaleTypeId= template.SaleTypeId,
                         RecommendedWeightPerSession = template.FoodTemplates.Sum(f => f.RecommendedWeightPerSession),
                         WeightBasedOnBodyMass = template.FoodTemplates.Sum(f => f.WeightBasedOnBodyMass)
                     }).ToList();
