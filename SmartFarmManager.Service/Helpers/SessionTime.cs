@@ -8,9 +8,10 @@ namespace SmartFarmManager.Service.Helpers
 {
     public static class SessionTime
     {
-        public static readonly (TimeSpan Start, TimeSpan End) Morning = (TimeSpan.FromHours(6), TimeSpan.FromHours(11));  // 6:00 - 11:59
-        public static readonly (TimeSpan Start, TimeSpan End) Afternoon = (TimeSpan.FromHours(12), TimeSpan.FromHours(17));  // 12:00 - 17:59
-        public static readonly (TimeSpan Start, TimeSpan End) Evening = (TimeSpan.FromHours(18), TimeSpan.FromHours(24));  // 18:00 - 22:59
+        public static readonly (TimeSpan Start, TimeSpan End) Morning = (TimeSpan.FromHours(6), TimeSpan.FromHours(12));  // 6:00 - 11:59
+        public static readonly (TimeSpan Start, TimeSpan End) Noon = (TimeSpan.FromHours(12), TimeSpan.FromHours(14));      // 12:00 - 13:59
+        public static readonly (TimeSpan Start, TimeSpan End) Afternoon = (TimeSpan.FromHours(14), TimeSpan.FromHours(18)); // 14:00 - 17:59
+        public static readonly (TimeSpan Start, TimeSpan End) Evening = (TimeSpan.FromHours(18), TimeSpan.FromHours(23));   // 18:00 - 22:59
 
         public static int GetCurrentSession(TimeSpan currentTime)
         {
@@ -18,17 +19,21 @@ namespace SmartFarmManager.Service.Helpers
             {
                 return 1; // Morning
             }
+            if (currentTime >= Noon.Start && currentTime < Noon.End)
+            {
+                return 2; // Noon
+            }
             if (currentTime >= Afternoon.Start && currentTime < Afternoon.End)
             {
-                return 2; // Afternoon
+                return 3; // Afternoon
             }
             if (currentTime >= Evening.Start && currentTime < Evening.End)
             {
-                return 3; // Evening
+                return 4; // Evening
             }
 
             return -1; // Invalid session
         }
     }
-
 }
+

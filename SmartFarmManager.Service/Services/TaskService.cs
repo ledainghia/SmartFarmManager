@@ -940,15 +940,12 @@ namespace SmartFarmManager.Service.Services
                 throw new ArgumentException("DueDate is required.");
             }
 
-            // 5. Kiểm tra Session có giá trị hay không
-            int newSession = model.Session != null
-                ? (int)Enum.Parse<SessionTypeEnum>(model.Session, true)
-                : task.Session;
-
-            if (newSession < 0 || !Enum.IsDefined(typeof(SessionTypeEnum), newSession))
+            // 5. Kiểm tra Session
+            if (model.Session <= 0 || !Enum.IsDefined(typeof(SessionTypeEnum), model.Session))
             {
                 throw new ArgumentException("Invalid session value provided.");
             }
+            int newSession = model.Session;
 
             // 6. Kiểm tra trong ngày và session có task nào cùng TaskTypeId hay không
             if (taskTypeIdToCheck.HasValue)
@@ -997,14 +994,13 @@ namespace SmartFarmManager.Service.Services
                 task.Description = model.Description;
             }
 
-
-
             // 8. Lưu thay đổi
             await _unitOfWork.Tasks.UpdateAsync(task);
             await _unitOfWork.CommitAsync();
 
             return true;
         }
+
 
 
         public async Task<bool> GenerateTasksForTodayAsync()
@@ -1066,7 +1062,7 @@ namespace SmartFarmManager.Service.Services
                                     Description = taskDaily.Description,
                                     DueDate = today,
                                     Session = taskDaily.Session,
-                                    Status = TaskStatusTypeEnum.Pending,
+                                    Status = TaskStatusEnum.Pending,
                                     CreatedAt = DateTimeUtils.VietnamNow()
                                 });
                             }
@@ -1098,7 +1094,7 @@ namespace SmartFarmManager.Service.Services
                                     Description = $"Tiêm vắc xin {vaccineSchedule.Vaccine.Name} cho giai đoạn {growthStage.Name}.",
                                     DueDate = today,
                                     Session = 1,
-                                    Status = TaskStatusTypeEnum.Pending,
+                                    Status = TaskStatusEnum.Pending,
                                     CreatedAt = DateTimeUtils.VietnamNow()
                                 });
 
@@ -1133,9 +1129,9 @@ namespace SmartFarmManager.Service.Services
                             ? (await _unitOfWork.TaskTypes.FindByCondition(tt => tt.Id == cleaningTaskTypeId).FirstOrDefaultAsync())?.PriorityNum ?? 1
                             : 1,
                         Description = "Task dọn dẹp chuồng theo lịch định kỳ.",
-                        DueDate = today,
+                        DueDate = today,    
                         Session = 1,
-                        Status = TaskStatusTypeEnum.Pending,
+                        Status = TaskStatusEnum.Pending,
                         CreatedAt = DateTimeUtils.VietnamNow()
                     });
                 }
@@ -1206,7 +1202,7 @@ namespace SmartFarmManager.Service.Services
                                 Description = taskDaily.Description,
                                 DueDate = targetDate,
                                 Session = taskDaily.Session,
-                                Status = TaskStatusTypeEnum.Pending,
+                                Status = TaskStatusEnum.Pending,
                                 CreatedAt = DateTimeUtils.VietnamNow()
                             });
                         }
@@ -1227,7 +1223,7 @@ namespace SmartFarmManager.Service.Services
                                     Description = $"Tiêm vắc xin {vaccineSchedule.Vaccine.Name} cho giai đoạn {growthStage.Name}.",
                                     DueDate = targetDate,
                                     Session = 1,
-                                    Status = TaskStatusTypeEnum.Pending,
+                                    Status = TaskStatusEnum.Pending,
                                     CreatedAt = DateTimeUtils.VietnamNow()
                                 });
 
@@ -1322,17 +1318,17 @@ namespace SmartFarmManager.Service.Services
             {
                 if (task.Session < currentSession) // Session đã qua
                 {
-                    if (task.Status == TaskStatusTypeEnum.Pending || task.Status == TaskStatusTypeEnum.InProgress)
+                    if (task.Status == TaskStatusEnum.Pending || task.Status == TaskStatusEnum.InProgress)
                     {
-                        task.Status = TaskStatusTypeEnum.OverSchedules; // Chuyển sang OverSchedules
+                        task.Status = TaskStatusEnum.Overdue; // Chuyển sang OverSchedules
                         await _unitOfWork.Tasks.UpdateAsync(task);
                     }
                 }
                 else if (task.Session == currentSession) // Session hiện tại
                 {
-                    if (task.Status == TaskStatusTypeEnum.Pending)
+                    if (task.Status == TaskStatusEnum.Pending)
                     {
-                        task.Status = TaskStatusTypeEnum.InProgress; // Chuyển sang InProgress
+                        task.Status = TaskStatusEnum.InProgress; // Chuyển sang InProgress
                         await _unitOfWork.Tasks.UpdateAsync(task);
                     }
                 }
@@ -1436,7 +1432,7 @@ namespace SmartFarmManager.Service.Services
                                 Description = taskDaily.Description,
                                 DueDate = date.Add(sessionEndTime),
                                 Session = taskDaily.Session,
-                                Status = TaskStatusTypeEnum.Pending,
+                                Status = TaskStatusEnum.Pending,
                                 CreatedAt = DateTimeUtils.VietnamNow()
                             });
                         }
@@ -1468,7 +1464,7 @@ namespace SmartFarmManager.Service.Services
                                 Description = $"Tiêm vắc xin {vaccineSchedule.Vaccine.Name} cho giai đoạn {growthStage.Name}.",
                                 DueDate = date.Add(GetSessionEndTime(1)),
                                 Session = 1,
-                                Status = TaskStatusTypeEnum.Pending,
+                                Status = TaskStatusEnum.Pending,
                                 CreatedAt = DateTimeUtils.VietnamNow()
                             });
 
@@ -1505,7 +1501,7 @@ namespace SmartFarmManager.Service.Services
                     Description = "Task dọn dẹp chuồng theo lịch định kỳ.",
                     DueDate = date.Add(GetSessionEndTime(1)),
                     Session = 1,
-                    Status = TaskStatusTypeEnum.Pending,
+                    Status = TaskStatusEnum.Pending,
                     CreatedAt = DateTimeUtils.VietnamNow()
                 });
             }
@@ -1533,9 +1529,9 @@ namespace SmartFarmManager.Service.Services
 
             foreach (var task in tasks)
             {
-                if (task.Status == TaskStatusTypeEnum.Pending || task.Status == TaskStatusTypeEnum.InProgress)
+                if (task.Status == TaskStatusEnum.Pending || task.Status == TaskStatusEnum.InProgress)
                 {
-                    task.Status = TaskStatusTypeEnum.OverSchedules;
+                    task.Status = TaskStatusEnum.Overdue;
                     await _unitOfWork.Tasks.UpdateAsync(task);
                 }
             }
