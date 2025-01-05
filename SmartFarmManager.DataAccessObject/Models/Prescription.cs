@@ -8,7 +8,7 @@ namespace SmartFarmManager.DataAccessObject.Models;
 public partial class Prescription : EntityBase
 {
 
-    public Guid RecordId { get; set; }
+    public Guid MedicalSymtomId { get; set; }
     public Guid CageId { get; set; }
 
     public DateTime? PrescribedDate { get; set; }
@@ -21,10 +21,12 @@ public partial class Prescription : EntityBase
     public string Status { get; set; }
     public int? DaysToTake { get; set; }
     public decimal? Price { get; set; }
+    public string? DoctorApproval { get; set; }
+    public string? StatusAnimal { get; set; }
 
     public virtual ICollection<HealthLog> HealthLogs { get; set; } = new List<HealthLog>();
-
+        
     public virtual ICollection<PrescriptionMedication> PrescriptionMedications { get; set; } = new List<PrescriptionMedication>();
 
-    public virtual MedicalSymptom Record { get; set; }
+    public virtual MedicalSymptom MedicalSymtom { get; set; }
 }

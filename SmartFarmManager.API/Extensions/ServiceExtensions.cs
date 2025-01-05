@@ -185,14 +185,14 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IGrowthStageRepository, GrowthStageRepository>();
             services.AddScoped<IVaccineRepository, VaccineRepository>();
             services.AddScoped<ITaskDailyRepository, TaskDailyRepository>();
-            services.AddScoped<ITemporaryCageAssignmentRepository, TemporaryCageAssignmentRepository>();
             services.AddScoped<IVaccineScheduleRepository, VaccineScheduleRepository>();
             services.AddScoped<IHealthLogRepository, HealthLogRepository>();
             services.AddScoped<IPictureRepository, PictureRepostory>();
             services.AddScoped<IPrescriptionMedicationRepository, PrescriptionMedicationRepository>();
             services.AddScoped<IDailyFoodUsageLogRepository, DailyFoodUsageLogRepository>();
             services.AddScoped<IVaccineScheduleLogRepository, VaccineScheduleLogRepository>();
-
+            services.AddScoped<ILeaveRequestRepository, LeaveRequestRepository>();
+            services.AddScoped<ISaleTypeRepository, SaleTypeRepository>();
             return services;
         }
 

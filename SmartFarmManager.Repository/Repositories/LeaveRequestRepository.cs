@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace SmartFarmManager.Repository.Repositories
 {
-    public class TemporaryCageAssignmentRepository : RepositoryBaseAsync<TemporaryCageAssignment>, ITemporaryCageAssignmentRepository
+    public class LeaveRequestRepository : RepositoryBaseAsync<LeaveRequest>, ILeaveRequestRepository
     {
-        public TemporaryCageAssignmentRepository(SmartFarmContext dbContext) : base(dbContext)
+        public LeaveRequestRepository(SmartFarmContext dbContext) : base(dbContext)
         {
         }
     }

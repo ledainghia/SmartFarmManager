@@ -18,6 +18,6 @@ namespace SmartFarmManager.Service.BusinessModels.Task
 
         public DateTime? DueDate { get; set; }
 
-        public string Session { get; set; }
+        public int Session { get; set; }
     }
 }

@@ -35,13 +35,14 @@ namespace SmartFarmManager.Repository
         public IGrowthStageRepository GrowthStages { get; }
         public IVaccineRepository Vaccines { get; }
         public ITaskDailyRepository TaskDailies { get; }
-        public ITemporaryCageAssignmentRepository TemporaryCageAssignments { get; }
         public IHealthLogRepository HealthLogs { get; }
         public IPictureRepository Pictures { get; }
         public IPrescriptionMedicationRepository PrescriptionMedications { get; }
         public IVaccineScheduleLogRepository VaccineScheduleLogs { get; }
         public IDailyFoodUsageLogRepository DailyFoodUsageLogs { get; }
         public IVaccineScheduleRepository VaccineSchedules { get; }
+        public ILeaveRequestRepository LeaveRequests { get; }
+        public ISaleTypeRepository SaleTypes { get; }
 
         public UnitOfWork(SmartFarmContext context, IUserRepository users,
             ITaskTypeRepository taskTypes,
@@ -63,14 +64,15 @@ namespace SmartFarmManager.Repository
             IGrowthStageRepository growthStages,
             IVaccineTemplateRepository vaccineTemplates,
             IVaccineRepository vaccines,
-            ITemporaryCageAssignmentRepository temporaryCageAssignments,
             IHealthLogRepository healthLogs,
             IPictureRepository pictures,
             IPrescriptionMedicationRepository prescriptionMedications,
             IDailyFoodUsageLogRepository dailyFoodUsageLogs,
             IVaccineScheduleLogRepository vaccineScheduleLogs,
             IVaccineScheduleRepository vaccineSchedules,
-            ITaskDailyRepository taskDailies)
+            ITaskDailyRepository taskDailies,
+            ILeaveRequestRepository leaveRequests,
+            ISaleTypeRepository saleTypes)
         {
             _context = context;
             Users = users;
@@ -93,7 +95,6 @@ namespace SmartFarmManager.Repository
             GrowthStages = growthStages;
             VaccineTemplates = vaccineTemplates;
             Vaccines= vaccines;
-            TemporaryCageAssignments= temporaryCageAssignments;
             VaccineSchedules= vaccineSchedules;
             HealthLogs = healthLogs;
             Pictures = pictures;
@@ -102,6 +103,8 @@ namespace SmartFarmManager.Repository
             VaccineScheduleLogs = vaccineScheduleLogs;
             VaccineSchedules = vaccineSchedules;
             TaskDailies = taskDailies;
+            LeaveRequests=leaveRequests;
+            SaleTypes = saleTypes;
         }
          
 

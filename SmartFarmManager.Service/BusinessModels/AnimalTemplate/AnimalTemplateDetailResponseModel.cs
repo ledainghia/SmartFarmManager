@@ -12,7 +12,6 @@ namespace SmartFarmManager.Service.BusinessModels.AnimalTemplate
         public string Name { get; set; }
         public string Species { get; set; }
         public string Status { get; set; }
-        public int? DefaultCapacity { get; set; }
         public string Notes { get; set; }
         public List<GrowthStageTemplateResponse> GrowthStageTemplates { get; set; }
         public List<VaccineTemplateResponse> VaccineTemplates { get; set; }

@@ -10,7 +10,6 @@ namespace SmartFarmManager.Service.BusinessModels.AnimalTemplate
     {
         public string? Name { get; set; }
         public string? Species { get; set; }
-        public int? DefaultCapacity { get; set; }
         public string? Notes { get; set; }
     }
 }

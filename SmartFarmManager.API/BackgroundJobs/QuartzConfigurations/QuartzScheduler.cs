@@ -22,19 +22,25 @@ namespace SmartFarmManager.API.BackgroundJobs.QuartzConfigurations
             );
             // Job chạy vào đầu các buổi
             quartzConfig.ScheduleJob<Jobs.UpdateTaskStatusesJob>(trigger => trigger
-                .WithIdentity("UpdateTaskStatusesJob-Morning")
-                .WithCronSchedule("0 0 6 * * ?", x => x.InTimeZone(vietnamTimeZone)) // 6:00 sáng
+     .WithIdentity("UpdateTaskStatusesJob-Morning")
+     .WithCronSchedule("0 0 6 * * ?", x => x.InTimeZone(vietnamTimeZone)) // 6:00 sáng
+ );
+
+            quartzConfig.ScheduleJob<Jobs.UpdateTaskStatusesJob>(trigger => trigger
+                .WithIdentity("UpdateTaskStatusesJob-Noon")
+                .WithCronSchedule("0 0 12 * * ?", x => x.InTimeZone(vietnamTimeZone)) // 12:00 trưa
             );
 
             quartzConfig.ScheduleJob<Jobs.UpdateTaskStatusesJob>(trigger => trigger
                 .WithIdentity("UpdateTaskStatusesJob-Afternoon")
-                .WithCronSchedule("0 0 12 * * ?", x => x.InTimeZone(vietnamTimeZone)) // 12:00 trưa
+                .WithCronSchedule("0 0 14 * * ?", x => x.InTimeZone(vietnamTimeZone)) // 14:00 chiều
             );
 
             quartzConfig.ScheduleJob<Jobs.UpdateTaskStatusesJob>(trigger => trigger
                 .WithIdentity("UpdateTaskStatusesJob-Evening")
                 .WithCronSchedule("0 0 18 * * ?", x => x.InTimeZone(vietnamTimeZone)) // 18:00 tối
             );
+
 
             quartzConfig.ScheduleJob<Jobs.UpdateEveningTaskStatusesJob>(trigger => trigger
                 .WithIdentity("UpdateEveningTaskStatusesJob")

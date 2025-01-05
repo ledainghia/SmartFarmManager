@@ -5,7 +5,6 @@ namespace SmartFarmManager.API.Payloads.Requests.GrowthStageTemplate
 {
     public class CreateGrowthStageTemplateRequest
     {
-
         [Required]
         public Guid TemplateId { get; set; }
 
@@ -20,6 +19,8 @@ namespace SmartFarmManager.API.Payloads.Requests.GrowthStageTemplate
         [MaxLength(255)]
         public string? Notes { get; set; }
 
+        public Guid? SaleTypeId { get; set; } // Bổ sung trường SaleTypeId
+
         public CreateGrowthStageTemplateModel MapToModel()
         {
             return new CreateGrowthStageTemplateModel
@@ -29,8 +30,10 @@ namespace SmartFarmManager.API.Payloads.Requests.GrowthStageTemplate
                 WeightAnimal = this.WeightAnimal,
                 AgeStart = this.AgeStart,
                 AgeEnd = this.AgeEnd,
-                Notes = this.Notes
+                Notes = this.Notes,
+                SaleTypeId = this.SaleTypeId // Gán SaleTypeId
             };
         }
     }
+
 }

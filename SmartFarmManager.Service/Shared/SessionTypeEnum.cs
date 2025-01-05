@@ -8,8 +8,9 @@ namespace SmartFarmManager.Service.Shared
 {
     public enum SessionTypeEnum
     {
-        Morning = 1,   // Buổi sáng
-        Afternoon = 2, // Buổi chiều
-        Evening = 3 
+        Morning = 1,  // Sáng
+        Noon = 2,     // Trưa
+        Afternoon = 3, // Chiều
+        Evening = 4    // Tối
     }
 }

@@ -25,12 +25,17 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<bool> CreateGrowthStageTemplateAsync(CreateGrowthStageTemplateModel model)
         {
-            var animalTemplate = await _unitOfWork.AnimalTemplates.FindByCondition(t => t.Id == model.TemplateId).FirstOrDefaultAsync();
+            // 1. Kiểm tra AnimalTemplate
+            var animalTemplate = await _unitOfWork.AnimalTemplates
+                .FindByCondition(t => t.Id == model.TemplateId)
+                .FirstOrDefaultAsync();
+
             if (animalTemplate == null)
             {
                 throw new ArgumentException($"Animal Template with ID {model.TemplateId} does not exist.");
             }
 
+            // 2. Kiểm tra StageName trùng lặp
             var duplicateStageName = await _unitOfWork.GrowthStageTemplates
                 .FindByCondition(s => s.TemplateId == model.TemplateId && s.StageName == model.StageName)
                 .AnyAsync();
@@ -39,15 +44,26 @@ namespace SmartFarmManager.Service.Services
             {
                 throw new ArgumentException($"StageName '{model.StageName}' already exists in the Animal Template.");
             }
+            if (model.SaleTypeId.HasValue)
+            {
+                var saleType = await _unitOfWork.SaleTypes
+                    .FindByCondition(s => s.Id == model.SaleTypeId)
+                    .FirstOrDefaultAsync();
 
+                if (saleType == null)
+                {
+                    throw new ArgumentException($"SaleType with ID {model.SaleTypeId} does not exist.");
+                }
+            }
+
+            // 4. Kiểm tra AgeStart/AgeEnd tính liên tục
             var existingStages = await _unitOfWork.GrowthStageTemplates
-      .FindByCondition(s => s.TemplateId == model.TemplateId)
-      .OrderBy(s => s.AgeStart)
-      .ToListAsync();
+                .FindByCondition(s => s.TemplateId == model.TemplateId)
+                .OrderBy(s => s.AgeStart)
+                .ToListAsync();
 
             if (!existingStages.Any())
             {
-                // 4. Nếu không có GrowthStage nào, AgeStart phải bắt đầu từ 1
                 if (model.AgeStart != 1)
                 {
                     throw new ArgumentException("The first GrowthStageTemplate must have an AgeStart of 1.");
@@ -55,7 +71,6 @@ namespace SmartFarmManager.Service.Services
             }
             else
             {
-                // 5. Kiểm tra tính liên tục của AgeStart
                 var lastStage = existingStages.Last();
                 if (model.AgeStart != (lastStage.AgeEnd + 1))
                 {
@@ -63,7 +78,7 @@ namespace SmartFarmManager.Service.Services
                 }
             }
 
-
+            // 5. Tạo GrowthStageTemplate
             var growthStageTemplate = new GrowthStageTemplate
             {
                 TemplateId = model.TemplateId,
@@ -71,7 +86,8 @@ namespace SmartFarmManager.Service.Services
                 WeightAnimal = model.WeightAnimal,
                 AgeStart = model.AgeStart,
                 AgeEnd = model.AgeEnd,
-                Notes = model.Notes
+                Notes = model.Notes,
+                SaleTypeId = model.SaleTypeId // Gán SaleTypeId
             };
 
             await _unitOfWork.GrowthStageTemplates.CreateAsync(growthStageTemplate);
@@ -79,6 +95,7 @@ namespace SmartFarmManager.Service.Services
 
             return true;
         }
+
         public async Task<bool> UpdateGrowthStageTemplateAsync(Guid id, UpdateGrowthStageTemplateModel model)
         {
             // 1. Kiểm tra GrowthStageTemplate có tồn tại không
