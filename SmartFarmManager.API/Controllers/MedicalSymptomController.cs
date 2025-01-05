@@ -6,6 +6,7 @@ using SmartFarmManager.API.Payloads.Responses.MedicalSymptom;
 using SmartFarmManager.API.Payloads.Responses.Picture;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Service.BusinessModels.MedicalSymptom;
+using SmartFarmManager.Service.BusinessModels.MedicalSymptomDetail;
 using SmartFarmManager.Service.BusinessModels.Picture;
 using SmartFarmManager.Service.Interfaces;
 
@@ -39,10 +40,16 @@ namespace SmartFarmManager.API.Controllers
                 Status = request.Status,
                 AffectedQuantity = request.AffectedQuantity,
                 Notes = request.Notes,
+                CreateAt = DateTime.UtcNow,
                 Pictures = request.Pictures.Select(p => new PictureModel
                 {
                     Image = p.Image,
                     DateCaptured = p.DateCaptured
+                }).ToList(),
+                MedicalSymptomDetails = request.MedicalSymptomDetails.Select(d => new MedicalSymptomDetailModel
+                {
+                    SymptomId = d.SymptomId,
+                    Notes = d.Notes
                 }).ToList()
             };
 

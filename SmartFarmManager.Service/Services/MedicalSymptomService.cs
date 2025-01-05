@@ -1,8 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Utilities.Date;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels.MedicalSymptom;
 using SmartFarmManager.Service.BusinessModels.Picture;
+using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -76,11 +78,18 @@ namespace SmartFarmManager.Service.Services
                 Status = medicalSymptomModel.Status,
                 AffectedQuantity = medicalSymptomModel.AffectedQuantity,
                 Notes = medicalSymptomModel.Notes,
-                CreateAt = DateTime.UtcNow,
+                CreateAt = medicalSymptomModel.CreateAt,
                 Pictures = medicalSymptomModel.Pictures.Select(p => new DataAccessObject.Models.Picture
                 {
                     Image = p.Image,
                     DateCaptured = p.DateCaptured
+                }).ToList(),
+                MedicalSymptomDetails = medicalSymptomModel.MedicalSymptomDetails.Select(d => new DataAccessObject.Models.MedicalSymtomDetail
+                {
+                    SymptomId = d.SymptomId,
+                    MedicalSymptomId = d.SymptomId,
+                    Notes = d.Notes,
+                    CreateAt = DateTimeUtils.VietnamNow()
                 }).ToList()
             };
 
@@ -89,6 +98,7 @@ namespace SmartFarmManager.Service.Services
 
             return medicalSymptom.Id;
         }
+
 
         public async Task<MedicalSymptomModel?> GetMedicalSymptomByIdAsync(Guid id)
         {
