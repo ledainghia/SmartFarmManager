@@ -34,4 +34,5 @@ public partial class GrowthStage : EntityBase
     public virtual FarmingBatch FarmingBatch { get; set; }
 
     public virtual ICollection<VaccineSchedule> VaccineSchedules { get; set; } = new List<VaccineSchedule>();
-}
+    public virtual ICollection<EggHarvest> EggHarvests { get; set; } = new List<EggHarvest>();
+}   

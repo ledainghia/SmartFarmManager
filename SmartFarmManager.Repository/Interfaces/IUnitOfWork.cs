@@ -30,7 +30,6 @@ namespace SmartFarmManager.Repository.Interfaces
         IGrowthStageRepository GrowthStages { get; }
         IVaccineRepository Vaccines { get; }
         ITaskDailyRepository TaskDailies { get; }
-        ITemporaryCageAssignmentRepository TemporaryCageAssignments { get; }
         IVaccineScheduleRepository VaccineSchedules { get; }
         IHealthLogRepository HealthLogs { get; }
         IPictureRepository Pictures { get; }

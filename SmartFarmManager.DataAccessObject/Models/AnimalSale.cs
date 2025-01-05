@@ -12,9 +12,13 @@ public partial class AnimalSale : EntityBase
 
     public DateTime? SaleDate { get; set; }
 
-    public double Revenue { get; set; }
+    public double Total { get; set; }
+    public double? UnitPrice { get; set; }
+    public int Quantity { get; set; }
+    public Guid StaffId { get; set; }
+    public Guid SaleTypeId { get; set; }
 
-    public string BuyerInfo { get; set; }
 
+    public virtual SaleType SaleType { get; set; }
     public virtual FarmingBatch FarmingBatch { get; set; }
 }
