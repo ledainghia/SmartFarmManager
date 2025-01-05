@@ -88,7 +88,7 @@ namespace SmartFarmManager.Service.Services
                 FarmingBatchId = medicalSymptomModel.FarmingBatchId,
                 PrescriptionId = medicalSymptomModel.PrescriptionId,
                 Symptoms = medicalSymptomModel.Symptoms,
-                Status = medicalSymptomModel.Status,
+                Status = MedicalSymptomStatuseEnum.Pending,
                 AffectedQuantity = medicalSymptomModel.AffectedQuantity,
                 Notes = medicalSymptomModel.Notes,
                 CreateAt = medicalSymptomModel.CreateAt

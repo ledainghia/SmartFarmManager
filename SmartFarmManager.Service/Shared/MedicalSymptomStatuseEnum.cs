@@ -10,5 +10,8 @@ namespace SmartFarmManager.Service.Shared
     {
         public const string Normal = "Normal"; //Bình thường
         public const string Diagnosed = "Diagnosed"; //Đã chuẩn đoán
+        public const string Pending = "Pending"; //Đang chờ xem xét
+        public const string Prescribed = "Prescribed"; //Đã kê thuốc
+
     }
 }
