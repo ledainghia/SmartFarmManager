@@ -131,26 +131,28 @@ namespace SmartFarmManager.Service.Services
             // 5. Get Assigned User for the Cage
             Guid? assignedUserId = null;
 
-            // Check if there is a temporary staff assigned to the cage
-            var temporaryAssignment = await _unitOfWork.TemporaryCageAssignments
-                .FindByCondition(ta => ta.CageId == model.CageId &&
-                                       ta.StartDate <= model.DueDate &&
-                                       ta.EndDate >= model.DueDate)
+            // Check if there is a leave request for the staff managing the cage
+            var cageStaff = await _unitOfWork.CageStaffs
+                .FindByCondition(cs => cs.CageId == model.CageId)
                 .FirstOrDefaultAsync();
 
-            if (temporaryAssignment != null)
+            if (cageStaff != null)
             {
-                assignedUserId = temporaryAssignment.TemporaryStaffId;
-            }
-            else
-            {
-                // If no temporary staff, check the default staff assigned to the cage
-                var cageStaff = await _unitOfWork.CageStaffs
-                    .FindByCondition(cs => cs.CageId == model.CageId)
+                var leaveRequest = await _unitOfWork.LeaveRequests
+                    .FindByCondition(lr => lr.StaffFarmId == cageStaff.StaffFarmId &&
+                                           lr.StartDate.Date <= model.DueDate.Date &&
+                                           lr.EndDate.Date >= model.DueDate.Date &&
+                                           lr.Status == "Approved")
                     .FirstOrDefaultAsync();
 
-                if (cageStaff != null)
+                if (leaveRequest != null)
                 {
+                    // If a leave request exists and approved, use the temporary user
+                    assignedUserId = leaveRequest.UserTempId;
+                }
+                else
+                {
+                    // Otherwise, assign to the default staff
                     assignedUserId = cageStaff.StaffFarmId;
                 }
             }
@@ -1249,23 +1251,35 @@ namespace SmartFarmManager.Service.Services
 
         private async Task<Guid?> GetAssignedStaffForCage(Guid cageId, DateTime date)
         {
-            // Kiểm tra TemporaryCageAssignment
-            var tempAssignment = await _unitOfWork.TemporaryCageAssignments
-                .FindByCondition(tca => tca.CageId == cageId && tca.StartDate <= date && tca.EndDate >= date)
-                .FirstOrDefaultAsync();
-
-            if (tempAssignment != null)
-            {
-                return tempAssignment.TemporaryStaffId;
-            }
-
-            // Nếu không có Temporary Assignment, lấy Staff mặc định
+            // 1. Lấy thông tin nhân viên mặc định của chuồng
             var defaultStaff = await _unitOfWork.CageStaffs
                 .FindByCondition(cs => cs.CageId == cageId)
                 .FirstOrDefaultAsync();
 
-            return defaultStaff?.StaffFarmId;
+            if (defaultStaff == null)
+            {
+                // Không có nhân viên mặc định gán cho chuồng
+                return null;
+            }
+
+            // 2. Kiểm tra xem nhân viên mặc định có đơn nghỉ phép hợp lệ
+            var leaveRequest = await _unitOfWork.LeaveRequests
+                .FindByCondition(lr => lr.StaffFarmId == defaultStaff.StaffFarmId &&
+                                       lr.StartDate <= date &&
+                                       lr.EndDate >= date &&
+                                       lr.Status == "Approved")
+                .FirstOrDefaultAsync();
+
+            if (leaveRequest != null)
+            {
+                // Nếu có đơn nghỉ phép đã được phê duyệt, trả về UserTempId
+                return leaveRequest.UserTempId;
+            }
+
+            // 3. Nếu không có đơn nghỉ phép, trả về nhân viên mặc định
+            return defaultStaff.StaffFarmId;
         }
+
         private async Task<Guid?> GetFarmAdminIdByCageId(Guid cageId)
         {
             // Tìm Cage để lấy FarmId
