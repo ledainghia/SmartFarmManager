@@ -149,14 +149,44 @@ public partial class SmartFarmContext : DbContext
     public virtual DbSet<WaterLog> WaterLogs { get; set; }
     public virtual DbSet<TaskDaily> TaskDailies { get; set; }
     public virtual DbSet<EggHarvest> EggHarvests { get; set; }
-    public DbSet<SaleType> SaleTypes { get; set; }
+    public virtual DbSet<SaleType> SaleTypes { get; set; }
+    public virtual DbSet<Symptom> Symptoms { get; set; }
+    public virtual DbSet<MedicalSymtomDetail> MedicalSymtomDetails { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+
+        modelBuilder.Entity<MedicalSymtomDetail>(entity =>
+        {
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Notes)
+                  .HasMaxLength(500);
+
+            entity.Property(e => e.CreateAt)
+                  .IsRequired();
+
+            entity.HasOne(e => e.MedicalSymptom)
+                  .WithMany(ms => ms.MedicalSymptomDetails)
+                  .HasForeignKey(e => e.MedicalSymptomId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Symptom)
+                  .WithMany(s => s.MedicalSymptomDetails)
+                  .HasForeignKey(e => e.SymptomId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+        modelBuilder.Entity<Symptom>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.SymptomName)
+                  .HasMaxLength(200)
+                  .IsRequired();
+        });
         modelBuilder.Entity<SaleType>(entity =>
         {
-            entity.ToTable("SaleType");
 
             entity.HasKey(e => e.Id);
 
@@ -176,7 +206,6 @@ public partial class SmartFarmContext : DbContext
 
         modelBuilder.Entity<EggHarvest>(entity =>
         {
-            entity.ToTable("EggHarvest");
             entity.HasKey(e => e.Id);
 
             entity.Property(e => e.DateCollected)
