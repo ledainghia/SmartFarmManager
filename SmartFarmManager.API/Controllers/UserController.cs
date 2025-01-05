@@ -94,6 +94,16 @@ namespace SmartFarmManager.API.Controllers
                 return StatusCode(500, ApiResult<string>.Fail($"An error occurred: {ex.Message}"));
             }
         }
+        [HttpGet("server-time")]
+        public IActionResult GetServerTime()
+        {
+            var serverTime = DateTime.Now;
+            var dayOfWeek = serverTime.ToString("dddd", new System.Globalization.CultureInfo("vi-VN")); // Lấy thứ bằng tiếng Việt
+            var formattedTime = $"{dayOfWeek}, {serverTime:dd/MM/yyyy, HH:mm:ss}";
+
+            return Ok(ApiResult<string>.Succeed(formattedTime));
+        }
+
 
     }
 }

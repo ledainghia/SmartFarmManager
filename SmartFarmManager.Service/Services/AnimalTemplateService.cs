@@ -42,7 +42,6 @@ namespace SmartFarmManager.Service.Services
             {
                 Name = model.Name,
                 Species = model.Species,
-                DefaultCapacity = model.DefaultCapacity,
                 Status = AnimalTemplateStatusEnum.Draft,
                 Notes = model.Notes,
             };
@@ -94,16 +93,6 @@ namespace SmartFarmManager.Service.Services
                 existingTemplate.Species = model.Species;
             }
 
-            // 4. Kiểm tra giá trị DefaultCapacity
-            if (model.DefaultCapacity.HasValue)
-            {
-                if (model.DefaultCapacity <= 0)
-                {
-                    throw new ArgumentException("Default Capacity must be greater than zero.");
-                }
-
-                existingTemplate.DefaultCapacity = model.DefaultCapacity;
-            }
 
             // 5. Kiểm tra giá trị Notes
             if (!string.IsNullOrEmpty(model.Notes))
@@ -208,7 +197,6 @@ namespace SmartFarmManager.Service.Services
                     Name = t.Name,
                     Species = t.Species,
                     Status = t.Status,
-                    DefaultCapacity = t.DefaultCapacity,
                     Notes = t.Notes
                 })
                 .ToListAsync();
@@ -248,7 +236,6 @@ namespace SmartFarmManager.Service.Services
                 Name = animalTemplate.Name,
                 Species = animalTemplate.Species,
                 Status = animalTemplate.Status,
-                DefaultCapacity = animalTemplate.DefaultCapacity,
                 Notes = animalTemplate.Notes,
                 GrowthStageTemplates = animalTemplate.GrowthStageTemplates.Select(g => new GrowthStageTemplateResponse
                 {

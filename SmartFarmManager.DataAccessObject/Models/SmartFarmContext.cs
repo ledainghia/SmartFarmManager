@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
@@ -48,7 +49,7 @@ public partial class SmartFarmContext : DbContext
     {
 
 
-        optionsBuilder.UseSqlServer("Server=103.48.193.165,5053;Database=Farm;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;");
+        optionsBuilder.UseSqlServer("Server=103.48.193.165,5053;Database=Farm3;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;");
 
     }
 
@@ -147,9 +148,52 @@ public partial class SmartFarmContext : DbContext
 
     public virtual DbSet<WaterLog> WaterLogs { get; set; }
     public virtual DbSet<TaskDaily> TaskDailies { get; set; }
+    public virtual DbSet<EggHarvest> EggHarvests { get; set; }
+    public DbSet<SaleType> SaleTypes { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<SaleType>(entity =>
+        {
+            entity.ToTable("SaleType");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.StageTypeName)
+                  .HasMaxLength(100)
+                  .IsRequired();
+
+            entity.Property(e => e.Discription)
+                  .HasMaxLength(255);
+
+            // Quan hệ với AnimalSale
+            entity.HasMany(st => st.AnimalSales)
+                  .WithOne(asale => asale.SaleType)
+                  .HasForeignKey(asale => asale.SaleTypeId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<EggHarvest>(entity =>
+        {
+            entity.ToTable("EggHarvest");
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.DateCollected)
+                  .IsRequired();
+
+            entity.Property(e => e.EggCount)
+                  .IsRequired();
+
+            entity.Property(e => e.Notes)
+                  .HasMaxLength(255);
+
+            entity.HasOne(e => e.growthStage)
+                  .WithMany(g => g.EggHarvests) 
+                  .HasForeignKey(e => e.GrowthStageId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
         // LeaveRequest Configuration
         modelBuilder.Entity<LeaveRequest>(entity =>
         {
@@ -174,38 +218,9 @@ public partial class SmartFarmContext : DbContext
                   .HasForeignKey(e => e.StaffFarmId)
                   .OnDelete(DeleteBehavior.Cascade);
 
-            // Foreign Key: AdminId -> Users(UserId)
-            entity.HasOne(e => e.Admin)
-                  .WithMany()
-                  .HasForeignKey(e => e.AdminId)
-                  .OnDelete(DeleteBehavior.Restrict);
+            
         });
 
-        modelBuilder.Entity<TemporaryCageAssignment>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-
-            entity.Property(e => e.Notes)
-                  .HasMaxLength(255);
-
-            // Foreign Key: CageId -> Cages(CageId)
-            entity.HasOne(e => e.Cage)
-                  .WithMany()
-                  .HasForeignKey(e => e.CageId)
-                  .OnDelete(DeleteBehavior.Cascade);
-
-            // Foreign Key: OriginalStaffId -> Users(UserId)
-            entity.HasOne(e => e.OriginalStaff)
-                  .WithMany()
-                  .HasForeignKey(e => e.OriginalStaffId)
-                  .OnDelete(DeleteBehavior.Restrict);
-
-            // Foreign Key: TemporaryStaffId -> Users(UserId)
-            entity.HasOne(e => e.TemporaryStaff)
-                  .WithMany()
-                  .HasForeignKey(e => e.TemporaryStaffId)
-                  .OnDelete(DeleteBehavior.Restrict);
-        });
 
 
         // TaskDaily
@@ -256,15 +271,19 @@ public partial class SmartFarmContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__AnimalSa__1EE3C3FF9307295C");
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.BuyerInfo).HasMaxLength(255);
             entity.Property(e => e.SaleDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+
 
             entity.HasOne(d => d.FarmingBatch).WithMany(p => p.AnimalSales)
                 .HasForeignKey(d => d.FarmingBatchId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__AnimalSal__Farmi__160F4887");
+            entity.HasOne(e => e.SaleType)
+          .WithMany(st => st.AnimalSales)
+          .HasForeignKey(e => e.SaleTypeId)
+          .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<AnimalTemplate>(entity =>
@@ -674,7 +693,7 @@ public partial class SmartFarmContext : DbContext
                 .HasMaxLength(50)
                 .HasDefaultValue("Ðang di?u tr?");
             entity.Property(e => e.Symptoms).HasMaxLength(200);
-            entity.Property(e => e.Treatment).HasMaxLength(100);
+
 
             entity.HasOne(d => d.FarmingBatch).WithMany(p => p.MedicalSymptoms)
                 .HasForeignKey(d => d.FarmingBatchId)
@@ -766,8 +785,8 @@ public partial class SmartFarmContext : DbContext
             entity.Property(e => e.PrescribedDate).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.Price).HasColumnType("decimal(10, 2)");
 
-            entity.HasOne(d => d.Record).WithMany(p => p.Prescriptions)
-                .HasForeignKey(d => d.RecordId)
+            entity.HasOne(d => d.MedicalSymtom).WithMany(p => p.Prescriptions)
+                .HasForeignKey(d => d.MedicalSymtomId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Prescript__Recor__40F9A68C");
         });

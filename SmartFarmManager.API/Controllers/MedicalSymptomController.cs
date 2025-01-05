@@ -66,10 +66,11 @@ namespace SmartFarmManager.API.Controllers
                 FarmingBatchId = medicalSymptom.FarmingBatchId,
                 Symptoms = medicalSymptom.Symptoms,
                 Diagnosis = medicalSymptom.Diagnosis,
-                Treatment = medicalSymptom.Treatment,
                 Status = medicalSymptom.Status,
                 AffectedQuantity = medicalSymptom.AffectedQuantity,
                 Notes = medicalSymptom.Notes,
+                NameAnimal = medicalSymptom.NameAnimal,
+                CreateAt = medicalSymptom.CreateAt,
                 Pictures = medicalSymptom.Pictures.Select(p => new PictureResponse
                 {
                     Id = p.Id,
@@ -98,10 +99,12 @@ namespace SmartFarmManager.API.Controllers
                 FarmingBatchId = ms.FarmingBatchId,
                 Symptoms = ms.Symptoms,
                 Diagnosis = ms.Diagnosis,
-                Treatment = ms.Treatment,
                 Status = ms.Status,
                 AffectedQuantity = ms.AffectedQuantity,
                 Notes = ms.Notes,
+                Quantity = ms.Quantity,
+                NameAnimal = ms.NameAnimal,
+                CreateAt = ms.CreateAt,
                 Pictures = ms.Pictures.Select(p => new PictureResponse
                 {
                     Id = p.Id,
@@ -126,7 +129,6 @@ namespace SmartFarmManager.API.Controllers
             {
                 Id = id,
                 Diagnosis = request.Diagnosis,
-                Treatment = request.Treatment,
                 Status = request.Status,
                 Notes = request.Notes
             };

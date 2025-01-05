@@ -131,26 +131,28 @@ namespace SmartFarmManager.Service.Services
             // 5. Get Assigned User for the Cage
             Guid? assignedUserId = null;
 
-            // Check if there is a temporary staff assigned to the cage
-            var temporaryAssignment = await _unitOfWork.TemporaryCageAssignments
-                .FindByCondition(ta => ta.CageId == model.CageId &&
-                                       ta.StartDate <= model.DueDate &&
-                                       ta.EndDate >= model.DueDate)
+            // Check if there is a leave request for the staff managing the cage
+            var cageStaff = await _unitOfWork.CageStaffs
+                .FindByCondition(cs => cs.CageId == model.CageId)
                 .FirstOrDefaultAsync();
 
-            if (temporaryAssignment != null)
+            if (cageStaff != null)
             {
-                assignedUserId = temporaryAssignment.TemporaryStaffId;
-            }
-            else
-            {
-                // If no temporary staff, check the default staff assigned to the cage
-                var cageStaff = await _unitOfWork.CageStaffs
-                    .FindByCondition(cs => cs.CageId == model.CageId)
+                var leaveRequest = await _unitOfWork.LeaveRequests
+                    .FindByCondition(lr => lr.StaffFarmId == cageStaff.StaffFarmId &&
+                                           lr.StartDate.Date <= model.DueDate.Date &&
+                                           lr.EndDate.Date >= model.DueDate.Date &&
+                                           lr.Status == "Approved")
                     .FirstOrDefaultAsync();
 
-                if (cageStaff != null)
+                if (leaveRequest != null)
                 {
+                    // If a leave request exists and approved, use the temporary user
+                    assignedUserId = leaveRequest.UserTempId;
+                }
+                else
+                {
+                    // Otherwise, assign to the default staff
                     assignedUserId = cageStaff.StaffFarmId;
                 }
             }
@@ -244,8 +246,8 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<bool> UpdateTaskPriorityAsync(Guid taskId, UpdateTaskPriorityModel model)
         {
-            
-            var task = await _unitOfWork.Tasks.FindAsync(x=>x.Id==taskId);
+
+            var task = await _unitOfWork.Tasks.FindAsync(x => x.Id == taskId);
             if (task == null)
             {
                 throw new KeyNotFoundException("Task not found.");
@@ -332,7 +334,7 @@ namespace SmartFarmManager.Service.Services
                 }
                 task.PriorityNum = model.NewPriority;
 
-                await _unitOfWork.Tasks.UpdateAsync(task);    
+                await _unitOfWork.Tasks.UpdateAsync(task);
                 await _unitOfWork.CommitAsync();
                 return true;
 
@@ -340,18 +342,21 @@ namespace SmartFarmManager.Service.Services
         }
 
 
-       
+
         //change status of task by task id and status id
         public async Task<bool> ChangeTaskStatusAsync(Guid taskId, string? status)
         {
             var task = await _unitOfWork.Tasks.FindAsync(x => x.Id == taskId);
-            if (task == null)
+            if (status == null ||
+    (status != TaskStatusEnum.Pending &&
+     status != TaskStatusEnum.InProgress &&
+     status != TaskStatusEnum.Done &&
+     status != TaskStatusEnum.Overdue))
             {
-                throw new ArgumentException("Invalid TaskId");
-            }
-            if (status == null || status.Equals(TaskStatusEnum.Pending) || status.Equals(TaskStatusEnum.InProgress) || status.Equals(TaskStatusEnum.Done) || status.Equals(TaskStatusEnum.Overdue)) {
                 throw new ArgumentException("Không đúng status");
             }
+
+
             if (status == TaskStatusEnum.Done)
             {
                 task.CompletedAt = DateTime.UtcNow;
@@ -409,7 +414,7 @@ namespace SmartFarmManager.Service.Services
             return taskModel;
         }
 
-        public async Task<List<TaskResponse>> GetTasksForUserWithStateAsync(Guid userId,Guid cageId, DateTime? specificDate = null)
+        public async Task<List<TaskResponse>> GetTasksForUserWithStateAsync(Guid userId, Guid cageId, DateTime? specificDate = null)
         {
             // Ngày hiện tại và ngày mặc định
             //chỉ ngày nay với mai?????????????????
@@ -554,7 +559,7 @@ namespace SmartFarmManager.Service.Services
         public async Task<PagedResult<TaskDetailModel>> GetFilteredTasksAsync(TaskFilterModel filter)
         {
             // Query từ repository
-            var query = _unitOfWork.Tasks.FindAll(false, x => x.AssignedToUser, x => x.TaskType, x => x.StatusLogs).Include(x=>x.Cage).Include(x=>x.StatusLogs).AsQueryable();
+            var query = _unitOfWork.Tasks.FindAll(false, x => x.AssignedToUser, x => x.TaskType, x => x.StatusLogs).Include(x => x.Cage).Include(x => x.StatusLogs).AsQueryable();
 
             // Áp dụng bộ lọc
             if (!string.IsNullOrEmpty(filter.TaskName))
@@ -628,7 +633,7 @@ namespace SmartFarmManager.Service.Services
                 .Select(t => new TaskDetailModel
                 {
                     Id = t.Id,
-                    CageId=t.CageId,
+                    CageId = t.CageId,
                     CageName = t.Cage.Name,
                     TaskName = t.TaskName,
                     Description = t.Description,
@@ -684,14 +689,14 @@ namespace SmartFarmManager.Service.Services
                             .FirstOrDefaultAsync();
             if (task == null)
             {
-                return null; 
+                return null;
             }
 
             // Map Task sang TaskDetailResponse
             return new TaskDetailModel
             {
                 Id = task.Id,
-                CageId=task.CageId,
+                CageId = task.CageId,
                 CageName = task.Cage.Name,
                 TaskName = task.TaskName,
                 Description = task.Description,
@@ -715,7 +720,7 @@ namespace SmartFarmManager.Service.Services
                 },
                 StatusLogs = task.StatusLogs.Select(sl => new StatusLogResponseModel
                 {
-                    
+
                     Status = sl.Status, // Tên status từ bảng Status
                     UpdatedAt = sl.UpdatedAt
                 }).ToList()
@@ -861,7 +866,7 @@ namespace SmartFarmManager.Service.Services
                         .Select(cageGroup => new CageTaskGroupModel
                         {
                             CageId = cageGroup.Key.CageId,
-                            CageName = cageGroup.Key.CageName, 
+                            CageName = cageGroup.Key.CageName,
                             Tasks = cageGroup.Select(task => new TaskDetailModel
                             {
                                 Id = task.Id,
@@ -937,15 +942,12 @@ namespace SmartFarmManager.Service.Services
                 throw new ArgumentException("DueDate is required.");
             }
 
-            // 5. Kiểm tra Session có giá trị hay không
-            int newSession = model.Session != null
-                ? (int)Enum.Parse<SessionTypeEnum>(model.Session, true)
-                : task.Session;
-
-            if (newSession < 0 || !Enum.IsDefined(typeof(SessionTypeEnum), newSession))
+            // 5. Kiểm tra Session
+            if (model.Session <= 0 || !Enum.IsDefined(typeof(SessionTypeEnum), model.Session))
             {
                 throw new ArgumentException("Invalid session value provided.");
             }
+            int newSession = model.Session;
 
             // 6. Kiểm tra trong ngày và session có task nào cùng TaskTypeId hay không
             if (taskTypeIdToCheck.HasValue)
@@ -994,14 +996,13 @@ namespace SmartFarmManager.Service.Services
                 task.Description = model.Description;
             }
 
-          
-
             // 8. Lưu thay đổi
             await _unitOfWork.Tasks.UpdateAsync(task);
             await _unitOfWork.CommitAsync();
 
             return true;
         }
+
 
 
         public async Task<bool> GenerateTasksForTodayAsync()
@@ -1063,7 +1064,7 @@ namespace SmartFarmManager.Service.Services
                                     Description = taskDaily.Description,
                                     DueDate = today,
                                     Session = taskDaily.Session,
-                                    Status = TaskStatusTypeEnum.Pending,
+                                    Status = TaskStatusEnum.Pending,
                                     CreatedAt = DateTimeUtils.VietnamNow()
                                 });
                             }
@@ -1094,8 +1095,8 @@ namespace SmartFarmManager.Service.Services
                                     PriorityNum = (int)vaccineTaskType?.PriorityNum,
                                     Description = $"Tiêm vắc xin {vaccineSchedule.Vaccine.Name} cho giai đoạn {growthStage.Name}.",
                                     DueDate = today,
-                                    Session = 1, 
-                                    Status = TaskStatusTypeEnum.Pending,
+                                    Session = 1,
+                                    Status = TaskStatusEnum.Pending,
                                     CreatedAt = DateTimeUtils.VietnamNow()
                                 });
 
@@ -1130,9 +1131,9 @@ namespace SmartFarmManager.Service.Services
                             ? (await _unitOfWork.TaskTypes.FindByCondition(tt => tt.Id == cleaningTaskTypeId).FirstOrDefaultAsync())?.PriorityNum ?? 1
                             : 1,
                         Description = "Task dọn dẹp chuồng theo lịch định kỳ.",
-                        DueDate = today,
+                        DueDate = today,    
                         Session = 1,
-                        Status = TaskStatusTypeEnum.Pending,
+                        Status = TaskStatusEnum.Pending,
                         CreatedAt = DateTimeUtils.VietnamNow()
                     });
                 }
@@ -1203,7 +1204,7 @@ namespace SmartFarmManager.Service.Services
                                 Description = taskDaily.Description,
                                 DueDate = targetDate,
                                 Session = taskDaily.Session,
-                                Status = TaskStatusTypeEnum.Pending,
+                                Status = TaskStatusEnum.Pending,
                                 CreatedAt = DateTimeUtils.VietnamNow()
                             });
                         }
@@ -1224,7 +1225,7 @@ namespace SmartFarmManager.Service.Services
                                     Description = $"Tiêm vắc xin {vaccineSchedule.Vaccine.Name} cho giai đoạn {growthStage.Name}.",
                                     DueDate = targetDate,
                                     Session = 1,
-                                    Status = TaskStatusTypeEnum.Pending,
+                                    Status = TaskStatusEnum.Pending,
                                     CreatedAt = DateTimeUtils.VietnamNow()
                                 });
 
@@ -1250,23 +1251,35 @@ namespace SmartFarmManager.Service.Services
 
         private async Task<Guid?> GetAssignedStaffForCage(Guid cageId, DateTime date)
         {
-            // Kiểm tra TemporaryCageAssignment
-            var tempAssignment = await _unitOfWork.TemporaryCageAssignments
-                .FindByCondition(tca => tca.CageId == cageId && tca.StartDate <= date && tca.EndDate >= date)
-                .FirstOrDefaultAsync();
-
-            if (tempAssignment != null)
-            {
-                return tempAssignment.TemporaryStaffId;
-            }
-
-            // Nếu không có Temporary Assignment, lấy Staff mặc định
+            // 1. Lấy thông tin nhân viên mặc định của chuồng
             var defaultStaff = await _unitOfWork.CageStaffs
                 .FindByCondition(cs => cs.CageId == cageId)
                 .FirstOrDefaultAsync();
 
-            return defaultStaff?.StaffFarmId;
+            if (defaultStaff == null)
+            {
+                // Không có nhân viên mặc định gán cho chuồng
+                return null;
+            }
+
+            // 2. Kiểm tra xem nhân viên mặc định có đơn nghỉ phép hợp lệ
+            var leaveRequest = await _unitOfWork.LeaveRequests
+                .FindByCondition(lr => lr.StaffFarmId == defaultStaff.StaffFarmId &&
+                                       lr.StartDate <= date &&
+                                       lr.EndDate >= date &&
+                                       lr.Status == "Approved")
+                .FirstOrDefaultAsync();
+
+            if (leaveRequest != null)
+            {
+                // Nếu có đơn nghỉ phép đã được phê duyệt, trả về UserTempId
+                return leaveRequest.UserTempId;
+            }
+
+            // 3. Nếu không có đơn nghỉ phép, trả về nhân viên mặc định
+            return defaultStaff.StaffFarmId;
         }
+
         private async Task<Guid?> GetFarmAdminIdByCageId(Guid cageId)
         {
             // Tìm Cage để lấy FarmId
@@ -1312,32 +1325,32 @@ namespace SmartFarmManager.Service.Services
 
             // Lấy tất cả các task trong ngày hôm nay
             var tasks = await _unitOfWork.Tasks
-                .FindByCondition(t => t.DueDate == today)
+                .FindByCondition(t => t.DueDate.Value.Date == today.Date)
                 .ToListAsync();
 
             foreach (var task in tasks)
             {
                 if (task.Session < currentSession) // Session đã qua
                 {
-                    if (task.Status == TaskStatusTypeEnum.Pending || task.Status == TaskStatusTypeEnum.InProgress)
+                    if (task.Status == TaskStatusEnum.Pending || task.Status == TaskStatusEnum.InProgress)
                     {
-                        task.Status = TaskStatusTypeEnum.OverSchedules; // Chuyển sang OverSchedules
+                        task.Status = TaskStatusEnum.Overdue; // Chuyển sang OverSchedules
                         await _unitOfWork.Tasks.UpdateAsync(task);
                     }
                 }
                 else if (task.Session == currentSession) // Session hiện tại
                 {
-                    if (task.Status == TaskStatusTypeEnum.Pending)
+                    if (task.Status == TaskStatusEnum.Pending)
                     {
-                        task.Status = TaskStatusTypeEnum.InProgress; // Chuyển sang InProgress
+                        task.Status = TaskStatusEnum.InProgress; // Chuyển sang InProgress
                         await _unitOfWork.Tasks.UpdateAsync(task);
                     }
                 }
             }
 
-            
-                await _unitOfWork.CommitAsync();
-            
+
+            await _unitOfWork.CommitAsync();
+
 
             return true;
         }
@@ -1433,7 +1446,7 @@ namespace SmartFarmManager.Service.Services
                                 Description = taskDaily.Description,
                                 DueDate = date.Add(sessionEndTime),
                                 Session = taskDaily.Session,
-                                Status = TaskStatusTypeEnum.Pending,
+                                Status = TaskStatusEnum.Pending,
                                 CreatedAt = DateTimeUtils.VietnamNow()
                             });
                         }
@@ -1465,7 +1478,7 @@ namespace SmartFarmManager.Service.Services
                                 Description = $"Tiêm vắc xin {vaccineSchedule.Vaccine.Name} cho giai đoạn {growthStage.Name}.",
                                 DueDate = date.Add(GetSessionEndTime(1)),
                                 Session = 1,
-                                Status = TaskStatusTypeEnum.Pending,
+                                Status = TaskStatusEnum.Pending,
                                 CreatedAt = DateTimeUtils.VietnamNow()
                             });
 
@@ -1502,7 +1515,7 @@ namespace SmartFarmManager.Service.Services
                     Description = "Task dọn dẹp chuồng theo lịch định kỳ.",
                     DueDate = date.Add(GetSessionEndTime(1)),
                     Session = 1,
-                    Status = TaskStatusTypeEnum.Pending,
+                    Status = TaskStatusEnum.Pending,
                     CreatedAt = DateTimeUtils.VietnamNow()
                 });
             }
@@ -1525,14 +1538,14 @@ namespace SmartFarmManager.Service.Services
         {
             var today = DateTimeUtils.VietnamNow().Date; // Lấy ngày hôm nay
             var tasks = await _unitOfWork.Tasks
-                .FindByCondition(t => t.DueDate == today && t.Session == 3) 
+                .FindByCondition(t => t.DueDate == today && t.Session == 3)
                 .ToListAsync();
 
             foreach (var task in tasks)
             {
-                if (task.Status == TaskStatusTypeEnum.Pending || task.Status == TaskStatusTypeEnum.InProgress)
+                if (task.Status == TaskStatusEnum.Pending || task.Status == TaskStatusEnum.InProgress)
                 {
-                    task.Status = TaskStatusTypeEnum.OverSchedules; 
+                    task.Status = TaskStatusEnum.Overdue;
                     await _unitOfWork.Tasks.UpdateAsync(task);
                 }
             }

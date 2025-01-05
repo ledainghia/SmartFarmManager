@@ -19,6 +19,7 @@ public partial class GrowthStage : EntityBase
     public int? AgeStart { get; set; }
 
     public int? AgeEnd { get; set; }
+    public Guid? SaleTypeId { get;set; }
 
     public DateTime? AgeStartDate { get; set; }
 
@@ -34,4 +35,5 @@ public partial class GrowthStage : EntityBase
     public virtual FarmingBatch FarmingBatch { get; set; }
 
     public virtual ICollection<VaccineSchedule> VaccineSchedules { get; set; } = new List<VaccineSchedule>();
-}
+    public virtual ICollection<EggHarvest> EggHarvests { get; set; } = new List<EggHarvest>();
+}   

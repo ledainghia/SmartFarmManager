@@ -8,8 +8,8 @@ namespace SmartFarmManager.Service.Shared
 {
     public static class PrescriptionStatusEnum
     {
-        public const string Active = "Đang sử dụng";
-        public const string Completed = "Đã hoàn thành";
-        public const string Cancelled = "Đã hủy";
+        public const string Active = "Active";
+        public const string Completed = "Completed";
+        public const string Cancelled = "Cancelled";
     }
 }

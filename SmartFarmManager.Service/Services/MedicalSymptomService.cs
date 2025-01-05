@@ -24,7 +24,7 @@ namespace SmartFarmManager.Service.Services
         public async Task<IEnumerable<MedicalSymptomModel>> GetMedicalSymptomsAsync(string? status)
         {
             var symptoms = await _unitOfWork.MedicalSymptom
-                .FindAll().Where(ms => string.IsNullOrEmpty(status) || ms.Status == status).Include(p => p.Pictures).ToListAsync();
+                .FindAll().Where(ms => string.IsNullOrEmpty(status) || ms.Status == status).Include(p => p.Pictures).Include(p => p.FarmingBatch).ToListAsync();
 
             return symptoms.Select(ms => new MedicalSymptomModel
             {
@@ -32,10 +32,12 @@ namespace SmartFarmManager.Service.Services
                 FarmingBatchId = ms.FarmingBatchId,
                 Symptoms = ms.Symptoms,
                 Diagnosis = ms.Diagnosis,
-                Treatment = ms.Treatment,
                 Status = ms.Status,
                 AffectedQuantity = ms.AffectedQuantity,
                 Notes = ms.Notes,
+                Quantity = ms.FarmingBatch?.Quantity ?? 0,
+                NameAnimal = ms.FarmingBatch.Species,
+                CreateAt = ms.CreateAt, 
                 Pictures = ms.Pictures.Select(p => new PictureModel
                 {
                     Id = p.Id,
@@ -56,7 +58,6 @@ namespace SmartFarmManager.Service.Services
 
             // Cập nhật thông tin
             existingSymptom.Diagnosis = updatedModel.Diagnosis;
-            existingSymptom.Treatment = updatedModel.Treatment;
             existingSymptom.Status = updatedModel.Status;
             existingSymptom.Notes = updatedModel.Notes;
 
@@ -74,6 +75,7 @@ namespace SmartFarmManager.Service.Services
                 Status = medicalSymptomModel.Status,
                 AffectedQuantity = medicalSymptomModel.AffectedQuantity,
                 Notes = medicalSymptomModel.Notes,
+                CreateAt = DateTime.UtcNow,
                 Pictures = medicalSymptomModel.Pictures.Select(p => new DataAccessObject.Models.Picture
                 {
                     Image = p.Image,
@@ -90,7 +92,7 @@ namespace SmartFarmManager.Service.Services
         public async Task<MedicalSymptomModel?> GetMedicalSymptomByIdAsync(Guid id)
         {
             var medicalSymptom = await _unitOfWork.MedicalSymptom.FindAll()
-                .Where(m => m.Id == id).Include(p => p.Pictures).FirstOrDefaultAsync();
+                .Where(m => m.Id == id).Include(p => p.Pictures).Include(p => p.FarmingBatch).FirstOrDefaultAsync();
 
             if (medicalSymptom == null)
             {
@@ -103,10 +105,12 @@ namespace SmartFarmManager.Service.Services
                 FarmingBatchId = medicalSymptom.FarmingBatchId,
                 Symptoms = medicalSymptom.Symptoms,
                 Diagnosis = medicalSymptom.Diagnosis,
-                Treatment = medicalSymptom.Treatment,
                 Status = medicalSymptom.Status,
                 AffectedQuantity = medicalSymptom.AffectedQuantity,
                 Notes = medicalSymptom.Notes,
+                Quantity = medicalSymptom.FarmingBatch.Quantity,
+                NameAnimal = medicalSymptom.FarmingBatch.Species,
+                CreateAt = medicalSymptom.CreateAt,
                 Pictures = medicalSymptom.Pictures.Select(p => new PictureModel
                 {
                     Id = p.Id,
@@ -147,10 +151,11 @@ namespace SmartFarmManager.Service.Services
                 FarmingBatchId = ms.FarmingBatchId,
                 Symptoms = ms.Symptoms,
                 Diagnosis = ms.Diagnosis,
-                Treatment = ms.Treatment,
                 Status = ms.Status,
                 AffectedQuantity = ms.AffectedQuantity,
-                Notes = ms.Notes
+                Quantity = farmingBatch.Quantity,
+                Notes = ms.Notes,
+                CreateAt = ms.CreateAt,
             });
         }
     }

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SmartFarmManager.Repository.Interfaces
 {
-    public interface ITemporaryCageAssignmentRepository:IRepositoryBaseAsync<TemporaryCageAssignment>
+    public interface ILeaveRequestRepository:IRepositoryBaseAsync<LeaveRequest>
     {
     }
 }

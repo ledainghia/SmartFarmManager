@@ -16,6 +16,7 @@ public partial class DailyFoodUsageLog : EntityBase
     public string Notes { get; set; }
 
     public DateTime? LogTime { get; set; }
+    public double UnitPrice { get; set; }
 
     public string Photo { get; set; }
 

@@ -10,6 +10,7 @@ namespace SmartFarmManager.DataAccessObject.Models
     {
 
         public Guid StaffFarmId { get; set; }
+        public Guid UserTempId { get; set; }
 
         public DateTime StartDate { get; set; }
 
@@ -19,7 +20,6 @@ namespace SmartFarmManager.DataAccessObject.Models
 
         public string Status { get; set; } = "Pending";
 
-        public Guid? AdminId { get; set; }
 
         public DateTime? ReviewedAt { get; set; }
 
@@ -30,6 +30,5 @@ namespace SmartFarmManager.DataAccessObject.Models
         // Navigation Properties
         public virtual User StaffFarm { get; set; }
 
-        public virtual User Admin { get; set; }
     }
 }

@@ -242,7 +242,6 @@ namespace SmartFarmManager.Service.Services
                     Id = vaccineTemplate.Template.Id,
                     Name = vaccineTemplate.Template.Name,
                     Species = vaccineTemplate.Template.Species,
-                    DefaultCapacity = vaccineTemplate.Template.DefaultCapacity,
                     Notes = vaccineTemplate.Template.Notes
                 }
             };
