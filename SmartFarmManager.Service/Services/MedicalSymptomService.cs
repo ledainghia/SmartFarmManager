@@ -70,6 +70,7 @@ namespace SmartFarmManager.Service.Services
         }
         public async Task<Guid> CreateMedicalSymptomAsync(MedicalSymptomModel medicalSymptomModel)
         {
+            // Bước 1: Tạo đối tượng MedicalSymptom mà chưa có MedicalSymptomDetails và Pictures
             var medicalSymptom = new DataAccessObject.Models.MedicalSymptom
             {
                 FarmingBatchId = medicalSymptomModel.FarmingBatchId,
@@ -78,22 +79,43 @@ namespace SmartFarmManager.Service.Services
                 Status = medicalSymptomModel.Status,
                 AffectedQuantity = medicalSymptomModel.AffectedQuantity,
                 Notes = medicalSymptomModel.Notes,
-                CreateAt = medicalSymptomModel.CreateAt,
-                Pictures = medicalSymptomModel.Pictures.Select(p => new DataAccessObject.Models.Picture
-                {
-                    Image = p.Image,
-                    DateCaptured = p.DateCaptured
-                }).ToList(),
-                MedicalSymptomDetails = medicalSymptomModel.MedicalSymptomDetails.Select(d => new DataAccessObject.Models.MedicalSymtomDetail
-                {
-                    SymptomId = d.SymptomId,
-                    MedicalSymptomId = d.SymptomId,
-                    Notes = d.Notes,
-                    CreateAt = DateTimeUtils.VietnamNow()
-                }).ToList()
+                CreateAt = medicalSymptomModel.CreateAt
             };
 
+            // Bước 2: Lưu đối tượng MedicalSymptom vào cơ sở dữ liệu
             await _unitOfWork.MedicalSymptom.CreateAsync(medicalSymptom);
+            await _unitOfWork.CommitAsync();
+
+            // Bước 3: Tạo MedicalSymptomDetails và Pictures với MedicalSymptomId
+            var medicalSymptomDetails = medicalSymptomModel.MedicalSymptomDetails.Select(d => new DataAccessObject.Models.MedicalSymtomDetail
+            {
+                SymptomId = d.SymptomId,
+                MedicalSymptomId = medicalSymptom.Id, // Gán ID sau khi lưu
+                Notes = d.Notes,
+                CreateAt = DateTimeUtils.VietnamNow()
+            }).ToList();
+
+            var pictures = medicalSymptomModel.Pictures.Select(p => new DataAccessObject.Models.Picture
+            {
+                RecordId = medicalSymptom.Id, // Gán ID sau khi lưu
+                Image = p.Image,
+                DateCaptured = p.DateCaptured
+            }).ToList();
+
+            // Bước 4: Thêm từng MedicalSymptomDetail vào ICollection
+            foreach (var detail in medicalSymptomDetails)
+            {
+                medicalSymptom.MedicalSymptomDetails.Add(detail);
+            }
+
+            // Bước 5: Thêm từng Picture vào ICollection
+            foreach (var picture in pictures)
+            {
+                medicalSymptom.Pictures.Add(picture);
+            }
+
+            // Bước 6: Cập nhật lại MedicalSymptom
+            await _unitOfWork.MedicalSymptom.UpdateAsync(medicalSymptom);
             await _unitOfWork.CommitAsync();
 
             return medicalSymptom.Id;
