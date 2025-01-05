@@ -45,7 +45,7 @@ namespace SmartFarmManager.Service.Services
 
             // 2. Kiểm tra StartAt và EndAt có nằm trong khoảng của GrowthStage không
             var validGrowthStage = farmingBatch.GrowthStages
-                .FirstOrDefault(gs => model.StartAt >= gs.AgeStartDate && model.EndAt <= gs.AgeEndDate && gs.Status == "Active");
+                .FirstOrDefault(gs => model.StartAt.Date >= gs.AgeStartDate.Value.Date && model.EndAt.Date <= gs.AgeEndDate.Value.Date);
 
             if (validGrowthStage == null)
             {
@@ -121,7 +121,7 @@ namespace SmartFarmManager.Service.Services
 
             // 4. Lấy GrowthStage phù hợp với ngày
             var validGrowthStage = farmingBatch.GrowthStages
-                .FirstOrDefault(gs => gs.AgeStartDate <= model.DueDate && gs.AgeEndDate >= model.DueDate);
+                .FirstOrDefault(gs => gs.AgeStartDate.Value.Date <= model.DueDate.Date && gs.AgeEndDate.Value.Date >= model.DueDate.Date);
 
             if (validGrowthStage == null)
             {
