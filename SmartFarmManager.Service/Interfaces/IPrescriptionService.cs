@@ -13,5 +13,6 @@ namespace SmartFarmManager.Service.Interfaces
         Task<Guid?> CreatePrescriptionAsync(PrescriptionModel model);
         Task<PrescriptionModel> GetPrescriptionByIdAsync(Guid id);
         Task<IEnumerable<PrescriptionModel>> GetActivePrescriptionsByCageIdAsync(Guid cageId);
+        Task<bool> UpdatePrescriptionAsync(PrescriptionModel model);
     }
 }

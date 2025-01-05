@@ -71,6 +71,7 @@ namespace SmartFarmManager.Service.Services
             var medicalSymptom = new DataAccessObject.Models.MedicalSymptom
             {
                 FarmingBatchId = medicalSymptomModel.FarmingBatchId,
+                PrescriptionId = medicalSymptomModel.PrescriptionId,
                 Symptoms = medicalSymptomModel.Symptoms,
                 Status = medicalSymptomModel.Status,
                 AffectedQuantity = medicalSymptomModel.AffectedQuantity,
