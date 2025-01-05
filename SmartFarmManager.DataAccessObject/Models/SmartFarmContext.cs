@@ -218,7 +218,7 @@ public partial class SmartFarmContext : DbContext
                   .HasMaxLength(255);
 
             entity.HasOne(e => e.growthStage)
-                  .WithMany(g => g.EggHarvests) 
+                  .WithMany(g => g.EggHarvests)
                   .HasForeignKey(e => e.GrowthStageId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
@@ -247,7 +247,7 @@ public partial class SmartFarmContext : DbContext
                   .HasForeignKey(e => e.StaffFarmId)
                   .OnDelete(DeleteBehavior.Cascade);
 
-            
+
         });
 
 
@@ -350,8 +350,8 @@ public partial class SmartFarmContext : DbContext
                 .IsRequired()
                 .HasMaxLength(50)
                 .HasDefaultValue("");
-            entity.HasOne(c=>c.Farm).WithMany(f=>f.Cages)
-            .HasForeignKey(c=>c.FarmId)
+            entity.HasOne(c => c.Farm).WithMany(f => f.Cages)
+            .HasForeignKey(c => c.FarmId)
             .OnDelete(DeleteBehavior.ClientSetNull)
             .HasConstraintName("FK__Farm__CageI__2321213213");
         });
@@ -722,7 +722,7 @@ public partial class SmartFarmContext : DbContext
                 .HasMaxLength(50)
                 .HasDefaultValue("Ðang di?u tr?");
             entity.Property(e => e.Symptoms).HasMaxLength(200);
-
+            
 
             entity.HasOne(d => d.FarmingBatch).WithMany(p => p.MedicalSymptoms)
                 .HasForeignKey(d => d.FarmingBatchId)
