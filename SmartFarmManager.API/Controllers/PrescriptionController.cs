@@ -59,7 +59,7 @@ namespace SmartFarmManager.API.Controllers
                         Morning = m.Morning,
                         Afternoon = m.Afternoon,
                         Evening = m.Evening,
-                        Night = m.Night
+                        Noon = m.Noon
                     }).ToList()
                 };
 
@@ -113,11 +113,11 @@ namespace SmartFarmManager.API.Controllers
                         Morning = m.Morning,
                         Afternoon = m.Afternoon,
                         Evening = m.Evening,
-                        Night = m.Night
+                        Noon = m.Noon
                     }).ToList()
                 });
 
-                return CreatedAtAction(nameof(GetPrescriptionById), new { id }, ApiResult<Guid>.Succeed(id));
+                return CreatedAtAction(nameof(GetPrescriptionById), new { id }, ApiResult<Guid?>.Succeed(id));
             }
             catch (ArgumentException ex)
             {
@@ -174,11 +174,62 @@ namespace SmartFarmManager.API.Controllers
                         Morning = m.Morning,
                         Afternoon = m.Afternoon,
                         Evening = m.Evening,
-                        Night = m.Night
+                        Noon = m.Noon
                     }).ToList()
                 }).ToList();
 
                 return Ok(ApiResult<IEnumerable<PrescriptionResponse>>.Succeed(response));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+            }
+        }
+        [HttpPut("{prescriptionId:guid}")]
+        public async Task<IActionResult> UpdatePrescription(Guid prescriptionId, [FromBody] UpdatePrescriptionRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                                               .Select(e => e.ErrorMessage)
+                                               .ToList();
+                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
+        {
+            { "Errors", errors.ToArray() }
+        }));
+            }
+
+            try
+            {
+                var model = new PrescriptionModel
+                {
+                    Id = prescriptionId,
+                    PrescribedDate = request.PrescribedDate,
+                    Notes = request.Notes,
+                    CageId = request.CageId,
+                    DaysToTake = request.DaysToTake,
+                    QuantityAnimal = request.QuantityAnimal,
+                    CaseType = request.CaseType,
+                    Status = request.Status,
+                    Price = request.Price,
+                    DoctorApproval = request.DoctorApproval,
+                    StatusAnimal = request.StatusAnimal
+                };
+
+                var result = await _prescriptionService.UpdatePrescriptionAsync(model);
+
+                if (!result)
+                    return NotFound(ApiResult<string>.Fail("Đơn thuốc không được tìm thấy."));
+
+                return Ok(ApiResult<bool>.Succeed(true));
             }
             catch (ArgumentException ex)
             {
