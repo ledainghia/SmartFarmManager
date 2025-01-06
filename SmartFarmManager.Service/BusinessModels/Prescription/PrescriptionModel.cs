@@ -21,6 +21,7 @@ namespace SmartFarmManager.Service.BusinessModels.Prescription
         public int? DaysToTake { get; set; }
         public string? DoctorApproval { get; set; }
         public string? StatusAnimal { get; set; }
+        public DateTime? EndDate { get; set; }
         public List<PrescriptionMedicationModel> Medications { get; set; }
     }
 }

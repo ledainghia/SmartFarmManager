@@ -1,5 +1,6 @@
 ﻿using SmartFarmManager.Service.BusinessModels.MedicalSymptomDetail;
 using SmartFarmManager.Service.BusinessModels.Picture;
+using SmartFarmManager.Service.BusinessModels.Prescription;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,5 +32,7 @@ namespace SmartFarmManager.Service.BusinessModels.MedicalSymptom
         public virtual ICollection<PictureModel> Pictures { get; set; } = new List<PictureModel>();
 
         public List<MedicalSymptomDetailModel> MedicalSymptomDetails { get; set; }
+
+        public List<PrescriptionModel> Prescriptions { get; set; }
     }
 }

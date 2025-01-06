@@ -142,7 +142,7 @@ namespace SmartFarmManager.Service.Services
                     .FindByCondition(lr => lr.StaffFarmId == cageStaff.StaffFarmId &&
                                            lr.StartDate.Date <= model.DueDate.Date &&
                                            lr.EndDate.Date >= model.DueDate.Date &&
-                                           lr.Status == "Approved")
+                                           lr.Status == LeaveRequestStatusEnum.Approved)
                     .FirstOrDefaultAsync();
 
                 if (leaveRequest != null)

@@ -4,6 +4,7 @@ using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels.MedicalSymptom;
 using SmartFarmManager.Service.BusinessModels.Picture;
+using SmartFarmManager.Service.BusinessModels.Prescription;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Shared;
@@ -27,7 +28,7 @@ namespace SmartFarmManager.Service.Services
         public async Task<IEnumerable<MedicalSymptomModel>> GetMedicalSymptomsAsync(string? status)
         {
             var symptoms = await _unitOfWork.MedicalSymptom
-                .FindAll().Where(ms => string.IsNullOrEmpty(status) || ms.Status == status).Include(p => p.Pictures).Include(p => p.FarmingBatch).ToListAsync();
+                .FindAll().Where(ms => string.IsNullOrEmpty(status) || ms.Status == status).Include(p => p.Pictures).Include(p => p.FarmingBatch).Include(p => p.Prescriptions).ToListAsync();
 
             return symptoms.Select(ms => new MedicalSymptomModel
             {
@@ -46,7 +47,20 @@ namespace SmartFarmManager.Service.Services
                     Id = p.Id,
                     Image = p.Image,
                     DateCaptured = p.DateCaptured
-                }).ToList()
+                }).ToList(),
+                Prescriptions = ms.Prescriptions.Select(p => new PrescriptionModel
+                {
+                    Id = p.Id,
+                    PrescribedDate = p.PrescribedDate,
+                    Status = p.Status,
+                    QuantityAnimal = p.QuantityAnimal,
+                    Notes = p.Notes,
+                    Price = p.Price,
+                    DaysToTake = p.DaysToTake,
+                    DoctorApproval = p.DoctorApproval,
+                    StatusAnimal = p.StatusAnimal,
+                    EndDate = p.EndDate,
+                }).ToList(),
             });
         }
         public async Task<bool> UpdateMedicalSymptomAsync(MedicalSymptomModel updatedModel)
@@ -128,7 +142,7 @@ namespace SmartFarmManager.Service.Services
         public async Task<MedicalSymptomModel?> GetMedicalSymptomByIdAsync(Guid id)
         {
             var medicalSymptom = await _unitOfWork.MedicalSymptom.FindAll()
-                .Where(m => m.Id == id).Include(p => p.Pictures).Include(p => p.FarmingBatch).FirstOrDefaultAsync();
+                .Where(m => m.Id == id).Include(p => p.Pictures).Include(p => p.FarmingBatch).Include(p => p.Prescriptions).FirstOrDefaultAsync();
 
             if (medicalSymptom == null)
             {
@@ -152,7 +166,20 @@ namespace SmartFarmManager.Service.Services
                     Id = p.Id,
                     Image = p.Image,
                     DateCaptured = p.DateCaptured
-                }).ToList()
+                }).ToList(),
+                Prescriptions = medicalSymptom.Prescriptions.Select(p => new PrescriptionModel
+                {
+                    Id = p.Id,
+                    PrescribedDate = p.PrescribedDate,
+                    Status = p.Status,
+                    QuantityAnimal = p.QuantityAnimal,
+                    Notes = p.Notes,
+                    Price = p.Price,
+                    DaysToTake = p.DaysToTake,
+                    DoctorApproval = p.DoctorApproval,
+                    StatusAnimal = p.StatusAnimal,
+                    EndDate = p.EndDate,
+                }).ToList(),
             };
         }
         public async Task<IEnumerable<MedicalSymptomModel>> GetMedicalSymptomsByStaffAndBatchAsync(Guid staffId, Guid farmBatchId)

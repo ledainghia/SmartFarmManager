@@ -5,6 +5,9 @@ using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Cages;
 using SmartFarmManager.Service.BusinessModels.FarmingBatch;
+using SmartFarmManager.Service.BusinessModels.GrowthStage;
+using SmartFarmManager.Service.BusinessModels.TaskDaily;
+using SmartFarmManager.Service.BusinessModels.VaccineSchedule;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using System;
@@ -30,7 +33,7 @@ namespace SmartFarmManager.Service.Services
             var query = _unitOfWork.Cages.FindAll(false, x => x.Farm)
                 .Include(c => c.CageStaffs)
                 .ThenInclude(cs => cs.StaffFarm)
-                .Include(c => c.FarmingBatches)
+                .Include(c => c.FarmingBatches).ThenInclude(c => c.GrowthStages)
                 .AsQueryable();
 
             // Áp dụng các bộ lọc
@@ -90,6 +93,26 @@ namespace SmartFarmManager.Service.Services
                     CleaningFrequency = fb.CleaningFrequency,
                     Quantity = fb.Quantity,
                     AffectedQuantity = fb.AffectedQuantity,
+                    GrowthStageDetails = fb.GrowthStages.Where(gs =>
+                        gs.AgeStartDate.HasValue &&
+                        gs.AgeEndDate.HasValue &&
+                        gs.AgeStartDate.Value.Date <= DateTimeUtils.VietnamNow().Date &&
+                        gs.AgeEndDate.Value.Date >= DateTimeUtils.VietnamNow().Date)
+                        .Select(gs => new GrowthStageDetailModel
+                        {
+                            Id = gs.Id,
+                            Name = gs.Name,
+                            WeightAnimal = gs.WeightAnimal,
+                            Quantity = gs.Quantity,
+                            AgeStart = gs.AgeStart,
+                            AgeEnd = gs.AgeEnd,
+                            AgeStartDate = gs.AgeStartDate,
+                            AgeEndDate = gs.AgeEndDate,
+                            Status = gs.Status,
+                            RecommendedWeightPerSession = gs.RecommendedWeightPerSession,
+                            WeightBasedOnBodyMass = gs.WeightBasedOnBodyMass,
+                        })
+                        .FirstOrDefault()
                 })
                 .FirstOrDefault()
 
@@ -112,7 +135,7 @@ namespace SmartFarmManager.Service.Services
         public async Task<CageDetailModel> GetCageByIdAsync(Guid cageId)
         {
             // Lấy dữ liệu từ repository
-            var cage = await _unitOfWork.Cages.FindByCondition(x=>x.Id==cageId, false, c => c.Farm).Include(c => c.CageStaffs)
+            var cage = await _unitOfWork.Cages.FindByCondition(x => x.Id == cageId, false, c => c.Farm).Include(c => c.CageStaffs)
                 .ThenInclude(cs => cs.StaffFarm).FirstOrDefaultAsync();
 
             // Xử lý khi không tìm thấy cage
