@@ -84,7 +84,20 @@ namespace SmartFarmManager.API.Controllers
                     Id = p.Id,
                     Image = p.Image,
                     DateCaptured = p.DateCaptured
-                }).ToList()
+                }).ToList(),
+                Prescriptions = medicalSymptom.Prescriptions.Select(p => new Payloads.Responses.Prescription.PrescriptionResponse
+                {
+                    Id = p.Id,
+                    PrescribedDate = p.PrescribedDate,
+                    Status = p.Status,
+                    QuantityAnimal = p.QuantityAnimal,
+                    Notes = p.Notes,
+                    Price = p.Price,
+                    DaysToTake = p.DaysToTake,
+                    DoctorApproval = p.DoctorApproval,
+                    StatusAnimal = p.StatusAnimal,
+                    EndDate = p.EndDate,
+                }).ToList(),
             };
 
             return Ok(ApiResult<MedicalSymptomResponse>.Succeed(response));
@@ -118,7 +131,21 @@ namespace SmartFarmManager.API.Controllers
                     Id = p.Id,
                     Image = p.Image,
                     DateCaptured = p.DateCaptured
-                }).ToList()
+                }).ToList(),
+                Prescriptions = ms.Prescriptions.Select(p => new Payloads.Responses.Prescription.PrescriptionResponse
+                {
+                    Id = p.Id,
+                    PrescribedDate = p.PrescribedDate,
+                    Status = p.Status,
+                    QuantityAnimal = p.QuantityAnimal,
+                    Notes = p.Notes,
+                    Price = p.Price,
+                    DaysToTake = p.DaysToTake,
+                    DoctorApproval = p.DoctorApproval,
+                    StatusAnimal = p.StatusAnimal,
+                    EndDate = p.EndDate,
+                }).ToList(),
+
             });
 
             return Ok(ApiResult<IEnumerable<MedicalSymptomResponse>>.Succeed(response));

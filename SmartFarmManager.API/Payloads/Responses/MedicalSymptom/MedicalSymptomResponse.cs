@@ -1,4 +1,6 @@
 ﻿using SmartFarmManager.API.Payloads.Responses.Picture;
+using SmartFarmManager.API.Payloads.Responses.Prescription;
+using SmartFarmManager.Service.BusinessModels.Prescription;
 
 namespace SmartFarmManager.API.Payloads.Responses.MedicalSymptom
 {
@@ -14,6 +16,8 @@ namespace SmartFarmManager.API.Payloads.Responses.MedicalSymptom
         public int? Quantity { get; set; }
         public string NameAnimal { get; set; }
         public string Notes { get; set; }
-        public List<PictureResponse> Pictures { get; set; } = new List<PictureResponse>();
+        public List<PictureResponse> Pictures { get; set; }
+        public List<PrescriptionResponse> Prescriptions { get; set; }
+
     }
 }

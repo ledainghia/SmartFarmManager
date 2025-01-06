@@ -10,6 +10,9 @@
         public decimal? Price { get; set; }
         public Guid? CageId { get; set; }
         public int? DaysToTake { get; set; }
+        public string? DoctorApproval { get; set; }
+        public string? StatusAnimal { get; set; }
+        public DateTime? EndDate { get; set; }
         public List<PrescriptionMedicationResponse> Medications { get; set; }
     }
 
