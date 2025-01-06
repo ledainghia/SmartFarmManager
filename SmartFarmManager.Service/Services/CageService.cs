@@ -10,6 +10,7 @@ using SmartFarmManager.Service.BusinessModels.TaskDaily;
 using SmartFarmManager.Service.BusinessModels.VaccineSchedule;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
+using SmartFarmManager.Service.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -81,7 +82,7 @@ namespace SmartFarmManager.Service.Services
                     StaffName = c.CageStaffs.FirstOrDefault().StaffFarm.FullName,
                     // Lấy thông tin FarmingBatch phù hợp
                     FarmingBatch = c.FarmingBatches
-                .Where(fb => fb.StartDate < DateTime.Now && fb.CompleteAt == null)
+                .Where(fb => fb.StartDate < DateTimeUtils.VietnamNow() && fb.CompleteAt == null && fb.Status == FarmingBatchStatusEnum.Active)
                 .Select(fb => new FarmingBatchModel
                 {
                     Id = fb.Id,
