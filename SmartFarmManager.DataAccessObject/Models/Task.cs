@@ -30,6 +30,9 @@ public partial class Task : EntityBase
 
     public DateTime? CreatedAt { get; set; }
 
+    public bool IsTreatmentTask { get; set; }
+    public Guid? PrescriptionId { get; set; }
+
     public virtual User AssignedToUser { get; set; }
 
     public virtual Cage Cage { get; set; }

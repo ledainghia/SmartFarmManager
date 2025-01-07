@@ -34,6 +34,7 @@ public partial class Cage : EntityBase
     public string CameraUrl { get; set; }
 
     public int ChannelId { get; set; }
+    public bool IsSolationCage { get; set; } = false;
 
     public virtual ICollection<CageStaff> CageStaffs { get; set; } = new List<CageStaff>();
 
