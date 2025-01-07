@@ -10,8 +10,6 @@ namespace SmartFarmManager.DataAccessObject.Models
     {
         public Guid MedicalSymptomId { get; set; }
         public Guid SymptomId { get; set; }
-        public DateTime CreateAt { get; set; }
-        public string? Notes { get; set; }
         public virtual MedicalSymptom MedicalSymptom { get; set; }
         public virtual Symptom Symptom { get; set; }
 
