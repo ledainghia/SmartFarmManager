@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.Symptom;
+using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Symptom;
 using SmartFarmManager.Service.Interfaces;
 
@@ -23,6 +24,13 @@ namespace SmartFarmManager.API.Controllers
         {
             var symptoms = await _symptomService.GetAllSymptomsAsync();
             return Ok(ApiResult<List<SymptomModel>>.Succeed(symptoms));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetSymptoms([FromQuery] string? name, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            var pagedSymptoms = await _symptomService.GetPagedSymptomsAsync(name, page, pageSize);
+            return Ok(ApiResult<PagedResult<SymptomModel>>.Succeed(pagedSymptoms));
         }
 
         [HttpGet("{id}")]

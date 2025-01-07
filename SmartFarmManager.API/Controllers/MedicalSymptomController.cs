@@ -207,7 +207,7 @@ namespace SmartFarmManager.API.Controllers
         }
         // GET: api/medical-symptoms/by-staff-and-batch
         [HttpGet("by-staff-and-batch")]
-        public async Task<IActionResult> GetMedicalSymptomsByStaffAndBatch([FromQuery] Guid staffId, [FromQuery] Guid farmBatchId)
+        public async Task<IActionResult> GetMedicalSymptomsByStaffAndBatch([FromQuery] Guid? staffId, [FromQuery] Guid? farmBatchId)
         {
             if (staffId == Guid.Empty || farmBatchId == Guid.Empty)
             {

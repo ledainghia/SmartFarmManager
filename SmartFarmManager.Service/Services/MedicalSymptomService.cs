@@ -182,7 +182,7 @@ namespace SmartFarmManager.Service.Services
                 }).ToList(),
             };
         }
-        public async Task<IEnumerable<MedicalSymptomModel>> GetMedicalSymptomsByStaffAndBatchAsync(Guid staffId, Guid farmBatchId)
+        public async Task<IEnumerable<MedicalSymptomModel>> GetMedicalSymptomsByStaffAndBatchAsync(Guid? staffId, Guid? farmBatchId)
         {
             // Lấy danh sách CageStaff theo Staff ID
             var cageStaffs = await _unitOfWork.CageStaffs

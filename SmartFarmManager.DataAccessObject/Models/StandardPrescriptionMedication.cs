@@ -20,7 +20,7 @@ namespace SmartFarmManager.DataAccessObject.Models
 
         public bool Evening { get; set; }
 
-        public bool Night { get; set; }
+        public bool Noon { get; set; }
 
         public virtual StandardPrescription Prescription { get; set; }
 
