@@ -19,7 +19,7 @@ namespace SmartFarmManager.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetDiseases([FromQuery] string? name, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetDiseases([FromQuery] string? name, [FromQuery] int page = 1, [FromQuery] int pageSize = 10000)
         {
             var pagedDiseases = await _diseaseService.GetPagedDiseasesAsync(name, page, pageSize);
             return Ok(ApiResult<PagedResult<DiseaseModel>>.Succeed(pagedDiseases));

@@ -34,7 +34,6 @@ namespace SmartFarmManager.Service.Services
             {
                 Id = ms.Id,
                 FarmingBatchId = ms.FarmingBatchId,
-                Symptoms = ms.Symptoms,
                 Diagnosis = ms.Diagnosis,
                 Status = ms.Status,
                 AffectedQuantity = ms.AffectedQuantity,
@@ -57,42 +56,82 @@ namespace SmartFarmManager.Service.Services
                     Notes = p.Notes,
                     Price = p.Price,
                     DaysToTake = p.DaysToTake,
-                    DoctorApproval = p.DoctorApproval,
-                    StatusAnimal = p.StatusAnimal,
                     EndDate = p.EndDate,
                 }).ToList(),
             });
         }
-        public async Task<bool> UpdateMedicalSymptomAsync(MedicalSymptomModel updatedModel)
+        public async Task<bool> UpdateMedicalSymptomAsync(UpdateMedicalSymptomModel updatedModel)
         {
-            var existingSymptom = await _unitOfWork.MedicalSymptom
+            await _unitOfWork.BeginTransactionAsync();
+
+            try
+            {
+                var existingSymptom = await _unitOfWork.MedicalSymptom
                 .GetByIdAsync(updatedModel.Id);
 
-            if (existingSymptom == null)
-            {
-                return false;
+                if (existingSymptom == null)
+                {
+                    return false;
+                }
+
+                // Danh sách trạng thái hợp lệ
+                var validStatuses = new[]
+                {
+            MedicalSymptomStatuseEnum.Normal,
+            MedicalSymptomStatuseEnum.Diagnosed
+        };
+
+                // Kiểm tra trạng thái có hợp lệ không
+                if (!validStatuses.Contains(updatedModel.Status))
+                {
+                    throw new ArgumentException($"Trạng thái không hợp lệ: {updatedModel.Status}");
+                }
+
+                // Cập nhật thông tin
+                existingSymptom.Diagnosis = updatedModel.Diagnosis;
+                existingSymptom.Status = updatedModel.Status;
+                existingSymptom.Notes = updatedModel.Notes;
+                var cage = await _unitOfWork.Cages.FindByCondition(c => c.IsDeleted == false && c.IsSolationCage == true).FirstOrDefaultAsync();
+                // Tạo mới Prescription nếu có
+                if (updatedModel.Prescriptions != null)
+                {
+                    var newPrescription = new Prescription
+                    {
+                        MedicalSymtomId = updatedModel.Id,
+                        CageId = cage.Id,
+                        PrescribedDate = updatedModel.Prescriptions.PrescribedDate,
+                        Notes = updatedModel.Prescriptions.Notes,
+                        DaysToTake = updatedModel.Prescriptions.DaysToTake,
+                        Status = updatedModel.Prescriptions.Status,
+                        QuantityAnimal = updatedModel.Prescriptions.QuantityAnimal.Value,
+                        EndDate = updatedModel.Prescriptions.PrescribedDate.Value.AddDays((double)updatedModel.Prescriptions.DaysToTake)
+
+                    };
+
+                    await _unitOfWork.Prescription.CreateAsync(newPrescription);
+                    var newPrescriptionMedication = updatedModel.Prescriptions.Medications.Select(m => new PrescriptionMedication
+                    {
+                        PrescriptionId = newPrescription.Id,
+                        MedicationId = m.MedicationId,
+                        Dosage = m.Dosage,
+                        Morning = m.Morning,
+                        Afternoon = m.Afternoon,
+                        Evening = m.Evening,
+                        Noon = m.Noon
+                    }).ToList();
+                    await _unitOfWork.PrescriptionMedications.CreateListAsync(newPrescriptionMedication);
+                }
+                await _unitOfWork.MedicalSymptom.UpdateAsync(existingSymptom);
+                await _unitOfWork.CommitAsync();
+
+                return true;
             }
-            // Danh sách trạng thái hợp lệ
-            var validStatuses = new[]
+            catch (Exception ex)
             {
-        MedicalSymptomStatuseEnum.Normal,
-        MedicalSymptomStatuseEnum.Diagnosed
-    };
-
-            // Kiểm tra trạng thái có hợp lệ không
-            if (!validStatuses.Contains(updatedModel.Status))
-            {
-                throw new ArgumentException($"Trạng thái không hợp lệ: {updatedModel.Status}");
+                await _unitOfWork.RollbackAsync();
+                Console.WriteLine($"Error in CreateFarmingBatchAsync: {ex.Message}");
+                throw new Exception("Failed to create Farming Batch. Details: " + ex.Message);
             }
-            // Cập nhật thông tin
-            existingSymptom.Diagnosis = updatedModel.Diagnosis;
-            existingSymptom.Status = updatedModel.Status;
-            existingSymptom.Notes = updatedModel.Notes;
-
-            await _unitOfWork.MedicalSymptom.UpdateAsync(existingSymptom);
-            await _unitOfWork.CommitAsync();
-
-            return true;
         }
         public async Task<Guid> CreateMedicalSymptomAsync(MedicalSymptomModel medicalSymptomModel)
         {
@@ -101,7 +140,6 @@ namespace SmartFarmManager.Service.Services
             {
                 FarmingBatchId = medicalSymptomModel.FarmingBatchId,
                 PrescriptionId = medicalSymptomModel.PrescriptionId,
-                Symptoms = medicalSymptomModel.Symptoms,
                 Status = MedicalSymptomStatuseEnum.Pending,
                 AffectedQuantity = medicalSymptomModel.AffectedQuantity,
                 Notes = medicalSymptomModel.Notes,
@@ -117,8 +155,6 @@ namespace SmartFarmManager.Service.Services
             {
                 SymptomId = d.SymptomId,
                 MedicalSymptomId = medicalSymptom.Id, // Gán ID sau khi lưu
-                Notes = d.Notes,
-                CreateAt = DateTimeUtils.VietnamNow()
             }).ToList();
 
             var pictures = medicalSymptomModel.Pictures.Select(p => new DataAccessObject.Models.Picture
@@ -128,7 +164,7 @@ namespace SmartFarmManager.Service.Services
                 DateCaptured = p.DateCaptured
             }).ToList();
 
-            
+
 
             // Bước 6: Cập nhật lại MedicalSymptom
             await _unitOfWork.Pictures.CreateListAsync(pictures);
@@ -153,7 +189,6 @@ namespace SmartFarmManager.Service.Services
             {
                 Id = medicalSymptom.Id,
                 FarmingBatchId = medicalSymptom.FarmingBatchId,
-                Symptoms = medicalSymptom.Symptoms,
                 Diagnosis = medicalSymptom.Diagnosis,
                 Status = medicalSymptom.Status,
                 AffectedQuantity = medicalSymptom.AffectedQuantity,
@@ -176,8 +211,6 @@ namespace SmartFarmManager.Service.Services
                     Notes = p.Notes,
                     Price = p.Price,
                     DaysToTake = p.DaysToTake,
-                    DoctorApproval = p.DoctorApproval,
-                    StatusAnimal = p.StatusAnimal,
                     EndDate = p.EndDate,
                 }).ToList(),
             };
@@ -212,7 +245,6 @@ namespace SmartFarmManager.Service.Services
             {
                 Id = ms.Id,
                 FarmingBatchId = ms.FarmingBatchId,
-                Symptoms = ms.Symptoms,
                 Diagnosis = ms.Diagnosis,
                 Status = ms.Status,
                 AffectedQuantity = ms.AffectedQuantity,

@@ -19,7 +19,7 @@ namespace SmartFarmManager.API.Controllers
             _symptomService = symptomService;
         }
 
-        [HttpGet]
+        [HttpGet("/getAll")]
         public async Task<IActionResult> GetAllSymptoms()
         {
             var symptoms = await _symptomService.GetAllSymptomsAsync();
@@ -27,7 +27,7 @@ namespace SmartFarmManager.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetSymptoms([FromQuery] string? name, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetSymptoms([FromQuery] string? name, [FromQuery] int page = 1, [FromQuery] int pageSize = 10000)
         {
             var pagedSymptoms = await _symptomService.GetPagedSymptomsAsync(name, page, pageSize);
             return Ok(ApiResult<PagedResult<SymptomModel>>.Succeed(pagedSymptoms));

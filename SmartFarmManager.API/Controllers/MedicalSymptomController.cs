@@ -8,6 +8,7 @@ using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Service.BusinessModels.MedicalSymptom;
 using SmartFarmManager.Service.BusinessModels.MedicalSymptomDetail;
 using SmartFarmManager.Service.BusinessModels.Picture;
+using SmartFarmManager.Service.BusinessModels.PrescriptionMedication;
 using SmartFarmManager.Service.Interfaces;
 
 namespace SmartFarmManager.API.Controllers
@@ -36,7 +37,6 @@ namespace SmartFarmManager.API.Controllers
             {
                 FarmingBatchId = request.FarmingBatchId,
                 PrescriptionId = request.PrescriptionId,
-                Symptoms = request.Symptoms,
                 Status = request.Status,
                 AffectedQuantity = request.AffectedQuantity,
                 Notes = request.Notes,
@@ -72,7 +72,6 @@ namespace SmartFarmManager.API.Controllers
             {
                 Id = medicalSymptom.Id,
                 FarmingBatchId = medicalSymptom.FarmingBatchId,
-                Symptoms = medicalSymptom.Symptoms,
                 Diagnosis = medicalSymptom.Diagnosis,
                 Status = medicalSymptom.Status,
                 AffectedQuantity = medicalSymptom.AffectedQuantity,
@@ -94,8 +93,6 @@ namespace SmartFarmManager.API.Controllers
                     Notes = p.Notes,
                     Price = p.Price,
                     DaysToTake = p.DaysToTake,
-                    DoctorApproval = p.DoctorApproval,
-                    StatusAnimal = p.StatusAnimal,
                     EndDate = p.EndDate,
                 }).ToList(),
             };
@@ -118,7 +115,6 @@ namespace SmartFarmManager.API.Controllers
             {
                 Id = ms.Id,
                 FarmingBatchId = ms.FarmingBatchId,
-                Symptoms = ms.Symptoms,
                 Diagnosis = ms.Diagnosis,
                 Status = ms.Status,
                 AffectedQuantity = ms.AffectedQuantity,
@@ -141,8 +137,6 @@ namespace SmartFarmManager.API.Controllers
                     Notes = p.Notes,
                     Price = p.Price,
                     DaysToTake = p.DaysToTake,
-                    DoctorApproval = p.DoctorApproval,
-                    StatusAnimal = p.StatusAnimal,
                     EndDate = p.EndDate,
                 }).ToList(),
 
@@ -175,14 +169,31 @@ namespace SmartFarmManager.API.Controllers
                     return BadRequest(ApiResult<object>.Fail("Invalid request data."));
                 }
 
-                var updatedModel = new MedicalSymptomModel
+                var updatedModel = new UpdateMedicalSymptomModel
                 {
                     Id = id,
                     Diagnosis = request.Diagnosis,
                     Status = request.Status,
-                    Notes = request.Notes
+                    Notes = request.Notes,
+                    Prescriptions = new Service.BusinessModels.Prescription.PrescriptionModel
+                    {
+                        RecordId = request.CreatePrescriptionRequest.MedicalSymptomId,
+                        PrescribedDate = request.CreatePrescriptionRequest.PrescribedDate,
+                        Notes = request.CreatePrescriptionRequest.Notes,
+                        DaysToTake = request.CreatePrescriptionRequest.DaysToTake,
+                        Status = request.CreatePrescriptionRequest.Status,
+                        QuantityAnimal = request.CreatePrescriptionRequest.QuantityAnimal,
+                        Medications = request.CreatePrescriptionRequest.Medications.Select(m => new PrescriptionMedicationModel
+                        {
+                            MedicationId = m.MedicationId,
+                            Dosage = m.Dosage,
+                            Morning = m.Morning,
+                            Afternoon = m.Afternoon,
+                            Evening = m.Evening,
+                            Noon = m.Noon
+                        }).ToList()
+                    }
                 };
-
                 var result = await _medicalSymptomService.UpdateMedicalSymptomAsync(updatedModel);
 
                 if (!result)

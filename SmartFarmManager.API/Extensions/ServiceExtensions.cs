@@ -196,6 +196,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IMedicalSymptomDetailRepository, MedicalSymptomDetailRepository>();
             services.AddScoped<ISymptomRepository, SymptomRepository>();
             services.AddScoped<IDiseaseRepositoy, DiseaseRepository>();
+            services.AddScoped<IStandardPrescriptionRepository, StandardPrescriptionRepository>();
             return services;
         }
 
@@ -229,6 +230,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IVaccineService, VaccineService>();
             services.AddScoped<ISymptomService, SymptomService>();
             services.AddScoped<IDiseaseService, DiseaseService>();
+            services.AddScoped<IStandardPrescriptionService, StandardPrescriptionService>();
 
 
             return services;

@@ -2,15 +2,15 @@
 {
     public class CreatePrescriptionRequest
     {
-        public Guid RecordId { get; set; }
+        public Guid? MedicalSymptomId { get; set; }
         public DateTime PrescribedDate { get; set; }
-        public string CaseType { get; set; }
         public string Notes { get; set; }
-        public Guid CageId { get; set; }
+        public Guid? CageId { get; set; }
         public int DaysToTake { get; set; }
         public int QuantityAnimal { get; set; }
-        public List<PrescriptionMedicationRequest> Medications { get; set; }
         public string Status { get; set; }
+        public List<PrescriptionMedicationRequest> Medications { get; set; }
+        
     }
     public class PrescriptionMedicationRequest
     {

@@ -10,9 +10,6 @@ public partial class MedicalSymptom : EntityBase
 
     public Guid FarmingBatchId { get; set; }
     public Guid? PrescriptionId { get; set; }
-
-    public string Symptoms { get; set; }
-
     public string Diagnosis { get; set; }
 
     public string Status { get; set; }
