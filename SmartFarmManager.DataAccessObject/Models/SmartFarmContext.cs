@@ -152,6 +152,11 @@ public partial class SmartFarmContext : DbContext
     public virtual DbSet<SaleType> SaleTypes { get; set; }
     public virtual DbSet<Symptom> Symptoms { get; set; }
     public virtual DbSet<MedicalSymtomDetail> MedicalSymtomDetails { get; set; }
+    public virtual DbSet<Disease> Diseases { get; set; }
+    public virtual DbSet<StandardPrescription> StandardPrescriptions { get; set; }
+    public virtual DbSet<StandardPrescriptionMedication> StandardPrescriptionMedications { get; set; }
+
+
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -162,11 +167,6 @@ public partial class SmartFarmContext : DbContext
 
             entity.HasKey(e => e.Id);
 
-            entity.Property(e => e.Notes)
-                  .HasMaxLength(500);
-
-            entity.Property(e => e.CreateAt)
-                  .IsRequired();
 
             entity.HasOne(e => e.MedicalSymptom)
                   .WithMany(ms => ms.MedicalSymptomDetails)
@@ -721,7 +721,6 @@ public partial class SmartFarmContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasDefaultValue("Ðang di?u tr?");
-            entity.Property(e => e.Symptoms).HasMaxLength(200);
             
 
             entity.HasOne(d => d.FarmingBatch).WithMany(p => p.MedicalSymptoms)
@@ -809,7 +808,6 @@ public partial class SmartFarmContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__Prescrip__401308323ACA723E");
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.CaseType).HasMaxLength(50);
             entity.Property(e => e.Notes).HasMaxLength(255);
             entity.Property(e => e.PrescribedDate).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.Price).HasColumnType("decimal(10, 2)");
@@ -1143,6 +1141,33 @@ public partial class SmartFarmContext : DbContext
                 .HasForeignKey(d => d.FarmId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__WaterLogs__FarmI__5CA1C101");
+        });
+        modelBuilder.Entity<Disease>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Description).HasMaxLength(500);
+        });
+        modelBuilder.Entity<StandardPrescription>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.Disease)
+                .WithMany(d => d.StandardPrescriptions)
+                .HasForeignKey(e => e.DiseaseId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.Property(e => e.Notes).HasMaxLength(255);
+        });
+        modelBuilder.Entity<StandardPrescriptionMedication>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.Prescription)
+                .WithMany(p => p.StandardPrescriptionMedications)
+                .HasForeignKey(e => e.PrescriptionId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Medication)
+                .WithMany(m => m.StandardPrescriptionMedications)
+                .HasForeignKey(e => e.MedicationId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         OnModelCreatingPartial(modelBuilder);

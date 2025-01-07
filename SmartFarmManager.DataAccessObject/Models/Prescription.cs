@@ -13,17 +13,12 @@ public partial class Prescription : EntityBase
 
     public DateTime? PrescribedDate { get; set; }
     public DateTime? EndDate { get; set; }
-
-    public string CaseType { get; set; }
-
     public string Notes { get; set; }
     public int QuantityAnimal { get; set; }
 
     public string Status { get; set; }
     public int? DaysToTake { get; set; }
     public decimal? Price { get; set; }
-    public string? DoctorApproval { get; set; }
-    public string? StatusAnimal { get; set; }
 
     public virtual ICollection<HealthLog> HealthLogs { get; set; } = new List<HealthLog>();
         

@@ -58,8 +58,6 @@ namespace SmartFarmManager.Service.Services
                     Status = model.Status,
                     CageId = model.CageId.Value,
                     DaysToTake = model.DaysToTake,
-                    DoctorApproval = DoctorApprovalEnum.Pending,
-                    StatusAnimal = StatusAnimalEnum.UnderTreatment,
                     EndDate = model.PrescribedDate.Value.AddDays((double)model.DaysToTake),
                     PrescriptionMedications = model.Medications.Select(m => new PrescriptionMedication
                     {
@@ -392,9 +390,6 @@ namespace SmartFarmManager.Service.Services
             if (model.PrescribedDate.HasValue)
                 prescription.PrescribedDate = model.PrescribedDate;
 
-            if (!string.IsNullOrWhiteSpace(model.CaseType))
-                prescription.CaseType = model.CaseType;
-
             if (!string.IsNullOrWhiteSpace(model.Notes))
                 prescription.Notes = model.Notes;
 
@@ -412,12 +407,6 @@ namespace SmartFarmManager.Service.Services
 
             if (model.DaysToTake.HasValue)
                 prescription.DaysToTake = model.DaysToTake.Value;
-
-            if (!string.IsNullOrWhiteSpace(model.DoctorApproval))
-                prescription.DoctorApproval = model.DoctorApproval;
-
-            if (!string.IsNullOrWhiteSpace(model.StatusAnimal))
-                prescription.StatusAnimal = model.StatusAnimal;
 
             // Lưu thay đổi
             await _unitOfWork.Prescription.UpdateAsync(prescription);
