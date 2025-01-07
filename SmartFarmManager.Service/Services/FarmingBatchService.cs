@@ -403,6 +403,35 @@ namespace SmartFarmManager.Service.Services
             };
         }
 
+        public async Task<List<FarmingBatchModel>> GetActiveFarmingBatchesByUserAsync(Guid userId)
+        {
+            // Lấy danh sách Cage theo userId
+            var cages = await _unitOfWork.Cages
+                .FindByCondition(c => c.CageStaffs.Any(cs => cs.StaffFarmId == userId) && !c.IsDeleted && c.BoardStatus)
+                .Include(c => c.FarmingBatches)
+                .ToListAsync();
+
+            // Lấy danh sách tất cả FarmingBatches từ các Cage
+            var farmingBatches = cages
+                .SelectMany(c => c.FarmingBatches)
+                .Where(fb => fb.Status == FarmingBatchStatusEnum.Active) // Lọc chỉ lấy các FarmingBatch Active
+                .ToList();
+
+            // Map sang FarmingBatchModel
+            return farmingBatches.Select(fb => new FarmingBatchModel
+            {
+                Id = fb.Id,
+                Name = fb.Name,
+                Species = fb.Species,
+                StartDate = fb.StartDate,
+                CompleteAt = fb.CompleteAt,
+                EndDate = fb.EndDate,
+                Status = fb.Status,
+                CleaningFrequency = fb.CleaningFrequency,
+                Quantity = fb.Quantity,
+                AffectedQuantity = fb.AffectedQuantity,
+            }).ToList();
+        }
 
     }
 }

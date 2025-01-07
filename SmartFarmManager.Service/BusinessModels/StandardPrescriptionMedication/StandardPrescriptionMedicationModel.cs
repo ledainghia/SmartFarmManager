@@ -4,26 +4,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SmartFarmManager.DataAccessObject.Models
+namespace SmartFarmManager.Service.BusinessModels.StandardPrescriptionMedication
 {
-    public partial class StandardPrescriptionMedication : EntityBase
+    public class StandardPrescriptionMedicationModel
     {
-        public Guid PrescriptionId { get; set; }
-
+        public Guid Id { get; set; }
         public Guid MedicationId { get; set; }
-
+        public string MedicationName { get; set; }
         public int Dosage { get; set; }
-
         public bool Morning { get; set; }
-
         public bool Afternoon { get; set; }
-
         public bool Evening { get; set; }
-
         public bool Noon { get; set; }
-
-        public virtual StandardPrescription Prescription { get; set; }
-
-        public virtual Medication Medication { get; set; }
     }
+
 }

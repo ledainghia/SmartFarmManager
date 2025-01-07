@@ -182,6 +182,11 @@ namespace SmartFarmManager.API.Controllers
                 return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred. Please contact support."));
             }
         }
-
+        [HttpGet("active-batches-by-user")]
+        public async Task<IActionResult> GetActiveBatchesByUser([FromQuery] Guid userId)
+        {
+            var activeBatches = await _farmingBatchService.GetActiveFarmingBatchesByUserAsync(userId);
+            return Ok(ApiResult<List<FarmingBatchModel>>.Succeed(activeBatches));
+        }
     }
 }

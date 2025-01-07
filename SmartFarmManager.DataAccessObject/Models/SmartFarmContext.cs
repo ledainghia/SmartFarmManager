@@ -721,7 +721,6 @@ public partial class SmartFarmContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasDefaultValue("Ðang di?u tr?");
-            entity.Property(e => e.Symptoms).HasMaxLength(200);
             
 
             entity.HasOne(d => d.FarmingBatch).WithMany(p => p.MedicalSymptoms)
