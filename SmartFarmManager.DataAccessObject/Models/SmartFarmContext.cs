@@ -152,6 +152,11 @@ public partial class SmartFarmContext : DbContext
     public virtual DbSet<SaleType> SaleTypes { get; set; }
     public virtual DbSet<Symptom> Symptoms { get; set; }
     public virtual DbSet<MedicalSymtomDetail> MedicalSymtomDetails { get; set; }
+    public virtual DbSet<Disease> Diseases { get; set; }
+    public virtual DbSet<StandardPrescription> StandardPrescriptions { get; set; }
+    public virtual DbSet<StandardPrescriptionMedication> StandardPrescriptionMedications { get; set; }
+
+
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -1143,6 +1148,33 @@ public partial class SmartFarmContext : DbContext
                 .HasForeignKey(d => d.FarmId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__WaterLogs__FarmI__5CA1C101");
+        });
+        modelBuilder.Entity<Disease>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Description).HasMaxLength(500);
+        });
+        modelBuilder.Entity<StandardPrescription>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.Disease)
+                .WithMany(d => d.StandardPrescriptions)
+                .HasForeignKey(e => e.DiseaseId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.Property(e => e.Notes).HasMaxLength(255);
+        });
+        modelBuilder.Entity<StandardPrescriptionMedication>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.Prescription)
+                .WithMany(p => p.StandardPrescriptionMedications)
+                .HasForeignKey(e => e.PrescriptionId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Medication)
+                .WithMany(m => m.StandardPrescriptionMedications)
+                .HasForeignKey(e => e.MedicationId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         OnModelCreatingPartial(modelBuilder);
