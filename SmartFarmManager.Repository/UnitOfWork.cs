@@ -45,7 +45,8 @@ namespace SmartFarmManager.Repository
         public ISaleTypeRepository SaleTypes { get; }
         public IMedicalSymptomDetailRepository MedicalSymptomDetails { get; }
         public ISymptomRepository Symptoms { get; }
-
+        public IDiseaseRepositoy Diseases { get; }
+        public IStandardPrescriptionRepository StandardPrescriptions { get; }
         public UnitOfWork(SmartFarmContext context, IUserRepository users,
             ITaskTypeRepository taskTypes,
             ITaskRepository tasks,
@@ -76,7 +77,9 @@ namespace SmartFarmManager.Repository
             ILeaveRequestRepository leaveRequests,
             ISaleTypeRepository saleTypes,
             IMedicalSymptomDetailRepository medicalSymptomDetails,
-            ISymptomRepository symptoms)
+            ISymptomRepository symptoms,
+            IDiseaseRepositoy diseases,
+            IStandardPrescriptionRepository standardPrescriptions)
         {
             _context = context;
             Users = users;
@@ -111,6 +114,8 @@ namespace SmartFarmManager.Repository
             SaleTypes = saleTypes;
             MedicalSymptomDetails = medicalSymptomDetails;
             Symptoms = symptoms;
+            Diseases = diseases;
+            StandardPrescriptions = standardPrescriptions;
         }
          
 

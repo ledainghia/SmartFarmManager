@@ -16,8 +16,6 @@ namespace SmartFarmManager.Service.BusinessModels.MedicalSymptom
 
         public Guid? PrescriptionId { get; set; }
 
-        public string Symptoms { get; set; }
-
         public string Diagnosis { get; set; }
 
         public DateTime? CreateAt { get; set; }

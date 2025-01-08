@@ -104,7 +104,6 @@ namespace SmartFarmManager.API.Controllers
                     CageId = request.CageId,
                     DaysToTake = request.DaysToTake,
                     QuantityAnimal = request.QuantityAnimal,
-                    CaseType = request.CaseType,
                     Status = request.Status,
                     Medications = request.Medications.Select(m => new PrescriptionMedicationModel
                     {
@@ -220,8 +219,6 @@ namespace SmartFarmManager.API.Controllers
                     CaseType = request.CaseType,
                     Status = request.Status,
                     Price = request.Price,
-                    DoctorApproval = request.DoctorApproval,
-                    StatusAnimal = request.StatusAnimal
                 };
 
                 var result = await _prescriptionService.UpdatePrescriptionAsync(model);

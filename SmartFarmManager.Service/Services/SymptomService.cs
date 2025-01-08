@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SmartFarmManager.Repository.Interfaces;
+using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Symptom;
 using SmartFarmManager.Service.Interfaces;
 using System;
@@ -84,6 +85,30 @@ namespace SmartFarmManager.Service.Services
             await _unitOfWork.CommitAsync();
 
             return true;
+        }
+        public async Task<PagedResult<SymptomModel>> GetPagedSymptomsAsync(string? name, int page, int pageSize)
+        {
+            var (items, totalCount) = await _unitOfWork.Symptoms.GetPagedAsync(
+                filter: s => string.IsNullOrEmpty(name) || s.SymptomName.Contains(name),
+                orderBy: q => q.OrderBy(s => s.SymptomName),
+                page: page,
+                pageSize: pageSize
+            );
+
+            return new PagedResult<SymptomModel>
+            {
+                Items = items.Select(s => new SymptomModel
+                {
+                    Id = s.Id,
+                    SymptomName = s.SymptomName
+                }),
+                TotalItems = totalCount,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+                CurrentPage = page,
+                PageSize = pageSize,
+                HasNextPage = page < (int)Math.Ceiling(totalCount / (double)pageSize),
+                HasPreviousPage = page > 1
+            };
         }
     }
 }
