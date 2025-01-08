@@ -102,9 +102,13 @@ namespace SmartFarmManager.API.Controllers
 
         // GET: api/medical-symptoms
         [HttpGet]
-        public async Task<IActionResult> GetMedicalSymptoms([FromQuery] string? status)
+        public async Task<IActionResult> GetMedicalSymptoms(
+    [FromQuery] string? status,
+    [FromQuery] DateTime? startDate,
+    [FromQuery] DateTime? endDate,
+    [FromQuery] string? searchTerm)
         {
-            var medicalSymptoms = await _medicalSymptomService.GetMedicalSymptomsAsync(status);
+            var medicalSymptoms = await _medicalSymptomService.GetMedicalSymptomsAsync(status, startDate, endDate, searchTerm);
 
             if (medicalSymptoms == null || !medicalSymptoms.Any())
             {
@@ -122,6 +126,7 @@ namespace SmartFarmManager.API.Controllers
                 Quantity = ms.Quantity,
                 NameAnimal = ms.NameAnimal,
                 CreateAt = ms.CreateAt,
+                Symptoms = ms.Symtom,
                 Pictures = ms.Pictures.Select(p => new PictureResponse
                 {
                     Id = p.Id,

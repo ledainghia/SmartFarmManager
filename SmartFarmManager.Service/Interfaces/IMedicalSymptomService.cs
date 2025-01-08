@@ -12,7 +12,7 @@ namespace SmartFarmManager.Service.Interfaces
     {
         Task<Guid> CreateMedicalSymptomAsync(MedicalSymptomModel medicalSymptom);
         Task<MedicalSymptomModel?> GetMedicalSymptomByIdAsync(Guid id);
-        Task<IEnumerable<MedicalSymptomModel>> GetMedicalSymptomsAsync(string? status);
+        Task<IEnumerable<MedicalSymptomModel>> GetMedicalSymptomsAsync(string? status, DateTime? startDate, DateTime? endDate, string? searchTerm);
         Task<bool> UpdateMedicalSymptomAsync(UpdateMedicalSymptomModel updatedSymptom);
         Task<IEnumerable<MedicalSymptomModel>> GetMedicalSymptomsByStaffAndBatchAsync(Guid? staffId, Guid? farmBatchId);
     }

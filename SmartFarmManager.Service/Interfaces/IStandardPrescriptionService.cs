@@ -9,7 +9,7 @@ namespace SmartFarmManager.Service.Interfaces
 {
     public interface IStandardPrescriptionService
     {
-        Task<List<StandardPrescriptionModel>> GetStandardPrescriptionsByDiseaseIdAsync(Guid diseaseId);
+        Task<StandardPrescriptionModel?> GetStandardPrescriptionsByDiseaseIdAsync(Guid diseaseId);
     }
 
 }
