@@ -20,7 +20,7 @@ namespace SmartFarmManager.API.Controllers
         }
 
         // POST: api/healthlogs
-        [HttpPost("{cageId:guid}/health-log")]
+        [HttpPost("{prescriptionId:guid}/health-log")]
         public async Task<IActionResult> CreateHealthLog(Guid prescriptionId, [FromBody] CreateHealthLogRequest request)
         {
             if (!ModelState.IsValid)
