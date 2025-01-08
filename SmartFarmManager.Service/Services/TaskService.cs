@@ -827,6 +827,8 @@ namespace SmartFarmManager.Service.Services
                     t.CompletedAt,
                     t.CreatedAt,
                     t.Session,
+                    t.IsTreatmentTask,
+                    t.PrescriptionId,
                     CageName = t.Cage.Name, // Use CageName from database
                     AssignedToUser = new
                     {
@@ -877,6 +879,8 @@ namespace SmartFarmManager.Service.Services
                                 Status = task.Status,
                                 CompletedAt = task.CompletedAt,
                                 CreatedAt = task.CreatedAt,
+                                IsTreatmentTask = task.IsTreatmentTask,
+                                PrescriptionId = task.PrescriptionId,
                                 AssignedToUser = new UserResponseModel
                                 {
                                     UserId = task.AssignedToUser.Id,
