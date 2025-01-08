@@ -77,8 +77,8 @@ namespace SmartFarmManager.Service.Services
                 // Danh sách trạng thái hợp lệ
                 var validStatuses = new[]
                 {
-            MedicalSymptomStatuseEnum.Normal,
-            MedicalSymptomStatuseEnum.Diagnosed
+            MedicalSymptomStatuseEnum.Rejected,
+            MedicalSymptomStatuseEnum.Prescribed
         };
 
                 // Kiểm tra trạng thái có hợp lệ không
@@ -95,6 +95,14 @@ namespace SmartFarmManager.Service.Services
                 // Tạo mới Prescription nếu có
                 if (updatedModel.Prescriptions != null)
                 {
+                    var medications = updatedModel.Prescriptions.Medications;
+
+                    // Tính tổng giá thuốc trong đơn thuốc
+                    var totalPrice = medications.Sum(m =>
+                    {
+                        var medication = _unitOfWork.Medication.GetByIdAsync(m.MedicationId).Result; // Lấy thông tin thuốc
+                        return medication.PricePerDose.Value * m.Dosage;
+                    });
                     var newPrescription = new Prescription
                     {
                         MedicalSymtomId = updatedModel.Id,
@@ -105,7 +113,7 @@ namespace SmartFarmManager.Service.Services
                         Status = updatedModel.Prescriptions.Status,
                         QuantityAnimal = updatedModel.Prescriptions.QuantityAnimal.Value,
                         EndDate = updatedModel.Prescriptions.PrescribedDate.Value.AddDays((double)updatedModel.Prescriptions.DaysToTake)
-
+                        Price = totalPrice
                     };
 
                     await _unitOfWork.Prescription.CreateAsync(newPrescription);
