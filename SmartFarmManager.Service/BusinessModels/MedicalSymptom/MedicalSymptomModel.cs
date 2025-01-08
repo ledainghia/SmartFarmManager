@@ -13,6 +13,7 @@ namespace SmartFarmManager.Service.BusinessModels.MedicalSymptom
     {
         public Guid Id { get; set; }
         public Guid FarmingBatchId { get; set; }
+        public string Symtom {  get; set; }
 
         public Guid? PrescriptionId { get; set; }
 

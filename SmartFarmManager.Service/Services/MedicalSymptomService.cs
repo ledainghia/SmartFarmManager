@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MailKit.Search;
+using Microsoft.EntityFrameworkCore;
 using Org.BouncyCastle.Utilities.Date;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
@@ -13,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace SmartFarmManager.Service.Services
 {
@@ -27,11 +29,42 @@ namespace SmartFarmManager.Service.Services
             _userService = userService;
         }
 
-        public async Task<IEnumerable<MedicalSymptomModel>> GetMedicalSymptomsAsync(string? status)
+        public async Task<IEnumerable<MedicalSymptomModel>> GetMedicalSymptomsAsync(string? status, DateTime? startDate, DateTime? endDate, string? searchTerm)
         {
-            var symptoms = await _unitOfWork.MedicalSymptom
-                .FindAll().Where(ms => string.IsNullOrEmpty(status) || ms.Status == status).Include(p => p.Pictures).Include(p => p.FarmingBatch).Include(p => p.Prescriptions).ToListAsync();
+            var query = _unitOfWork.MedicalSymptom
+        .FindAll()
+        .Include(p => p.Pictures)
+        .Include(p => p.FarmingBatch)
+        .Include(p => p.Prescriptions)
+        .Include(p => p.MedicalSymptomDetails).ThenInclude(p => p.Symptom)
+        .AsQueryable();
+            // Lọc theo trạng thái nếu có
+            if (!string.IsNullOrEmpty(status))
+            {
+                query = query.Where(ms => ms.Status == status);
+            }
 
+            // Lọc theo ngày tạo (CreateAt) nếu có
+            if (startDate.HasValue)
+            {
+                query = query.Where(ms => ms.CreateAt >= startDate.Value);
+            }
+            if (endDate.HasValue)
+            {
+                query = query.Where(ms => ms.CreateAt <= endDate.Value);
+            }
+
+            // Lọc theo từ khóa tìm kiếm nếu có
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                query = query.Where(ms =>
+                    ms.Diagnosis.Contains(searchTerm) ||
+                    ms.Notes.Contains(searchTerm) ||
+                ms.FarmingBatch.Species.Contains(searchTerm) ||
+                    ms.MedicalSymptomDetails.Any(md => md.Symptom.SymptomName.Contains(searchTerm)));
+            }
+
+            var symptoms = await query.ToListAsync();
             return symptoms.Select(ms => new MedicalSymptomModel
             {
                 Id = ms.Id,
@@ -60,6 +93,7 @@ namespace SmartFarmManager.Service.Services
                     DaysToTake = p.DaysToTake,
                     EndDate = p.EndDate,
                 }).ToList(),
+                Symtom = string.Join(", ", ms.MedicalSymptomDetails.Select(d => d.Symptom.SymptomName))
             });
         }
         public async Task<bool> UpdateMedicalSymptomAsync(UpdateMedicalSymptomModel updatedModel)

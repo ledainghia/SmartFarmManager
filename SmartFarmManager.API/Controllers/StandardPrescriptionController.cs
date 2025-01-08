@@ -24,12 +24,12 @@ namespace SmartFarmManager.API.Controllers
             {
                 var prescriptions = await _service.GetStandardPrescriptionsByDiseaseIdAsync(diseaseId);
 
-                if (!prescriptions.Any())
+                if (prescriptions == null)
                 {
                     return NotFound(ApiResult<object>.Fail($"No StandardPrescriptions found for DiseaseId: {diseaseId}"));
                 }
 
-                return Ok(ApiResult<List<StandardPrescriptionModel>>.Succeed(prescriptions));
+                return Ok(ApiResult<StandardPrescriptionModel>.Succeed(prescriptions));
             }
             catch (Exception ex)
             {
