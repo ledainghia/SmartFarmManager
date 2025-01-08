@@ -489,7 +489,9 @@ namespace SmartFarmManager.Service.Services
 
             // Kiểm tra xem FarmBatchId có thuộc Cage của Staff không
             var farmingBatch = await _unitOfWork.FarmingBatches
-                .FindByCondition(fb => cageIds.Contains(fb.CageId) && fb.Id == farmBatchId, trackChanges: false, fb => fb.MedicalSymptoms)
+                .FindByCondition(fb => cageIds.Contains(fb.CageId) && fb.Id == farmBatchId)
+                .Include(p => p.MedicalSymptoms)
+                .ThenInclude(p => p.MedicalSymptomDetails).ThenInclude(p => p.Symptom)
                 .FirstOrDefaultAsync();
 
             if (farmingBatch == null)
@@ -508,6 +510,7 @@ namespace SmartFarmManager.Service.Services
                 Quantity = farmingBatch.Quantity,
                 Notes = ms.Notes,
                 CreateAt = ms.CreateAt,
+                Symtom = string.Join(", ", ms.MedicalSymptomDetails.Select(md => md.Symptom.SymptomName)) // Nối triệu chứng
             });
         }
     }
