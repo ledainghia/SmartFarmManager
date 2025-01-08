@@ -31,6 +31,8 @@ namespace SmartFarmManager.Service.Services
             var prescription = await _unitOfWork.Prescription
                 .FindByCondition(p => p.Id == prescriptionId && p.Status == PrescriptionStatusEnum.Active)
                 .Include(p => p.PrescriptionMedications)
+                .Include(p => p.MedicalSymtom)
+                .ThenInclude(p => p.FarmingBatch)
                 .FirstOrDefaultAsync();
             if (prescription == null)
                 return null;
@@ -62,6 +64,14 @@ namespace SmartFarmManager.Service.Services
                     // Cập nhật trạng thái Prescription thành Completed
                     prescription.Status = PrescriptionStatusEnum.Completed;
                     await _unitOfWork.Prescription.UpdateAsync(prescription);
+                    var farmingBatch = await _unitOfWork.FarmingBatches.FindByCondition(f => f.Id == prescription.MedicalSymtom.FarmingBatchId).FirstOrDefaultAsync();
+                    if (farmingBatch != null) {
+                        farmingBatch.AffectedQuantity -= prescription.QuantityAnimal;
+                    }
+                    else
+                    {
+                        return null;
+                    }
                 }
                 else {
                     return null;
