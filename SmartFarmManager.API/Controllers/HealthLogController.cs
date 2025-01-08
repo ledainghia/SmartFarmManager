@@ -21,12 +21,12 @@ namespace SmartFarmManager.API.Controllers
 
         // POST: api/healthlogs
         [HttpPost("{cageId:guid}/health-log")]
-        public async Task<IActionResult> CreateHealthLog(Guid cageId, [FromBody] CreateHealthLogRequest request)
+        public async Task<IActionResult> CreateHealthLog(Guid prescriptionId, [FromBody] CreateHealthLogRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ApiResult<string>.Fail("Yêu cầu không hợp lệ"));
 
-            var result = await _healthLogService.CreateHealthLogAsync(cageId, new HealthLogModel
+            var result = await _healthLogService.CreateHealthLogAsync(prescriptionId, new HealthLogModel
             {
                 Date = request.Date,
                 Notes = request.Notes,

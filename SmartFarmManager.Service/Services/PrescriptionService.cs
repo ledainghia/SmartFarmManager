@@ -107,7 +107,7 @@ namespace SmartFarmManager.Service.Services
                         DueDate = startDate.ToDateTime(TimeOnly.MinValue),
                         Status = TaskStatusEnum.Pending,
                         Session = (int)SessionTypeEnum.Morning,
-                        CreatedAt = DateTime.Now
+                        CreatedAt = DateTimeUtils.VietnamNow(),
                     });
                 }
 
@@ -127,7 +127,7 @@ namespace SmartFarmManager.Service.Services
                         DueDate = startDate.ToDateTime(TimeOnly.MinValue),
                         Status = TaskStatusEnum.Pending,
                         Session = (int)SessionTypeEnum.Noon,
-                        CreatedAt = DateTime.Now
+                        CreatedAt = DateTimeUtils.VietnamNow(),
                     });
                 }
 
@@ -147,7 +147,7 @@ namespace SmartFarmManager.Service.Services
                         DueDate = startDate.ToDateTime(TimeOnly.MinValue),
                         Status = TaskStatusEnum.Pending,
                         Session = (int)SessionTypeEnum.Afternoon,
-                        CreatedAt = DateTime.Now
+                        CreatedAt = DateTimeUtils.VietnamNow(),
                     });
                 }
 
@@ -167,7 +167,7 @@ namespace SmartFarmManager.Service.Services
                         DueDate = startDate.ToDateTime(TimeOnly.MinValue),
                         Status = TaskStatusEnum.Pending,
                         Session = (int)SessionTypeEnum.Evening,
-                        CreatedAt = DateTime.Now
+                        CreatedAt = DateTimeUtils.VietnamNow(),
                     });
                 }
 
@@ -198,7 +198,7 @@ namespace SmartFarmManager.Service.Services
                                 DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
                                 Status = TaskStatusEnum.Pending,
                                 Session = (int)SessionTypeEnum.Morning,
-                                CreatedAt = DateTime.Now
+                                CreatedAt = DateTimeUtils.VietnamNow(),
                             });
                         }
                     }
@@ -221,7 +221,7 @@ namespace SmartFarmManager.Service.Services
                                 DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
                                 Status = TaskStatusEnum.Pending,
                                 Session = (int)SessionTypeEnum.Noon,
-                                CreatedAt = DateTime.Now
+                                CreatedAt = DateTimeUtils.VietnamNow(),
                             });
                         }
                     }
@@ -244,7 +244,7 @@ namespace SmartFarmManager.Service.Services
                                 DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
                                 Status = TaskStatusEnum.Pending,
                                 Session = (int)SessionTypeEnum.Afternoon,
-                                CreatedAt = DateTime.Now
+                                CreatedAt = DateTimeUtils.VietnamNow(),
                             });
                         }
                     }
@@ -267,7 +267,7 @@ namespace SmartFarmManager.Service.Services
                                 DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
                                 Status = TaskStatusEnum.Pending,
                                 Session = (int)SessionTypeEnum.Evening,
-                                CreatedAt = DateTime.Now
+                                CreatedAt = DateTimeUtils.VietnamNow(),
                             });
                         }
                     }
