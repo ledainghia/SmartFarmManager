@@ -25,17 +25,48 @@ namespace SmartFarmManager.Service.Services
             _mapper = mapper;
         }
 
-        public async Task<Guid?> CreateHealthLogAsync(Guid cageId, HealthLogModel model)
+        public async Task<Guid?> CreateHealthLogAsync(Guid prescriptionId, HealthLogModel model)
         {
             // Tìm Prescription với CageId và trạng thái phù hợp
-            var prescription = await _unitOfWork.Prescription.FindByCondition(
-                p => p.CageId == cageId && p.Status == PrescriptionStatusEnum.Active, // Tìm đơn thuốc đang hoạt động
-                trackChanges: false
-            ).FirstOrDefaultAsync();
-
+            var prescription = await _unitOfWork.Prescription
+                .FindByCondition(p => p.Id == prescriptionId && p.Status == PrescriptionStatusEnum.Active)
+                .Include(p => p.PrescriptionMedications)
+                .FirstOrDefaultAsync();
             if (prescription == null)
                 return null;
+            // Kiểm tra đơn thuốc có thuốc kê cho các buổi sáng, trưa, chiều, tối hay không
+            var hasMorningMedication = prescription.PrescriptionMedications.Any(m => m.Morning);
+            var hasNoonMedication = prescription.PrescriptionMedications.Any(m => m.Noon);
+            var hasAfternoonMedication = prescription.PrescriptionMedications.Any(m => m.Afternoon);
+            var hasEveningMedication = prescription.PrescriptionMedications.Any(m => m.Evening);
 
+            // Lấy thời gian hiện tại
+            var now = DateTimeUtils.VietnamNow();
+            var currentTime = now.TimeOfDay;
+            var currentSession = SessionTime.GetCurrentSession(currentTime);
+
+            // Nếu ngày hiện tại trùng với EndDate và là buổi cuối cùng được kê thuốc
+            if (prescription.EndDate.HasValue && now.Date == prescription.EndDate.Value.Date)
+            {
+                var isLastSession = currentSession switch
+                {
+                    1 => !hasNoonMedication && !hasAfternoonMedication && !hasEveningMedication,  // Morning là buổi cuối
+                    2 => !hasAfternoonMedication && !hasEveningMedication,                      // Noon là buổi cuối
+                    3 => !hasEveningMedication,                                                // Afternoon là buổi cuối
+                    4 => true,                                                                 // Evening là buổi cuối
+                    _ => false
+                };
+
+                if (isLastSession)
+                {
+                    // Cập nhật trạng thái Prescription thành Completed
+                    prescription.Status = PrescriptionStatusEnum.Completed;
+                    await _unitOfWork.Prescription.UpdateAsync(prescription);
+                }
+                else {
+                    return null;
+                }
+            }
             // Tạo log
             var newLog = new HealthLog
             {
