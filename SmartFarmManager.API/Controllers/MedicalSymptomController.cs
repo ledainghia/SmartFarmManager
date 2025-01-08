@@ -8,6 +8,7 @@ using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Service.BusinessModels.MedicalSymptom;
 using SmartFarmManager.Service.BusinessModels.MedicalSymptomDetail;
 using SmartFarmManager.Service.BusinessModels.Picture;
+using SmartFarmManager.Service.BusinessModels.Prescription;
 using SmartFarmManager.Service.BusinessModels.PrescriptionMedication;
 using SmartFarmManager.Service.Interfaces;
 
@@ -180,14 +181,15 @@ namespace SmartFarmManager.API.Controllers
                     Diagnosis = request.Diagnosis,
                     Status = request.Status,
                     Notes = request.Notes,
-                    Prescriptions = new Service.BusinessModels.Prescription.PrescriptionModel
+                    Prescriptions = request.CreatePrescriptionRequest != null ? new PrescriptionModel
                     {
                         RecordId = request.CreatePrescriptionRequest.MedicalSymptomId,
                         PrescribedDate = request.CreatePrescriptionRequest.PrescribedDate,
                         Notes = request.CreatePrescriptionRequest.Notes,
+                        CageId = request.CreatePrescriptionRequest.CageId,
                         DaysToTake = request.CreatePrescriptionRequest.DaysToTake,
-                        Status = request.CreatePrescriptionRequest.Status,
                         QuantityAnimal = request.CreatePrescriptionRequest.QuantityAnimal,
+                        Status = request.CreatePrescriptionRequest.Status,
                         Medications = request.CreatePrescriptionRequest.Medications.Select(m => new PrescriptionMedicationModel
                         {
                             MedicationId = m.MedicationId,
@@ -197,7 +199,7 @@ namespace SmartFarmManager.API.Controllers
                             Evening = m.Evening,
                             Noon = m.Noon
                         }).ToList()
-                    }
+                    } : null
                 };
                 var result = await _medicalSymptomService.UpdateMedicalSymptomAsync(updatedModel);
 
