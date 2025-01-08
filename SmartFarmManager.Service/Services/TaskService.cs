@@ -706,6 +706,8 @@ namespace SmartFarmManager.Service.Services
                 Session = task.Session,
                 CompletedAt = task.CompletedAt,
                 CreatedAt = task.CreatedAt,
+                IsTreatmentTask = task.IsTreatmentTask,
+                PrescriptionId = task.PrescriptionId,
                 AssignedToUser = new UserResponseModel
                 {
                     UserId = task.AssignedToUser.Id,
