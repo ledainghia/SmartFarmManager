@@ -161,12 +161,28 @@ public partial class SmartFarmContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Symptom>(entity =>
+        {
 
+            entity.HasKey(e => e.Id); // Khóa chính
+
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+
+            entity.Property(e => e.SymptomName)
+                .HasMaxLength(200)
+                .IsRequired(); // Triệu chứng không được để trống
+
+            // Thiết lập quan hệ với MedicalSymptomDetail
+            entity.HasMany(e => e.MedicalSymptomDetails)
+                  .WithOne(e => e.Symptom)
+                  .HasForeignKey(e => e.SymptomId)
+                  .OnDelete(DeleteBehavior.Cascade); // Xóa triệu chứng sẽ xóa liên kết
+        });
         modelBuilder.Entity<MedicalSymtomDetail>(entity =>
         {
 
             entity.HasKey(e => e.Id);
-
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
             entity.HasOne(e => e.MedicalSymptom)
                   .WithMany(ms => ms.MedicalSymptomDetails)
@@ -177,19 +193,12 @@ public partial class SmartFarmContext : DbContext
                   .HasForeignKey(e => e.SymptomId)
                   .OnDelete(DeleteBehavior.Restrict);
         });
-        modelBuilder.Entity<Symptom>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-
-            entity.Property(e => e.SymptomName)
-                  .HasMaxLength(200)
-                  .IsRequired();
-        });
+    
         modelBuilder.Entity<SaleType>(entity =>
         {
 
             entity.HasKey(e => e.Id);
-
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.StageTypeName)
                   .HasMaxLength(100)
                   .IsRequired();
@@ -207,7 +216,7 @@ public partial class SmartFarmContext : DbContext
         modelBuilder.Entity<EggHarvest>(entity =>
         {
             entity.HasKey(e => e.Id);
-
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.DateCollected)
                   .IsRequired();
 
@@ -720,8 +729,8 @@ public partial class SmartFarmContext : DbContext
             entity.Property(e => e.Notes).HasMaxLength(255);
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
-                .HasDefaultValue("Ðang di?u tr?");
-            entity.Property(e => e.Symptoms).HasMaxLength(200);
+                .HasDefaultValue("Pending");
+
             
 
             entity.HasOne(d => d.FarmingBatch).WithMany(p => p.MedicalSymptoms)
@@ -1146,12 +1155,14 @@ public partial class SmartFarmContext : DbContext
         modelBuilder.Entity<Disease>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
             entity.Property(e => e.Description).HasMaxLength(500);
         });
         modelBuilder.Entity<StandardPrescription>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.HasOne(e => e.Disease)
                 .WithMany(d => d.StandardPrescriptions)
                 .HasForeignKey(e => e.DiseaseId)
@@ -1161,6 +1172,7 @@ public partial class SmartFarmContext : DbContext
         modelBuilder.Entity<StandardPrescriptionMedication>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.HasOne(e => e.Prescription)
                 .WithMany(p => p.StandardPrescriptionMedications)
                 .HasForeignKey(e => e.PrescriptionId)

@@ -15,12 +15,13 @@ namespace SmartFarmManager.DataAccessObject.Models
         public int Dosage { get; set; }
 
         public bool Morning { get; set; }
+        public bool Noon { get; set; }
 
         public bool Afternoon { get; set; }
 
         public bool Evening { get; set; }
 
-        public bool Night { get; set; }
+
 
         public virtual StandardPrescription Prescription { get; set; }
 
