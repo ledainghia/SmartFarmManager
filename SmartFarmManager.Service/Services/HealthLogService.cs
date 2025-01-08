@@ -112,7 +112,7 @@ namespace SmartFarmManager.Service.Services
             return _mapper.Map<IEnumerable<HealthLogModel>>(healthLogs);
         }
 
-        public async Task<HealthLogModel> GetHealthLogByTaskIdAsync(Guid taskId)
+        public async Task<HealthLogModel?> GetHealthLogByTaskIdAsync(Guid taskId)
         {
             // Tìm log Health dựa trên TaskId
             var healthLog = await _unitOfWork.HealthLogs.FindByCondition(
