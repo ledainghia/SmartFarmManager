@@ -17,7 +17,7 @@ namespace SmartFarmManager.API.BackgroundJobs.QuartzConfigurations
             quartzConfig.ScheduleJob<Jobs.GenerateTasksForTomorrowJob>(trigger => trigger
                 .WithIdentity("GenerateTasksForTomorrowJob")
                 .WithCronSchedule("0 0 1 * * ?", x => x
-                    .InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")) // Múi giờ Việt Nam
+                    .InTimeZone(vietnamTimeZone) // Múi giờ Việt Nam
                 )
             );
             // Job chạy vào đầu các buổi

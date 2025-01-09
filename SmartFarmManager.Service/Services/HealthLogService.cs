@@ -37,10 +37,10 @@ namespace SmartFarmManager.Service.Services
             if (prescription == null)
                 return null;
             // Kiểm tra đơn thuốc có thuốc kê cho các buổi sáng, trưa, chiều, tối hay không
-            var hasMorningMedication = prescription.PrescriptionMedications.Any(m => m.Morning);
-            var hasNoonMedication = prescription.PrescriptionMedications.Any(m => m.Noon);
-            var hasAfternoonMedication = prescription.PrescriptionMedications.Any(m => m.Afternoon);
-            var hasEveningMedication = prescription.PrescriptionMedications.Any(m => m.Evening);
+            var hasMorningMedication = prescription.PrescriptionMedications.Any(m => m.Morning > 0);
+            var hasNoonMedication = prescription.PrescriptionMedications.Any(m => m.Noon > 0);
+            var hasAfternoonMedication = prescription.PrescriptionMedications.Any(m => m.Afternoon > 0);
+            var hasEveningMedication = prescription.PrescriptionMedications.Any(m => m.Evening > 0);
 
             // Lấy thời gian hiện tại
             var now = DateTimeUtils.VietnamNow();
