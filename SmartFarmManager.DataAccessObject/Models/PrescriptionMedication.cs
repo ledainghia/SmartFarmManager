@@ -12,12 +12,10 @@ public partial class PrescriptionMedication : EntityBase
 
     public Guid MedicationId { get; set; }
 
-    public int? Dosage { get; set; }
-
-    public bool Morning { get; set; } = false;
-    public bool Afternoon { get; set; } = false;
-    public bool Evening { get; set; } = false;
-    public bool Noon { get; set; } = false;
+    public int Morning { get; set; } = 0;
+    public int Afternoon { get; set; } = 0;
+    public int Evening { get; set; } = 0;
+    public int Noon { get; set; } = 0;
 
     public virtual Medication Medication { get; set; }
 
