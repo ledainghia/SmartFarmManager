@@ -13,5 +13,6 @@ namespace SmartFarmManager.Service.BusinessModels.GrowthStageTemplate
         public int? AgeStart { get; set; }
         public int? AgeEnd { get; set; }
         public string? Notes { get; set; }
+        public Guid? SaleTypeId { get; set; }
     }
 }

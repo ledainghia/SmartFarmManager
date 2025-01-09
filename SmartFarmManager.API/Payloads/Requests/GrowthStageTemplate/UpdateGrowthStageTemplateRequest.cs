@@ -15,6 +15,8 @@ namespace SmartFarmManager.API.Payloads.Requests.GrowthStageTemplate
         [MaxLength(255)]
         public string? Notes { get; set; }
 
+        public Guid? SaleTypeId { get; set; } // Thêm SaleTypeId
+
         public UpdateGrowthStageTemplateModel MapToModel()
         {
             return new UpdateGrowthStageTemplateModel
@@ -23,8 +25,10 @@ namespace SmartFarmManager.API.Payloads.Requests.GrowthStageTemplate
                 WeightAnimal = this.WeightAnimal,
                 AgeStart = this.AgeStart,
                 AgeEnd = this.AgeEnd,
-                Notes = this.Notes
+                Notes = this.Notes,
+                SaleTypeId = this.SaleTypeId // Gán SaleTypeId
             };
         }
     }
+
 }

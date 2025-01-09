@@ -13,8 +13,6 @@ namespace SmartFarmManager.API.Payloads.Requests.AnimalTemplate
         [MaxLength(50)]
         public string Species { get; set; }
 
-        public int? DefaultCapacity { get; set; }
-
         [MaxLength(255)]
         public string Notes { get; set; }
 

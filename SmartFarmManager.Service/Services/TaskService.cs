@@ -1162,7 +1162,7 @@ namespace SmartFarmManager.Service.Services
 
             // Lấy ngày cần generate task (ngày mai)
             var targetDate = today.AddDays(1);
-
+            //var targetDate = today;
             // Lấy tất cả các FarmingBatch đang ở trạng thái Active
             var activeBatches = await _unitOfWork.FarmingBatches
                 .FindByCondition(fb => fb.Status == FarmingBatchStatusEnum.Active)
@@ -1177,6 +1177,8 @@ namespace SmartFarmManager.Service.Services
 
             foreach (var batch in activeBatches)
             {
+                var existingTasksForTargetDateaa = await _unitOfWork.Tasks
+                    .FindByCondition(t => t.DueDate.Value.Date == targetDate.Date && t.CageId == batch.CageId).ToListAsync();
                 var existingTasksForTargetDate = await _unitOfWork.Tasks
                     .FindByCondition(t => t.DueDate.Value.Date == targetDate.Date && t.CageId == batch.CageId)
                     .AnyAsync();
@@ -1192,7 +1194,7 @@ namespace SmartFarmManager.Service.Services
                 foreach (var growthStage in batch.GrowthStages)
                 {
                     // Kiểm tra nếu ngày cần generate nằm trong khoảng thời gian của GrowthStage
-                    if (growthStage.AgeStartDate <= targetDate && growthStage.AgeEndDate >= targetDate)
+                    if (growthStage.AgeStartDate.Value.Date <= targetDate.Date && growthStage.AgeEndDate.Value.Date >= targetDate.Date)
                     {
                         // Generate Task từ TaskDaily
                         foreach (var taskDaily in growthStage.TaskDailies)
@@ -1230,7 +1232,7 @@ namespace SmartFarmManager.Service.Services
                                     PriorityNum = 2,
                                     Description = $"Tiêm vắc xin {vaccineSchedule.Vaccine.Name} cho giai đoạn {growthStage.Name}.",
                                     DueDate = targetDate,
-                                    Session = 1,
+                                    Session = vaccineSchedule.Session,
                                     Status = TaskStatusEnum.Pending,
                                     CreatedAt = DateTimeUtils.VietnamNow()
                                 });
@@ -1483,7 +1485,7 @@ namespace SmartFarmManager.Service.Services
                                 PriorityNum = (int)vaccineTaskType?.PriorityNum,
                                 Description = $"Tiêm vắc xin {vaccineSchedule.Vaccine.Name} cho giai đoạn {growthStage.Name}.",
                                 DueDate = date.Add(GetSessionEndTime(1)),
-                                Session = 1,
+                                Session = vaccineSchedule.Session,
                                 Status = TaskStatusEnum.Pending,
                                 CreatedAt = DateTimeUtils.VietnamNow()
                             });
@@ -1535,8 +1537,9 @@ namespace SmartFarmManager.Service.Services
             return session switch
             {
                 1 => SessionTime.Morning.End, // Giờ kết thúc buổi sáng
-                2 => SessionTime.Afternoon.End, // Giờ kết thúc buổi chiều
-                3 => SessionTime.Evening.End, // Giờ kết thúc buổi tối
+                2 => SessionTime.Noon.End, // Giờ kết thúc buổi chiều
+                3 => SessionTime.Afternoon.End, // Giờ kết thúc buổi tối
+                4 => SessionTime.Evening.End,
                 _ => throw new ArgumentException($"Invalid session value '{session}'.")
             };
         }
