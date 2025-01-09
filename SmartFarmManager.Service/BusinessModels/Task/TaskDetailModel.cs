@@ -19,6 +19,8 @@ namespace SmartFarmManager.Service.BusinessModels.Task
         public int Session { get; set; }
         public DateTime? CompletedAt { get; set; }
         public DateTime? CreatedAt { get; set; }
+        public bool IsTreatmentTask { get; set; }
+        public Guid? PrescriptionId { get; set; }
 
         public UserResponseModel AssignedToUser { get; set; }
 

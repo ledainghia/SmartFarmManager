@@ -8,7 +8,7 @@ namespace SmartFarmManager.Service.Shared
 {
     public class MedicalSymptomStatuseEnum
     {
-        public const string Rejected = "Rejected"; //Bình thường
+        public const string Rejected = "Rejected"; //Từ chối - Bình thường
         public const string Pending = "Pending"; //Đang chờ xem xét
         public const string Prescribed = "Prescribed"; //Đã kê thuốc
 

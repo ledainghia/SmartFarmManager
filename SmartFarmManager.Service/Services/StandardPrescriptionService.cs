@@ -20,22 +20,25 @@ namespace SmartFarmManager.Service.Services
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<List<StandardPrescriptionModel>> GetStandardPrescriptionsByDiseaseIdAsync(Guid diseaseId)
+        public async Task<StandardPrescriptionModel?> GetStandardPrescriptionsByDiseaseIdAsync(Guid diseaseId)
         {
             // Lấy danh sách StandardPrescription từ database
             var prescriptions = await _unitOfWork.StandardPrescriptions
                 .FindByCondition(sp => sp.DiseaseId == diseaseId)
                 .Include(sp => sp.StandardPrescriptionMedications)
                 .ThenInclude(spm => spm.Medication)
-                .ToListAsync();
-
-            // Chuyển đổi sang model
-            return prescriptions.Select(sp => new StandardPrescriptionModel
+                .FirstOrDefaultAsync();
+            if (prescriptions == null)
             {
-                Id = sp.Id,
-                Notes = sp.Notes,
-                DiseaseId = sp.DiseaseId,
-                Medications = sp.StandardPrescriptionMedications.Select(spm => new StandardPrescriptionMedicationModel
+                return null;
+            }
+            // Chuyển đổi sang model
+            return new StandardPrescriptionModel
+            {
+                Id = prescriptions.Id,
+                Notes = prescriptions.Notes,
+                DiseaseId = prescriptions.DiseaseId,
+                Medications = prescriptions.StandardPrescriptionMedications.Select(spm => new StandardPrescriptionMedicationModel
                 {
                     Id = spm.Id,
                     MedicationId = spm.MedicationId,
@@ -46,7 +49,7 @@ namespace SmartFarmManager.Service.Services
                     Evening = spm.Evening,
                     Noon = spm.Noon
                 }).ToList()
-            }).ToList();
+            };
         }
     }
 
