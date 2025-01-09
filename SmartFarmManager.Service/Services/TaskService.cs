@@ -1294,7 +1294,6 @@ namespace SmartFarmManager.Service.Services
 
                 // Lấy danh sách nhân viên được giao cho chuồng cách ly
                 var assignedEmployeeId = await GetAssignedStaffForCage(prescription.CageId, targetDate) ?? Guid.Empty;
-                var task
                 // Tạo các task điều trị từ PrescriptionMedications
                 foreach (var medication in prescription.PrescriptionMedications)
                 {
@@ -1406,7 +1405,7 @@ namespace SmartFarmManager.Service.Services
                 .FindByCondition(tt => tt.TaskTypeName == taskTypeName)
                 .FirstOrDefaultAsync();
 
-            return taskType?.PriorityNum;
+            return taskType.PriorityNum.Value;
         }
 
         public async Task<bool> UpdateAllTaskStatusesAsync()
