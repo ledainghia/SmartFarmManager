@@ -1406,7 +1406,7 @@ namespace SmartFarmManager.Service.Services
                 .FindByCondition(tt => tt.TaskTypeName == taskTypeName)
                 .FirstOrDefaultAsync();
 
-            return taskType?.PriorityNum;
+            return taskType.PriorityNum.Value;
         }
 
         public async Task<bool> UpdateAllTaskStatusesAsync()
