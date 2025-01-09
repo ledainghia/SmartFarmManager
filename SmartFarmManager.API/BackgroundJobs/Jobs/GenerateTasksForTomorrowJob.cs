@@ -16,6 +16,7 @@
         {
             Console.WriteLine("Generating tasks for tomorrow...");
             await _taskService.GenerateTasksForTomorrowAsync();
+            await _taskService.GenerateTreatmentTasksAsync();
         }
     }
 

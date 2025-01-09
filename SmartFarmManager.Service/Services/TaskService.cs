@@ -1255,6 +1255,89 @@ namespace SmartFarmManager.Service.Services
             return true;
         }
 
+        public async Task<bool> GenerateTreatmentTasksAsync()
+        {
+            // Lấy ngày hôm nay theo giờ Việt Nam
+            var today = DateTimeUtils.VietnamNow().Date;
+
+            // Lấy ngày cần generate task (ngày mai)
+            var targetDate = today.AddDays(1);
+
+            // Lấy tất cả các Prescription đang hoạt động
+            var activePrescriptions = await _unitOfWork.Prescription
+                .FindByCondition(p => p.Status == PrescriptionStatusEnum.Active
+                                      && p.PrescribedDate <= targetDate
+                                      && p.EndDate >= targetDate)
+                .Include(p => p.PrescriptionMedications)
+                .Include(p => p.MedicalSymtom)
+                .ToListAsync();
+
+            if (!activePrescriptions.Any())
+                return false;
+
+            var tasksToCreate = new List<Task>();
+
+            foreach (var prescription in activePrescriptions)
+            {
+                // Kiểm tra xem đã có task điều trị nào được tạo cho ngày này trong chuồng này chưa
+                var existingTasksForTargetDate = await _unitOfWork.Tasks
+                    .FindByCondition(t => t.DueDate.Value.Date == targetDate.Date && t.CageId == prescription.CageId)
+                    .AnyAsync();
+
+                if (existingTasksForTargetDate)
+                {
+                    continue; // Bỏ qua nếu đã có task
+                }
+
+                // Lấy AdminId của Farm liên quan đến Cage
+                var adminId = await GetFarmAdminIdByCageId(prescription.CageId);
+
+                // Lấy danh sách nhân viên được giao cho chuồng cách ly
+                var assignedEmployeeId = await GetAssignedStaffForCage(prescription.CageId, targetDate) ?? Guid.Empty;
+                var task
+                // Tạo các task điều trị từ PrescriptionMedications
+                foreach (var medication in prescription.PrescriptionMedications)
+                {
+                    var sessionTasks = new List<(int Session, int Quantity)>
+            {
+                (1, medication.Morning),
+                (2, medication.Noon),
+                (3, medication.Afternoon),
+                (4, medication.Evening)
+            };
+
+                    foreach (var sessionTask in sessionTasks.Where(t => t.Quantity > 0))
+                    {
+                        // Tạo task điều trị cho từng buổi
+                        tasksToCreate.Add(new Task
+                        {
+                            TaskTypeId = await GetTaskTypeIdByName("Cho uống thuốc"),
+                            CageId = prescription.CageId,
+                            AssignedToUserId = assignedEmployeeId,
+                            CreatedByUserId = (Guid)adminId,
+                            TaskName = $"Điều trị: {medication.Medication.Name}",
+                            PriorityNum = await GetTaskTypePriorityIdByName("Cho uống thuốc"), // Ưu tiên cao cho điều trị
+                            Description = $"Dùng {sessionTask.Quantity} liều thuốc {medication.Medication.Name} cho {prescription.QuantityAnimal} con.",
+                            DueDate = targetDate,
+                            Session = sessionTask.Session,
+                            Status = TaskStatusEnum.Pending,
+                            CreatedAt = DateTimeUtils.VietnamNow(),
+                            IsTreatmentTask = true,
+                            PrescriptionId = prescription.Id
+                        });
+                    }
+                }
+            }
+
+            // Lưu các task vào database
+            if (tasksToCreate.Any())
+            {
+                await _unitOfWork.Tasks.CreateListAsync(tasksToCreate);
+                await _unitOfWork.CommitAsync();
+            }
+
+            return true;
+        }
 
 
         private async Task<Guid?> GetAssignedStaffForCage(Guid cageId, DateTime date)
@@ -1316,6 +1399,14 @@ namespace SmartFarmManager.Service.Services
                 .FirstOrDefaultAsync();
 
             return taskType?.Id;
+        }
+        private async Task<int> GetTaskTypePriorityIdByName(string taskTypeName)
+        {
+            var taskType = await _unitOfWork.TaskTypes
+                .FindByCondition(tt => tt.TaskTypeName == taskTypeName)
+                .FirstOrDefaultAsync();
+
+            return taskType?.PriorityNum;
         }
 
         public async Task<bool> UpdateAllTaskStatusesAsync()

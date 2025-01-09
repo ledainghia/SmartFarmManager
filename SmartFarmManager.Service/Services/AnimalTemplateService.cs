@@ -108,7 +108,10 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<bool> ChangeStatusAsync(Guid id, string newStatus)
         {
-            var existingTemplate = await _unitOfWork.AnimalTemplates.FindByCondition(t => t.Id == id).FirstOrDefaultAsync();
+            var existingTemplate = await _unitOfWork.AnimalTemplates
+                .FindByCondition(t => t.Id == id)
+                .FirstOrDefaultAsync();
+
             if (existingTemplate == null)
             {
                 throw new KeyNotFoundException($"Animal Template with ID {id} does not exist.");
@@ -128,7 +131,64 @@ namespace SmartFarmManager.Service.Services
 
             if (string.Equals(existingTemplate.Status, newStatus, StringComparison.OrdinalIgnoreCase))
             {
-                return true; 
+                return true;
+            }
+
+            if (string.Equals(newStatus, AnimalTemplateStatusEnum.Active, StringComparison.OrdinalIgnoreCase))
+            {
+                // Kiểm tra điều kiện ràng buộc
+                var hasGrowthStages = await _unitOfWork.GrowthStageTemplates
+                    .FindByCondition(g => g.TemplateId == id)
+                    .AnyAsync();
+
+                if (!hasGrowthStages)
+                {
+                    throw new InvalidOperationException($"Animal Template with ID {id} must have at least one growth stage before activating.");
+                }
+
+                var hasVaccineSchedules = await _unitOfWork.VaccineTemplates
+                    .FindByCondition(v => v.TemplateId == id)
+                    .AnyAsync();
+
+                if (!hasVaccineSchedules)
+                {
+                    throw new InvalidOperationException($"Animal Template with ID {id} must have at least one vaccine schedule before activating.");
+                }
+
+                var hasFoodTemplates = await _unitOfWork.FoodTemplates
+                    .FindByCondition(f => f.StageTemplate.TemplateId == id)
+                    .Include(f => f.StageTemplate)
+                    .AnyAsync();
+
+                if (!hasFoodTemplates)
+                {
+                    throw new InvalidOperationException($"Animal Template with ID {id} must have at least one food template before activating.");
+                }
+
+                var growthStages = await _unitOfWork.GrowthStageTemplates
+                    .FindByCondition(g => g.TemplateId == id)
+                    .ToListAsync();
+
+                foreach (var stage in growthStages)
+                {
+                    var hasTaskDailies = await _unitOfWork.TaskDailyTemplates
+                        .FindByCondition(t => t.GrowthStageTemplateId == stage.Id)
+                        .AnyAsync();
+
+                    if (!hasTaskDailies)
+                    {
+                        throw new InvalidOperationException($"Growth stage with ID {stage.Id} must have at least one daily task before activating the animal template.");
+                    }
+
+                    var hasFoodInStage = await _unitOfWork.FoodTemplates
+                        .FindByCondition(f => f.StageTemplateId == stage.Id)
+                        .AnyAsync();
+
+                    if (!hasFoodInStage)
+                    {
+                        throw new InvalidOperationException($"Growth stage with ID {stage.Id} must have at least one food template before activating the animal template.");
+                    }
+                }
             }
 
             existingTemplate.Status = newStatus;
@@ -137,6 +197,7 @@ namespace SmartFarmManager.Service.Services
 
             return true;
         }
+
         public async Task<bool> DeleteAnimalTemplateAsync(Guid id)
         {
             var existingTemplate = await _unitOfWork.AnimalTemplates.FindByCondition(t => t.Id == id).FirstOrDefaultAsync();

@@ -14,7 +14,7 @@ public partial class Prescription : EntityBase
     public DateTime? PrescribedDate { get; set; }
     public DateTime? EndDate { get; set; }
     public string Notes { get; set; }
-    public int QuantityAnimal { get; set; }
+    public int QuantityAnimal { get; set; } 
 
     public string Status { get; set; }
     public int? DaysToTake { get; set; }
