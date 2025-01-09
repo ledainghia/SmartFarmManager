@@ -1269,6 +1269,7 @@ namespace SmartFarmManager.Service.Services
                                       && p.PrescribedDate <= targetDate
                                       && p.EndDate >= targetDate)
                 .Include(p => p.PrescriptionMedications)
+                .ThenInclude(pm=>pm.Medication)
                 .Include(p => p.MedicalSymtom)
                 .ToListAsync();
 
@@ -1279,14 +1280,14 @@ namespace SmartFarmManager.Service.Services
 
             foreach (var prescription in activePrescriptions)
             {
-                // Kiểm tra xem đã có task điều trị nào được tạo cho ngày này trong chuồng này chưa
-                var existingTasksForTargetDate = await _unitOfWork.Tasks
-                    .FindByCondition(t => t.DueDate.Value.Date == targetDate.Date && t.CageId == prescription.CageId)
+                // Kiểm tra xem đã có task điều trị nào được tạo cho PrescriptionId cụ thể vào ngày này chưa
+                var existingTasksForPrescription = await _unitOfWork.Tasks
+                    .FindByCondition(t => t.DueDate.Value.Date == targetDate.Date && t.PrescriptionId == prescription.Id)
                     .AnyAsync();
 
-                if (existingTasksForTargetDate)
+                if (existingTasksForPrescription)
                 {
-                    continue; // Bỏ qua nếu đã có task
+                    continue; // Bỏ qua nếu đã có task cho PrescriptionId này
                 }
 
                 // Lấy AdminId của Farm liên quan đến Cage
@@ -1294,7 +1295,7 @@ namespace SmartFarmManager.Service.Services
 
                 // Lấy danh sách nhân viên được giao cho chuồng cách ly
                 var assignedEmployeeId = await GetAssignedStaffForCage(prescription.CageId, targetDate) ?? Guid.Empty;
-                
+
                 // Tạo các task điều trị từ PrescriptionMedications
                 foreach (var medication in prescription.PrescriptionMedications)
                 {
@@ -1338,6 +1339,7 @@ namespace SmartFarmManager.Service.Services
 
             return true;
         }
+
 
 
         private async Task<Guid?> GetAssignedStaffForCage(Guid cageId, DateTime date)

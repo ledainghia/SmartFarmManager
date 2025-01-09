@@ -193,7 +193,6 @@ namespace SmartFarmManager.API.Controllers
                         Medications = request.CreatePrescriptionRequest.Medications.Select(m => new PrescriptionMedicationModel
                         {
                             MedicationId = m.MedicationId,
-                            Dosage = m.Dosage,
                             Morning = m.Morning,
                             Afternoon = m.Afternoon,
                             Evening = m.Evening,
