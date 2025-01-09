@@ -62,7 +62,6 @@ namespace SmartFarmManager.Service.Services
                     PrescriptionMedications = model.Medications.Select(m => new PrescriptionMedication
                     {
                         MedicationId = m.MedicationId,
-                        Dosage = m.Dosage,
                         Morning = m.Morning,
                         Afternoon = m.Afternoon,
                         Evening = m.Evening,
@@ -78,10 +77,11 @@ namespace SmartFarmManager.Service.Services
                 var currentSession = SessionTime.GetCurrentSession(currentTime);
 
                 // Kiểm tra đơn thuốc có thuốc kê cho các buổi sáng, trưa, chiều, tối hay không
-                var hasMorningMedication = model.Medications.Any(m => m.Morning);
-                var hasNoonMedication = model.Medications.Any(m => m.Noon);
-                var hasAfternoonMedication = model.Medications.Any(m => m.Afternoon);
-                var hasEveningMedication = model.Medications.Any(m => m.Evening);
+                var hasMorningMedication = model.Medications.Any(m => m.Morning > 0);
+                var hasNoonMedication = model.Medications.Any(m => m.Noon > 0);
+                var hasAfternoonMedication = model.Medications.Any(m => m.Afternoon > 0);
+                var hasEveningMedication = model.Medications.Any(m => m.Evening > 0);
+
 
                 // Tạo danh sách TaskDaily và Task
                 var taskList = new List<DataAccessObject.Models.Task>();
@@ -318,7 +318,6 @@ namespace SmartFarmManager.Service.Services
                 Medications = prescription.PrescriptionMedications.Select(pm => new PrescriptionMedicationModel
                 {
                     MedicationId = pm.MedicationId,
-                    Dosage = pm.Dosage.Value,
                     Morning = pm.Morning,
                     Afternoon = pm.Afternoon,
                     Evening = pm.Evening,
@@ -364,7 +363,6 @@ namespace SmartFarmManager.Service.Services
                 Medications = p.PrescriptionMedications.Select(pm => new PrescriptionMedicationModel
                 {
                     MedicationId = pm.MedicationId,
-                    Dosage = pm.Dosage.Value,
                     Morning = pm.Morning,
                     Afternoon = pm.Afternoon,
                     Evening = pm.Evening,

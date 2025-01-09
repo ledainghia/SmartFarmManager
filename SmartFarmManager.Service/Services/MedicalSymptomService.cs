@@ -133,11 +133,15 @@ namespace SmartFarmManager.Service.Services
                 {
                     var medications = updatedModel.Prescriptions.Medications;
 
-                    // Tính tổng giá thuốc trong đơn thuốc
                     var totalPrice = medications.Sum(m =>
                     {
                         var medication = _unitOfWork.Medication.GetByIdAsync(m.MedicationId).Result; // Lấy thông tin thuốc
-                        return medication.PricePerDose.Value * m.Dosage;
+
+                        // Tính tổng số liều (Morning + Noon + Afternoon + Evening)
+                        var totalDoses = m.Morning + m.Noon + m.Afternoon + m.Evening;
+
+                        // Tính giá dựa trên tổng số liều và giá mỗi liều
+                        return medication.PricePerDose.HasValue ? medication.PricePerDose.Value * totalDoses : 0;
                     });
                     var newPrescription = new Prescription
                     {
@@ -157,7 +161,6 @@ namespace SmartFarmManager.Service.Services
                     {
                         PrescriptionId = newPrescription.Id,
                         MedicationId = m.MedicationId,
-                        Dosage = m.Dosage,
                         Morning = m.Morning,
                         Afternoon = m.Afternoon,
                         Evening = m.Evening,
@@ -179,10 +182,10 @@ namespace SmartFarmManager.Service.Services
                     var currentSession = SessionTime.GetCurrentSession(currentTime);
 
                     // Kiểm tra đơn thuốc có thuốc kê cho các buổi sáng, trưa, chiều, tối hay không
-                    var hasMorningMedication = updatedModel.Prescriptions.Medications.Any(m => m.Morning);
-                    var hasNoonMedication = updatedModel.Prescriptions.Medications.Any(m => m.Noon);
-                    var hasAfternoonMedication = updatedModel.Prescriptions.Medications.Any(m => m.Afternoon);
-                    var hasEveningMedication = updatedModel.Prescriptions.Medications.Any(m => m.Evening);
+                    var hasMorningMedication = updatedModel.Prescriptions.Medications.Any(m => m.Morning > 0);
+                    var hasNoonMedication = updatedModel.Prescriptions.Medications.Any(m => m.Noon > 0);
+                    var hasAfternoonMedication = updatedModel.Prescriptions.Medications.Any(m => m.Afternoon > 0);
+                    var hasEveningMedication = updatedModel.Prescriptions.Medications.Any(m => m.Evening > 0);
 
                     // Tạo danh sách TaskDaily và Task
                     var taskList = new List<DataAccessObject.Models.Task>();
