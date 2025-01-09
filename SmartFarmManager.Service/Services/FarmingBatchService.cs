@@ -138,6 +138,7 @@ namespace SmartFarmManager.Service.Services
                             VaccineId = vaccine.Id,
                             Quantity = farmingBatch.Quantity,
                             ApplicationAge = vaccineTemplate.ApplicationAge,
+                            Session=vaccineTemplate.Session,
                             Status = VaccineScheduleStatusEnum.Upcoming,
                             Date = null // Ngày sẽ được cập nhật khi trạng thái chuyển sang Active
                         });

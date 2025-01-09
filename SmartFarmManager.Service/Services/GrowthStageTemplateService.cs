@@ -120,6 +120,22 @@ namespace SmartFarmManager.Service.Services
                 existingTemplate.StageName = model.StageName;
             }
 
+            // 3. Kiểm tra SaleTypeId (nếu có thay đổi)
+            if (model.SaleTypeId.HasValue && model.SaleTypeId != existingTemplate.SaleTypeId)
+            {
+                var saleType = await _unitOfWork.SaleTypes
+                    .FindByCondition(s => s.Id == model.SaleTypeId)
+                    .FirstOrDefaultAsync();
+
+                if (saleType == null)
+                {
+                    throw new ArgumentException($"SaleType with ID {model.SaleTypeId} does not exist.");
+                }
+
+                existingTemplate.SaleTypeId = model.SaleTypeId;
+            }
+
+            // 4. Cập nhật các trường khác
             if (model.WeightAnimal.HasValue)
             {
                 existingTemplate.WeightAnimal = model.WeightAnimal.Value;
@@ -140,7 +156,7 @@ namespace SmartFarmManager.Service.Services
                 existingTemplate.Notes = model.Notes;
             }
 
-            // 4. Lưu thay đổi
+            // 5. Lưu thay đổi
             await _unitOfWork.GrowthStageTemplates.UpdateAsync(existingTemplate);
             await _unitOfWork.CommitAsync();
 
