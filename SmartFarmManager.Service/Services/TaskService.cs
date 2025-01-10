@@ -206,7 +206,7 @@ namespace SmartFarmManager.Service.Services
 
                 if (duplicateTaskDailyExists)
                 {
-                    throw new InvalidOperationException($"Nhiệm vụ với loại '{taskType.TaskTypeName}' đã tồn tại trong buổi '{session}' tại chuồng '{cage.Name}'.");
+                    throw new InvalidOperationException($"Nhiệm vụ với loại '{taskType.TaskTypeName}' đã tồn tại trong buổi '{GetSessionName(session)}' tại chuồng '{cage.Name}'.");
                 }
 
                 // 8. Kiểm tra trùng lặp trong Task
@@ -221,7 +221,7 @@ namespace SmartFarmManager.Service.Services
 
                 if (taskWithSameTypeExists)
                 {
-                    throw new InvalidOperationException($"Nhiệm vụ loại '{taskType.TaskTypeName}' đã tồn tại trong chuồng '{cage.Name}' vào ngày {model.DueDate.Date.ToShortDateString()} trong buổi '{session}'.");
+                    throw new InvalidOperationException($"Nhiệm vụ loại '{taskType.TaskTypeName}' đã tồn tại trong chuồng '{cage.Name}' vào ngày {model.DueDate.Date.ToShortDateString()} trong buổi '{GetSessionName(session)}'.");
                 }
 
                 // 9. Tạo Task
