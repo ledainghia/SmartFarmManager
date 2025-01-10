@@ -31,5 +31,6 @@ namespace SmartFarmManager.Service.Interfaces
         Task<bool> GenerateTasksForTomorrowAsync();
         Task<bool> UpdateEveningTaskStatusesAsync();
         Task<bool> GenerateTreatmentTasksAsync();
+        Task<bool> GenerateTreatmentTasksAsyncV2();
     }
 }
