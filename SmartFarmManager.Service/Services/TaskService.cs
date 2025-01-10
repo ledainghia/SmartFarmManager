@@ -33,6 +33,12 @@ namespace SmartFarmManager.Service.Services
         public async Task<bool> CreateTaskRecurringAsync(CreateTaskRecurringModel model)
         {
             // 1. Kiểm tra Cage có thuộc FarmingBatch đang hoạt động không
+            var cage = await _unitOfWork.Cages.FindAsync(c => c.Id == model.CageId);
+            if (cage == null)
+            {
+                throw new ArgumentException("Không tìm thấy chuồng được chỉ định.");
+            }
+
             var farmingBatch = await _unitOfWork.FarmingBatches
                 .FindByCondition(fb => fb.CageId == model.CageId && fb.Status == "Active")
                 .Include(fb => fb.GrowthStages)
@@ -40,7 +46,7 @@ namespace SmartFarmManager.Service.Services
 
             if (farmingBatch == null)
             {
-                throw new ArgumentException("Không tìm thấy lứa nuôi nào đang hoạt động cho chuồng được chỉ định.");
+                throw new ArgumentException($"Không tìm thấy lứa nuôi nào đang hoạt động trong chuồng '{cage.Name}'.");
             }
 
             // 2. Kiểm tra StartAt và EndAt có nằm trong khoảng của GrowthStage không
@@ -49,10 +55,16 @@ namespace SmartFarmManager.Service.Services
 
             if (validGrowthStage == null)
             {
-                throw new ArgumentException("Khoảng thời gian được chỉ định không khớp với bất kỳ giai đoạn phát triển nào đang hoạt động.");
+                throw new ArgumentException($"Khoảng thời gian từ {model.StartAt.ToShortDateString()} đến {model.EndAt.ToShortDateString()} không khớp với bất kỳ giai đoạn phát triển nào trong chuồng '{cage.Name}'.");
             }
 
             // 3. Kiểm tra trùng lặp trong khoảng ngày
+            var taskType = await _unitOfWork.TaskTypes.FindAsync(tt => tt.Id == model.TaskTypeId);
+            if (taskType == null)
+            {
+                throw new ArgumentException("Loại nhiệm vụ không hợp lệ.");
+            }
+
             foreach (var session in model.Sessions)
             {
                 var duplicateTaskDailyExists = await _unitOfWork.TaskDailies
@@ -64,10 +76,11 @@ namespace SmartFarmManager.Service.Services
 
                 if (duplicateTaskDailyExists)
                 {
-                    throw new InvalidOperationException($"Nhiệm vụ lặp lại với loại nhiệm vụ '{model.TaskTypeId}' đã tồn tại trong buổi '{session}' cho khoảng thời gian được chỉ định.");
+                    throw new InvalidOperationException($"Nhiệm vụ lặp lại với loại '{taskType.TaskTypeName}' đã tồn tại trong buổi '{session}' cho chuồng '{cage.Name}' trong khoảng thời gian từ {model.StartAt.ToShortDateString()} đến {model.EndAt.ToShortDateString()}.");
                 }
             }
 
+            // 4. Tạo TaskDaily
             var taskDailies = new List<TaskDaily>();
 
             foreach (var session in model.Sessions)
@@ -93,6 +106,7 @@ namespace SmartFarmManager.Service.Services
         }
 
 
+
         public async Task<bool> CreateTaskAsync(CreateTaskModel model)
         {
             // 1. Kiểm tra DueDate
@@ -101,14 +115,20 @@ namespace SmartFarmManager.Service.Services
                 throw new ArgumentException("Ngày thực hiện phải ở tương lai.");
             }
 
-            // 2. Kiểm tra TaskTypeId
+            // 2. Kiểm tra TaskTypeId và lấy tên TaskType
             var taskType = await _unitOfWork.TaskTypes.FindAsync(x => x.Id == model.TaskTypeId);
             if (taskType == null)
             {
                 throw new ArgumentException("Loại nhiệm vụ không hợp lệ.");
             }
 
-            // 3. Lấy FarmingBatch đang hoạt động liên quan đến Cage
+            // 3. Lấy thông tin chuồng (Cage) và FarmingBatch đang hoạt động
+            var cage = await _unitOfWork.Cages.FindAsync(c => c.Id == model.CageId);
+            if (cage == null)
+            {
+                throw new ArgumentException("Không tìm thấy chuồng được chỉ định.");
+            }
+
             var farmingBatch = await _unitOfWork.FarmingBatches
                 .FindByCondition(fb => fb.CageId == model.CageId && fb.Status == FarmingBatchStatusEnum.Active)
                 .Include(fb => fb.GrowthStages)
@@ -116,7 +136,7 @@ namespace SmartFarmManager.Service.Services
 
             if (farmingBatch == null)
             {
-                throw new ArgumentException($"Không tìm thấy lứa nuôi nào đang hoạt động cho chuồng {model.CageId}.");
+                throw new ArgumentException($"Không tìm thấy lứa nuôi nào đang hoạt động trong chuồng '{cage.Name}'.");
             }
 
             // 4. Lấy GrowthStage phù hợp với ngày
@@ -125,15 +145,15 @@ namespace SmartFarmManager.Service.Services
 
             if (validGrowthStage == null)
             {
-                throw new ArgumentException($"Không tìm thấy giai đoạn phát triển phù hợp với ngày {model.DueDate.ToShortDateString()}.");
+                throw new ArgumentException($"Không tìm thấy giai đoạn phát triển phù hợp với ngày {model.DueDate.ToShortDateString()} trong chuồng '{cage.Name}'.");
             }
 
             // 5. Gán nhân viên cho chuồng
             Guid? assignedUserId = null;
 
-            // Kiểm tra yêu cầu nghỉ phép của nhân viên quản lý chuồng
             var cageStaff = await _unitOfWork.CageStaffs
                 .FindByCondition(cs => cs.CageId == model.CageId)
+                .Include(cs => cs.StaffFarm)
                 .FirstOrDefaultAsync();
 
             if (cageStaff != null)
@@ -147,39 +167,37 @@ namespace SmartFarmManager.Service.Services
 
                 if (leaveRequest != null)
                 {
-                    // Nếu nhân viên đang nghỉ phép, sử dụng người thay thế
+                    // Sử dụng nhân viên thay thế nếu có yêu cầu nghỉ phép
                     assignedUserId = leaveRequest.UserTempId;
                 }
                 else
                 {
-                    // Nếu không, gán cho nhân viên mặc định
                     assignedUserId = cageStaff.StaffFarmId;
                 }
             }
 
             if (assignedUserId == null)
             {
-                throw new InvalidOperationException($"Không có nhân viên nào được gán cho chuồng {model.CageId}.");
+                throw new InvalidOperationException($"Không có nhân viên nào được gán cho chuồng '{cage.Name}'.");
             }
 
-            // 6. Đảm bảo AssignedToUserId hợp lệ
             var assignedUser = await _unitOfWork.Users.FindAsync(x => x.Id == assignedUserId);
-            if (assignedUser == null || assignedUser.IsActive == null || (bool)assignedUser.IsActive == false)
+            if (assignedUser == null || assignedUser.IsActive == null || !(bool)assignedUser.IsActive)
             {
-                throw new ArgumentException("Người được gán nhiệm vụ không hợp lệ hoặc không hoạt động.");
+                throw new ArgumentException($"Nhân viên được gán nhiệm vụ trong chuồng '{cage.Name}' không hợp lệ hoặc không hoạt động.");
             }
 
             var tasksToCreate = new List<DataAccessObject.Models.Task>();
 
             foreach (var session in model.Session)
             {
-                // 7. Kiểm tra Session
+                // 6. Kiểm tra Session
                 if (!Enum.IsDefined(typeof(SessionTypeEnum), session))
                 {
                     throw new ArgumentException($"Giá trị buổi '{session}' không hợp lệ.");
                 }
 
-                // 8. Kiểm tra trùng lặp trong TaskDaily
+                // 7. Kiểm tra trùng lặp trong TaskDaily
                 var duplicateTaskDailyExists = await _unitOfWork.TaskDailies
                     .FindByCondition(td => td.GrowthStageId == validGrowthStage.Id &&
                                            td.Session == session &&
@@ -188,10 +206,10 @@ namespace SmartFarmManager.Service.Services
 
                 if (duplicateTaskDailyExists)
                 {
-                    throw new InvalidOperationException($"Nhiệm vụ với loại '{model.TaskTypeId}' đã tồn tại trong buổi '{session}'.");
+                    throw new InvalidOperationException($"Nhiệm vụ với loại '{taskType.TaskTypeName}' đã tồn tại trong buổi '{session}' tại chuồng '{cage.Name}'.");
                 }
 
-                // 9. Kiểm tra trùng lặp nhiệm vụ trong cùng ngày, chuồng, và buổi
+                // 8. Kiểm tra trùng lặp trong Task
                 var taskWithSameTypeExists = await _unitOfWork.Tasks
                     .FindByCondition(t => t.DueDate.HasValue &&
                                           t.DueDate.Value.Date == model.DueDate.Date &&
@@ -203,10 +221,10 @@ namespace SmartFarmManager.Service.Services
 
                 if (taskWithSameTypeExists)
                 {
-                    throw new InvalidOperationException($"Nhiệm vụ loại '{taskType.TaskTypeName}' đã tồn tại trong chuồng {model.CageId} vào ngày {model.DueDate.Date.ToShortDateString()} trong buổi '{session}'.");
+                    throw new InvalidOperationException($"Nhiệm vụ loại '{taskType.TaskTypeName}' đã tồn tại trong chuồng '{cage.Name}' vào ngày {model.DueDate.Date.ToShortDateString()} trong buổi '{session}'.");
                 }
 
-                // 10. Tạo Task
+                // 9. Tạo Task
                 var task = new DataAccessObject.Models.Task
                 {
                     Id = Guid.NewGuid(),
@@ -226,7 +244,7 @@ namespace SmartFarmManager.Service.Services
                 tasksToCreate.Add(task);
             }
 
-            // Lưu tất cả các nhiệm vụ
+            // Lưu các nhiệm vụ
             await _unitOfWork.Tasks.CreateListAsync(tasksToCreate);
             await _unitOfWork.CommitAsync();
 
@@ -239,7 +257,6 @@ namespace SmartFarmManager.Service.Services
 
             return true;
         }
-
 
 
 
