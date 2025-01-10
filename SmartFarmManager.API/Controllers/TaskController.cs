@@ -30,9 +30,9 @@ namespace SmartFarmManager.API.Controllers
                     .ToList();
 
                 return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
-            {
-                { "Errors", errors.ToArray() }
-            }));
+        {
+            { "Lỗi", errors.ToArray() }
+        }));
             }
 
             try
@@ -42,10 +42,10 @@ namespace SmartFarmManager.API.Controllers
 
                 if (!result)
                 {
-                    return BadRequest(ApiResult<string>.Fail("Failed to create recurring tasks. Please try again."));
+                    return BadRequest(ApiResult<string>.Fail("Không thể tạo nhiệm vụ lặp lại. Vui lòng thử lại."));
                 }
 
-                return Ok(ApiResult<string>.Succeed("Recurring tasks created successfully!"));
+                return Ok(ApiResult<string>.Succeed("Nhiệm vụ lặp lại đã được tạo thành công!"));
             }
             catch (ArgumentException ex)
             {
@@ -60,19 +60,20 @@ namespace SmartFarmManager.API.Controllers
                 return StatusCode(500, ApiResult<string>.Fail(ex.Message));
             }
         }
+
         [HttpPost]
         public async Task<IActionResult> CreateTask([FromBody] CreateTaskRequest request)
         {
             if (!ModelState.IsValid)
             {
-                // Collect validation errors
+                // Thu thập lỗi xác thực
                 var errors = ModelState.Values.SelectMany(v => v.Errors)
                                                .Select(e => e.ErrorMessage)
                                                .ToList();
 
                 return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
         {
-            { "Errors", errors.ToArray() }
+            { "Lỗi", errors.ToArray() }
         }));
             }
 
@@ -82,21 +83,25 @@ namespace SmartFarmManager.API.Controllers
                 var result = await _taskService.CreateTaskAsync(taskModel);
                 if (!result)
                 {
-                    throw new Exception("Error while saving Task!");
+                    throw new Exception("Có lỗi xảy ra trong quá trình lưu nhiệm vụ!");
                 }
-               
 
-                return Ok(ApiResult<string>.Succeed("Create Task successfully!"));
+                return Ok(ApiResult<string>.Succeed("Tạo nhiệm vụ thành công!"));
             }
             catch (ArgumentException ex)
             {
                 return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ApiResult<string>.Fail(ex.Message)); // Trả về lỗi trùng lặp
             }
             catch (Exception ex)
             {
                 return StatusCode(500, ApiResult<string>.Fail(ex.Message));
             }
         }
+
 
         [HttpPost("{taskId}/priority")]
         public async Task<IActionResult> UpdateTask(Guid taskId, [FromBody] UpdateTaskPriorityRequest request)
@@ -228,7 +233,7 @@ namespace SmartFarmManager.API.Controllers
         {
             try
             {
-                var result = await _taskService.GenerateTreatmentTasksAsync();
+                var result = await _taskService.GenerateTreatmentTasksAsyncV2();
 
                 if (!result)
                 {
