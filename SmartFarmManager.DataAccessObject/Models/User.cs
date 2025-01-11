@@ -25,6 +25,7 @@ public partial class User : EntityBase
     public DateTime? CreatedAt { get; set; }
 
     public Guid RoleId { get; set; }
+    public string? DeviceId { get; set; }
 
     public virtual ICollection<CageStaff> CageStaffs { get; set; } = new List<CageStaff>();
 
