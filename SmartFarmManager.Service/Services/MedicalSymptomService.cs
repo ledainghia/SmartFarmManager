@@ -202,34 +202,51 @@ namespace SmartFarmManager.Service.Services
                     TimeSpan startTime = TimeSpan.Zero;
                     var assignedUserTodayId = await _userService.GetAssignedUserForCageAsync(cage.Id, startDate);
 
-                    // Lấy danh sách thuốc của đơn thuốc một lần duy nhất
-                    var prescriptionMedications = await _unitOfWork.PrescriptionMedications
-                        .FindByCondition(pm => pm.PrescriptionId == newPrescription.Id)
-                        .Include(pm => pm.Medication)
+                    var medicationIds = updatedModel.Prescriptions.Medications.Select(m => m.MedicationId).ToList();
+
+                    // Truy vấn từ cơ sở dữ liệu để lấy MedicationName dựa trên MedicationId
+                    var medicationList = await _unitOfWork.Medication
+                        .FindByCondition(m => medicationIds.Contains(m.Id))
+                        .Select(m => new { m.Id, m.Name })
                         .ToListAsync();
 
-                    // Tạo dictionary lưu danh sách thuốc theo buổi
+                    // Bước 1: Lấy danh sách MedicationId
+                    var medicationListIds = newPrescriptionMedication.Select(pm => pm.MedicationId).ToList();
+
+                    // Bước 2: Truy vấn cơ sở dữ liệu để lấy MedicationName
+                    var medicationsList = await _unitOfWork.Medication
+                        .FindByCondition(m => medicationIds.Contains(m.Id))
+                        .ToListAsync();
+                    var prescriptionMedicationsWithNames = newPrescriptionMedication.Select(pm => new
+                    {
+                        pm.MedicationId,
+                        MedicationName = medicationsList.FirstOrDefault(m => m.Id == pm.MedicationId)?.Name,
+                        pm.Morning,
+                        pm.Noon,
+                        pm.Afternoon,
+                        pm.Evening
+                    }).ToList();
+
                     var sessionTasks = new Dictionary<int, List<(string MedicationName, int Quantity)>>();
 
-                    // Lấy thông tin thuốc cho từng buổi
-                    sessionTasks[(int)SessionTypeEnum.Morning] = prescriptionMedications
+                    sessionTasks[(int)SessionTypeEnum.Morning] = prescriptionMedicationsWithNames
                         .Where(pm => pm.Morning > 0)
-                        .Select(pm => (pm.Medication.Name, pm.Morning))
+                        .Select(pm => (pm.MedicationName, pm.Morning))
                         .ToList();
 
-                    sessionTasks[(int)SessionTypeEnum.Noon] = prescriptionMedications
+                    sessionTasks[(int)SessionTypeEnum.Noon] = prescriptionMedicationsWithNames
                         .Where(pm => pm.Noon > 0)
-                        .Select(pm => (pm.Medication.Name, pm.Noon))
+                        .Select(pm => (pm.MedicationName, pm.Noon))
                         .ToList();
 
-                    sessionTasks[(int)SessionTypeEnum.Afternoon] = prescriptionMedications
+                    sessionTasks[(int)SessionTypeEnum.Afternoon] = prescriptionMedicationsWithNames
                         .Where(pm => pm.Afternoon > 0)
-                        .Select(pm => (pm.Medication.Name, pm.Afternoon))
+                        .Select(pm => (pm.MedicationName, pm.Afternoon))
                         .ToList();
 
-                    sessionTasks[(int)SessionTypeEnum.Evening] = prescriptionMedications
+                    sessionTasks[(int)SessionTypeEnum.Evening] = prescriptionMedicationsWithNames
                         .Where(pm => pm.Evening > 0)
-                        .Select(pm => (pm.Medication.Name, pm.Evening))
+                        .Select(pm => (pm.MedicationName, pm.Evening))
                         .ToList();
 
                     // Kiểm tra và tạo task cho buổi sáng
@@ -468,6 +485,7 @@ namespace SmartFarmManager.Service.Services
             {
                 return null;
             }
+            farmingBatches.AffectedQuantity += medicalSymptomModel.AffectedQuantity.Value;
             // Bước 1: Tạo đối tượng MedicalSymptom mà chưa có MedicalSymptomDetails và Pictures
             var medicalSymptom = new DataAccessObject.Models.MedicalSymptom
             {
@@ -478,7 +496,7 @@ namespace SmartFarmManager.Service.Services
                 Notes = medicalSymptomModel.Notes,
                 CreateAt = DateTimeUtils.VietnamNow()
             };
-
+            await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatches);
             // Bước 2: Lưu đối tượng MedicalSymptom vào cơ sở dữ liệu
             await _unitOfWork.MedicalSymptom.CreateAsync(medicalSymptom);
             await _unitOfWork.CommitAsync();
