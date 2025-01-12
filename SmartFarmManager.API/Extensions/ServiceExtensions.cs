@@ -17,6 +17,9 @@ using System.Text.Json.Serialization;
 using System.Xml.Linq;
 using Quartz;
 using Quartz.Spi;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
+using Newtonsoft.Json;
 
 
 namespace SmartFarmManager.API.Extensions
@@ -49,7 +52,7 @@ namespace SmartFarmManager.API.Extensions
             {
                 Key = secretKey
             };
-
+            ConfigureFirebaseAdminSDK(configuration);
             services.Configure<JwtSettings>(options => { options.Key = jwtSettings.Key; });
             services.Configure<CookiePolicyOptions>(options =>
             {
@@ -263,10 +266,31 @@ namespace SmartFarmManager.API.Extensions
             return services;
         }
 
+        private static void ConfigureFirebaseAdminSDK(IConfiguration configuration)
+        {
+            var firebaseAdminSDK = new Dictionary<string, string>
+    {
+        { "type", configuration["CLOUDMESSAGE_TYPE"] },
+        { "project_id", configuration["CLOUDMESSAGE_PROJECT_ID"] },
+        { "private_key_id", configuration["CLOUDMESSAGE_PRIVATE_KEY_ID"] },
+        { "private_key", configuration["CLOUDMESSAGE_PRIVATE_KEY"]?.Replace("\\n", "\n") },
+        { "client_email", configuration["CLOUDMESSAGE_CLIENT_EMAIL"] },
+        { "client_id", configuration["CLOUDMESSAGE_CLIENT_ID"] },
+        { "auth_uri", configuration["CLOUDMESSAGE_AUTH_URI"] },
+        { "token_uri", configuration["CLOUDMESSAGE_TOKEN_URI"] },
+        { "auth_provider_x509_cert_url", configuration["CLOUDMESSAGE_AUTH_PROVIDER_X509_CERT_URL"] },
+        { "client_x509_cert_url", configuration["CLOUDMESSAGE_CLIENT_X509_CERT_URL"] },
+        { "universe_domain", configuration["CLOUDMESSAGE_UNIVERSE_DOMAIN"] }
+    };
 
+            var firebaseAdminSDKJson = JsonConvert.SerializeObject(firebaseAdminSDK);
+            var googleCredential = GoogleCredential.FromJson(firebaseAdminSDKJson);
 
-
-
-
+            FirebaseApp.Create(new AppOptions
+            {
+                Credential = googleCredential,
+                ProjectId = configuration["CLOUDMESSAGE_PROJECT_ID"]
+            });
+        }
     }
 }
