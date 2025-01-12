@@ -10,7 +10,7 @@ namespace SmartFarmManager.Service.Interfaces
 {
     public interface IMedicalSymptomService
     {
-        Task<Guid> CreateMedicalSymptomAsync(MedicalSymptomModel medicalSymptom);
+        Task<Guid?> CreateMedicalSymptomAsync(MedicalSymptomModel medicalSymptom);
         Task<MedicalSymptomModel?> GetMedicalSymptomByIdAsync(Guid id);
         Task<IEnumerable<MedicalSymptomModel>> GetMedicalSymptomsAsync(string? status, DateTime? startDate, DateTime? endDate, string? searchTerm);
         Task<bool> UpdateMedicalSymptomAsync(UpdateMedicalSymptomModel updatedSymptom);
