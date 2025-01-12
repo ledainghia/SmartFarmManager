@@ -124,12 +124,6 @@ namespace SmartFarmManager.Service.Services
                 {
                     throw new ArgumentException($"Trạng thái không hợp lệ: {updatedModel.Status}");
                 }
-                // Kiểm tra trạng thái đơn thuốc có hợp lệ không
-                if (updatedModel.Prescriptions.Status != PrescriptionStatusEnum.Active)
-                {
-                    throw new ArgumentException($"Trạng thái đơn thuốc không hợp lệ: {updatedModel.Prescriptions.Status}");
-                }
-
                 // Cập nhật thông tin
                 existingSymptom.Diagnosis = updatedModel.Diagnosis;
                 existingSymptom.Status = updatedModel.Status;
@@ -150,6 +144,11 @@ namespace SmartFarmManager.Service.Services
                         // Tính giá dựa trên tổng số liều và giá mỗi liều
                         return medication.PricePerDose.HasValue ? medication.PricePerDose.Value * totalDoses : 0;
                     });
+                    // Kiểm tra trạng thái đơn thuốc có hợp lệ không
+                    if (updatedModel.Prescriptions.Status != PrescriptionStatusEnum.Active)
+                    {
+                        throw new ArgumentException($"Trạng thái đơn thuốc không hợp lệ: {updatedModel.Prescriptions.Status}");
+                    }
                     var newPrescription = new Prescription
                     {
                         MedicalSymtomId = updatedModel.Id,
@@ -451,8 +450,24 @@ namespace SmartFarmManager.Service.Services
                 throw new Exception("Failed to create Farming Batch. Details: " + ex.Message);
             }
         }
-        public async Task<Guid> CreateMedicalSymptomAsync(MedicalSymptomModel medicalSymptomModel)
+        public async Task<Guid?> CreateMedicalSymptomAsync(MedicalSymptomModel medicalSymptomModel)
         {
+            // Lấy ngày hiện tại theo múi giờ Việt Nam
+            DateOnly currentDate = DateOnly.FromDateTime(DateTimeUtils.VietnamNow());
+
+            // Tìm giai đoạn phát triển hiện tại
+            var growthStage = await _unitOfWork.GrowthStages
+                .FindByCondition(gs => gs.FarmingBatchId == medicalSymptomModel.FarmingBatchId &&
+                                       gs.AgeStartDate.HasValue &&
+                                       gs.AgeEndDate.HasValue &&
+                                       currentDate >= DateOnly.FromDateTime(gs.AgeStartDate.Value) &&
+                                       currentDate <= DateOnly.FromDateTime(gs.AgeEndDate.Value))
+                .FirstOrDefaultAsync();
+            var farmingBatches = await _unitOfWork.FarmingBatches.FindByCondition(fb => fb.Id == medicalSymptomModel.FarmingBatchId).FirstOrDefaultAsync();
+            if (medicalSymptomModel.AffectedQuantity > growthStage.Quantity - farmingBatches.AffectedQuantity) 
+            {
+                return null;
+            }
             // Bước 1: Tạo đối tượng MedicalSymptom mà chưa có MedicalSymptomDetails và Pictures
             var medicalSymptom = new DataAccessObject.Models.MedicalSymptom
             {

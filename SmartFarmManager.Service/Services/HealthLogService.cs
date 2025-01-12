@@ -67,6 +67,7 @@ namespace SmartFarmManager.Service.Services
                     var farmingBatch = await _unitOfWork.FarmingBatches.FindByCondition(f => f.Id == prescription.MedicalSymtom.FarmingBatchId).FirstOrDefaultAsync();
                     if (farmingBatch != null) {
                         farmingBatch.AffectedQuantity -= prescription.QuantityAnimal;
+                        await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatch);
                     }
                     else
                     {
