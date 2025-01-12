@@ -96,7 +96,7 @@ namespace SmartFarmManager.API.Controllers
             }
         }
 
-        [HttpDelete("food-template/{id}")]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteFoodTemplate(Guid id)
         {
             try
@@ -116,7 +116,7 @@ namespace SmartFarmManager.API.Controllers
             }
         }
 
-        [HttpGet("food-templates")]
+        [HttpGet("")]
         public async Task<IActionResult> GetFoodTemplates([FromQuery] FoodTemplateFilterPagingRequest filterRequest)
         {
 
@@ -137,8 +137,7 @@ namespace SmartFarmManager.API.Controllers
                 var filterModel = new FoodTemplateFilterModel
                 {
                     StageTemplateId = filterRequest.StageTemplateId,
-                    FoodName = filterRequest.FoodName,
-                    Session = filterRequest.Session,
+                    FoodType = filterRequest.FoodType,
                     PageNumber = filterRequest.PageNumber,
                     PageSize = filterRequest.PageSize
                 };

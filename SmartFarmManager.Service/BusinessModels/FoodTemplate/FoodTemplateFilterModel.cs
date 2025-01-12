@@ -9,8 +9,7 @@ namespace SmartFarmManager.Service.BusinessModels.FoodTemplate
     public class FoodTemplateFilterModel
     {
         public Guid? StageTemplateId { get; set; }
-        public string? FoodName { get; set; }
-        public int? Session { get; set; }
+        public string? FoodType { get; set; }
         public int PageNumber { get; set; }
         public int PageSize { get; set; }
     }

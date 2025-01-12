@@ -281,8 +281,7 @@ namespace SmartFarmManager.Service.Services
                 FoodTemplates = growthStageTemplate.FoodTemplates.Select(f => new FoodTemplateResponse
                 {
                     Id = f.Id,
-                    FoodName = f.FoodName,
-                    RecommendedWeightPerSession = f.RecommendedWeightPerSession,
+                    FoodType= f.FoodType,
                     WeightBasedOnBodyMass = f.WeightBasedOnBodyMass
                 }).ToList(),
                 TaskDailyTemplates = growthStageTemplate.TaskDailyTemplates.Select(td => new TaskDailyTemplateResponse

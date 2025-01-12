@@ -17,6 +17,7 @@ public partial class GrowthStage : EntityBase
 
     public int? Quantity { get; set; }
     public int? AgeStart { get; set; }
+    public string FoodType { get; set; }
 
     public int? AgeEnd { get; set; }
     public Guid? SaleTypeId { get;set; }

@@ -11,9 +11,8 @@ namespace SmartFarmManager.API.Payloads.Requests.FoodTemplate
 
         [Required]
         [MaxLength(100)]
-        public string FoodName { get; set; } // Tên của thực phẩm
+        public string FoodType { get; set; } // Tên của thực phẩm
 
-        public decimal? RecommendedWeightPerSession { get; set; } // Trọng lượng khuyến nghị mỗi ngày
         public decimal? WeightBasedOnBodyMass { get; set; } // Trọng lượng dựa trên khối lượng cơ thể
 
         public CreateFoodTemplateModel MapToModel()
@@ -21,8 +20,7 @@ namespace SmartFarmManager.API.Payloads.Requests.FoodTemplate
             return new CreateFoodTemplateModel
             {
                 StageTemplateId = this.StageTemplateId,
-                FoodName = this.FoodName,
-                RecommendedWeightPerSession = this.RecommendedWeightPerSession,
+                FoodType = this.FoodType,
                 WeightBasedOnBodyMass = this.WeightBasedOnBodyMass
             };
         }

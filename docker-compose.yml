@@ -27,6 +27,17 @@ services:
       - 'ConnectionStrings:ProductConnection=Server=database,1433;Database=Farm;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;'
       - SECRET_KEY=adjkasdbyuaasgcndsjfngljkdsjflgsdfklgnslkdfnslkdnfkjsahdfkjsahjlkfsa
       - ASPNETCORE_ENVIRONMENT=Production
+      - CLOUDMESSAGE_TYPE=service_account
+      - CLOUDMESSAGE_PROJECT_ID=smartfarm-b1eb0
+      - CLOUDMESSAGE_PRIVATE_KEY_ID=a94ff997e4b3c04d55c357ce72a2860a81c47b0b
+      - CLOUDMESSAGE_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCTIGE4fpQ5YKN0\nhW2+qmhAWTckQfVrz3D9Tiet/H2I/x/vwGQumvGO7z114HIrm7vLNh/vtSvxGW0O\nlJKzrByUnUpVV8Be/AlTFuWGWPyiw8bQPAHP/WBokJoNf1ZMXMBO+AM2Cla9sCfm\nxnboP/xwUYX0QNZDVi2HQAGKZVx5J0G0q3EjDFecaeKwtGtWaDZ/DWFg16FqqrPj\nvAQNcWdkUM/sOM0KdShVG/Ym6MaJzI4Buacch3rnbu3CDEOuvvpVmM92k3bpIDwI\nmn45RtQm95a3i9RzSz0VviytOM+MXF9+GlDYrVNhC9frPLxPENzNKJ5iRFGrhM3O\n4rQD+L5bAgMBAAECggEADEWP8ADLp3PvR/GcYC7uiykZESXyecLPwqqy/JXDrGc7\nTraJcXaGRE0IOPDQe3qxHn4UcKlEuDnnf5o85YFE0QPEBq8b4ja7jS0RVmdnV/XK\n4eUsPlQwDaJVQ/lYq8qz768YKKwsGAS9da5QJ+2Bkz/5hsOk6FdXBm6V5YLjquc1\nTNC+fHRkQCF+cX608Sv00j+PZNQYp2ArPstlpfSpioRf4rF+poFPBErmuSaRhJFW\nw0p0CiCiIeCrF2QPP+7Ec+D53p9FiveOZCCFEOqGpAmD61OP0SVug/plXoRpdE0+\n/OdW0uweb8pMpM+IWnm30nEhx/XkZUijQEGMELqXwQKBgQDPnbbqdBmVRY2SZw2U\n6i9ISdMDkczjRwIQBhkAbLJ1JdWd3sxJbpOcT3iBb5H8k5cGClZeyb0xrr20qQCc\nMhEZzKo825FSyoKOXZUR2egjU7tC4QGzfstW5RM67a8UnNqyrSlXe3IH4Y9dUeE5\nNWerJn+rLikz94zEcQy5qwuEEwKBgQC1aeHmsCmJqtnVL9Je1uGeOpFSQFLBpfY4\nY5njrn/0CxoCs9rS4qehHWn+LHhFMBvmFkbz4xMkzM+jC/jypIXPBu+AmoFdhh5O\n0iX/6xjNJCc8kfcK96AsLyBfSpAjWvFa0QUH3qYLb8qS1+DyPZFoh7TagBAybCMY\nuRBVbmHVmQKBgEJ054Iw26eOdfyxBAXw2GW5S9ROrVjq99wNN5+NK6qYC8LW+Glg\n/dsBDT/RaNeCnssOMAtzZB4tIwhbOJjG5fZuLugAGIp5zESp6/ek2svEF6MWxyaf\npZMRDJDGWE6uzsp2507bcurW5r8mYIOhdqewURmIUyQRT3vp+/rKp4sFAoGBAIPW\nNdgbD6S/Z9zZCw3nJUGDGJborfuS63OhVnWzG8OzyaxLHmyBUQbyRFP151WIl83H\nRLr6u6/Ts9Wu3rUfQSrpxGX2Yqsfy6jGad0o8fYrHuSSwzDSMjHJ8cGugz9eWOYB\n3qEQeiT3kgTTI+OHQMPxU0ozJRIvqfXOkAM1252JAoGAbfF1fgYn5veRNWMxTYIV\nEGaBh3ne6rOF98mcUL/1MV4lObdFXNGbPGkSrQVqfTdVVlJ/mAkpj4E+3MMjbfam\n8yfSpcsrarK/R3yLaDtgCs21wk//142o6DnJJwu0HhpOQXsOdNTj12PjiitM6jUJ\nuTyr3SSq5MdOIYn17rfdtqc=\n-----END PRIVATE KEY-----\n
+      - CLOUDMESSAGE_CLIENT_EMAIL=firebase-adminsdk-3z8ou@smartfarm-b1eb0.iam.gserviceaccount.com
+      - CLOUDMESSAGE_CLIENT_ID=106709319715350722222
+      - CLOUDMESSAGE_AUTH_URI=https://accounts.google.com/o/oauth2/auth
+      - CLOUDMESSAGE_TOKEN_URI=https://oauth2.googleapis.com/token
+      - CLOUDMESSAGE_AUTH_PROVIDER_X509_CERT_URL=https://www.googleapis.com/oauth2/v1/certs
+      - CLOUDMESSAGE_CLIENT_X509_CERT_URL=https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-3z8ou%40smartfarm-b1eb0.iam.gserviceaccount.com
+      - CLOUDMESSAGE_UNIVERSE_DOMAIN=googleapis.com
     depends_on:
       - database
     restart: unless-stopped

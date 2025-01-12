@@ -576,7 +576,7 @@ public partial class SmartFarmContext : DbContext
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.CostPerKg).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.CurrentStock).HasColumnType("decimal(10, 2)");
-            entity.Property(e => e.NameFood).HasMaxLength(100);
+            entity.Property(e => e.FoodType).HasMaxLength(100);
             entity.Property(e => e.Quantity).HasColumnType("decimal(10, 2)");
 
             entity.HasOne(d => d.Farm).WithMany(p => p.FoodStacks)
@@ -590,10 +590,9 @@ public partial class SmartFarmContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__FoodTemp__58E25FB67BABBFBB");
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.FoodName)
+            entity.Property(e => e.FoodType)
                 .IsRequired()
                 .HasMaxLength(100);
-            entity.Property(e => e.RecommendedWeightPerSession).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.WeightBasedOnBodyMass).HasColumnType("decimal(5, 2)");
 
             entity.HasOne(d => d.StageTemplate).WithMany(p => p.FoodTemplates)

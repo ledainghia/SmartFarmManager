@@ -82,11 +82,12 @@ namespace SmartFarmManager.Service.Services
                         WeightAnimal = template.WeightAnimal,
                         AgeStart = template.AgeStart,
                         AgeEnd = template.AgeEnd,
+                        FoodType = template.FoodTemplates.FirstOrDefault()?.FoodType,
                         Status = GrowthStageStatusEnum.Planning,
                         AgeStartDate = null, // Sẽ được cập nhật khi trạng thái chuyển sang Active
                         AgeEndDate = null,
                         SaleTypeId= template.SaleTypeId,
-                        RecommendedWeightPerSession = template.FoodTemplates.Sum(f => f.RecommendedWeightPerSession),
+                        RecommendedWeightPerSession = farmingBatch.Quantity * (template.WeightAnimal ?? 0) * (template.FoodTemplates.Sum(f => f.WeightBasedOnBodyMass) ?? 0),
                         WeightBasedOnBodyMass = template.FoodTemplates.Sum(f => f.WeightBasedOnBodyMass)
                     }).ToList();
 

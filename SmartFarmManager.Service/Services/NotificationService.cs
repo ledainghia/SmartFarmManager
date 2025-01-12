@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using FirebaseAdmin.Messaging;
+using Microsoft.AspNetCore.SignalR;
+using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Service.Settings;
 using System;
 using System.Collections.Generic;
@@ -17,7 +19,7 @@ namespace SmartFarmManager.Service.Services
             _hubContext = hubContext;
         }
 
-        public async Task SendNotificationToUser(string userId, string message)
+        public async System.Threading.Tasks.Task SendNotificationToUser(string userId, string message)
         {
             var connectionIds = NotificationHub.GetConnectionIds(userId);
             if (connectionIds != null && connectionIds.Any())
@@ -32,6 +34,47 @@ namespace SmartFarmManager.Service.Services
             {
                 Console.WriteLine($"Không tìm thấy ConnectionId cho UserId: {userId}");
             }
+        }
+        public async Task<string> SendNotification(string token, string titile, string body)
+        {
+            var message = new Message()
+            {
+                Token = token,
+                Notification = new FirebaseAdmin.Messaging.Notification()
+                {
+                    Title = titile,
+                    Body = body
+                },
+                Data = new Dictionary<string, string>()
+                {
+                    { "key1", "value1" }
+                }
+            };
+            string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
+            return response;
+        }
+        public async Task<string> SendNotification(string token, string title, string body, object customData)
+        {
+            // Serialize custom object thành JSON string
+            var jsonData = Newtonsoft.Json.JsonConvert.SerializeObject(customData);
+
+            var message = new Message()
+            {
+                Token = token,
+                Notification = new FirebaseAdmin.Messaging.Notification()
+                {
+                    Title = title,
+                    Body = body
+                },
+                Data = new Dictionary<string, string>
+        {
+            { "custom_data", jsonData } // Thêm object vào payload
+        }
+            };
+
+            // Gửi thông báo qua Firebase
+            string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
+            return response; // Trả về ID của message đã gửi
         }
     }
 }

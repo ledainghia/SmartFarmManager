@@ -10,9 +10,7 @@ public partial class FoodTemplate : EntityBase
 
     public Guid StageTemplateId { get; set; }
 
-    public string FoodName { get; set; }
-
-    public decimal? RecommendedWeightPerSession { get; set; }
+    public string FoodType { get; set; }
 
     public decimal? WeightBasedOnBodyMass { get; set; }
 
