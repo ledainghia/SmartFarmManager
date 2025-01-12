@@ -96,6 +96,36 @@ namespace SmartFarmManager.Service.Services
                 Symtom = string.Join(", ", ms.MedicalSymptomDetails.Select(d => d.Symptom.SymptomName))
             });
         }
+        public async Task<string> GetMedicationDetailsBySessionAsync(Guid prescriptionId, SessionTypeEnum session)
+        {
+            // Lấy danh sách thuốc của đơn thuốc
+            var prescriptionMedications = await _unitOfWork.PrescriptionMedications
+                .FindByCondition(pm => pm.PrescriptionId == prescriptionId)
+                .Include(pm => pm.Medication)
+                .ToListAsync();
+
+            // Lọc thuốc theo buổi
+            var medicationsBySession = session switch
+            {
+                SessionTypeEnum.Morning => prescriptionMedications
+                    .Where(pm => pm.Morning > 0)
+                    .Select(pm => $"{pm.Medication.Name} (Số liều: {pm.Morning})"),
+                SessionTypeEnum.Noon => prescriptionMedications
+                    .Where(pm => pm.Noon > 0)
+                    .Select(pm => $"{pm.Medication.Name} (Số liều: {pm.Noon})"),
+                SessionTypeEnum.Afternoon => prescriptionMedications
+                    .Where(pm => pm.Afternoon > 0)
+                    .Select(pm => $"{pm.Medication.Name} (Số liều: {pm.Afternoon})"),
+                SessionTypeEnum.Evening => prescriptionMedications
+                    .Where(pm => pm.Evening > 0)
+                    .Select(pm => $"{pm.Medication.Name} (Số liều: {pm.Evening})"),
+                _ => Enumerable.Empty<string>()
+            };
+
+            // Trả về danh sách thuốc nối bằng dấu phẩy
+            return string.Join(", ", medicationsBySession);
+        }
+
         public async Task<bool> UpdateMedicalSymptomAsync(UpdateMedicalSymptomModel updatedModel)
         {
             await _unitOfWork.BeginTransactionAsync();
@@ -198,15 +228,17 @@ namespace SmartFarmManager.Service.Services
                     // Kiểm tra và tạo task cho buổi sáng
                     if (currentSession <= 1 && hasMorningMedication) // Buổi sáng
                     {
+                        var morningMedicationDetails = await GetMedicationDetailsBySessionAsync(newPrescription.Id, SessionTypeEnum.Morning);
                         startTime = SessionTime.Morning.Start;
                         taskList.Add(new DataAccessObject.Models.Task
                         {
+
                             TaskTypeId = taskType.Id,
                             CageId = cage.Id,
                             AssignedToUserId = assignedUserTodayId.Value, // Sẽ gán sau
                             CreatedByUserId = null,
                             TaskName = "Uống thuốc (Sáng)",
-                            Description = $"Uống thuốc ngày {startDate:dd/MM/yyyy} (Sáng)",
+                            Description = $"Điều trị cho {newPrescription.QuantityAnimal} con. Thuốc: {morningMedicationDetails}.",
                             PriorityNum = 1,
                             DueDate = startDate.ToDateTime(TimeOnly.MinValue),
                             Status = TaskStatusEnum.Pending,
@@ -218,6 +250,7 @@ namespace SmartFarmManager.Service.Services
                     // Kiểm tra và tạo task cho buổi trưa
                     if (currentSession <= 2 && hasNoonMedication) // Buổi trưa
                     {
+                        var noonMedicationDetails = await GetMedicationDetailsBySessionAsync(newPrescription.Id, SessionTypeEnum.Noon);
                         startTime = SessionTime.Noon.Start;
                         taskList.Add(new DataAccessObject.Models.Task
                         {
@@ -226,7 +259,7 @@ namespace SmartFarmManager.Service.Services
                             AssignedToUserId = assignedUserTodayId.Value, // Sẽ gán sau
                             CreatedByUserId = null,
                             TaskName = "Uống thuốc (Trưa)",
-                            Description = $"Uống thuốc ngày {startDate:dd/MM/yyyy} (Trưa)",
+                            Description = $"Điều trị cho {newPrescription.QuantityAnimal} con. Thuốc: {noonMedicationDetails}.",
                             PriorityNum = 1,
                             DueDate = startDate.ToDateTime(TimeOnly.MinValue),
                             Status = TaskStatusEnum.Pending,
@@ -238,6 +271,7 @@ namespace SmartFarmManager.Service.Services
                     // Kiểm tra và tạo task cho buổi chiều
                     if (currentSession <= 3 && hasAfternoonMedication) // Buổi chiều
                     {
+                        var afternoonMedicationDetails = await GetMedicationDetailsBySessionAsync(newPrescription.Id, SessionTypeEnum.Afternoon);
                         startTime = SessionTime.Afternoon.Start;
                         taskList.Add(new DataAccessObject.Models.Task
                         {
@@ -246,7 +280,7 @@ namespace SmartFarmManager.Service.Services
                             AssignedToUserId = assignedUserTodayId.Value, // Sẽ gán sau
                             CreatedByUserId = null,
                             TaskName = "Uống thuốc (Chiều)",
-                            Description = $"Uống thuốc ngày {startDate:dd/MM/yyyy} (Chiều)",
+                            Description = $"Điều trị cho {newPrescription.QuantityAnimal} con. Thuốc: {afternoonMedicationDetails}.",
                             PriorityNum = 1,
                             DueDate = startDate.ToDateTime(TimeOnly.MinValue),
                             Status = TaskStatusEnum.Pending,
@@ -258,6 +292,7 @@ namespace SmartFarmManager.Service.Services
                     // Kiểm tra và tạo task cho buổi tối
                     if (currentSession <= 4 && hasEveningMedication) // Buổi tối
                     {
+                        var eveningMedicationDetails = await GetMedicationDetailsBySessionAsync(newPrescription.Id, SessionTypeEnum.Evening);
                         startTime = SessionTime.Evening.Start;
                         taskList.Add(new DataAccessObject.Models.Task
                         {
@@ -266,7 +301,7 @@ namespace SmartFarmManager.Service.Services
                             AssignedToUserId = assignedUserTodayId.Value, // Sẽ gán sau
                             CreatedByUserId = null,
                             TaskName = "Uống thuốc (Tối)",
-                            Description = $"Uống thuốc ngày {startDate:dd/MM/yyyy} (Tối)",
+                            Description = $"Điều trị cho {newPrescription.QuantityAnimal} con. Thuốc: {eveningMedicationDetails}.",
                             PriorityNum = 1,
                             DueDate = startDate.ToDateTime(TimeOnly.MinValue),
                             Status = TaskStatusEnum.Pending,
@@ -287,6 +322,7 @@ namespace SmartFarmManager.Service.Services
                         // Kiểm tra và tạo task cho buổi sáng ngày mai nếu có thuốc kê cho sáng
                         if (hasMorningMedication)
                         {
+                            var morningMedicationDetails = await GetMedicationDetailsBySessionAsync(newPrescription.Id, SessionTypeEnum.Morning);
                             var assignedUserId = await _userService.GetAssignedUserForCageAsync(cage.Id, tomorrow);
                             if (assignedUserId != null)
                             {
@@ -297,7 +333,7 @@ namespace SmartFarmManager.Service.Services
                                     AssignedToUserId = assignedUserId.Value,
                                     CreatedByUserId = null,
                                     TaskName = $"Uống thuốc",
-                                    Description = $"Uống thuốc ngày {tomorrow:dd/MM/yyyy} (Sáng)",
+                                    Description = $"Điều trị cho {newPrescription.QuantityAnimal} con. Thuốc: {morningMedicationDetails}.",
                                     PriorityNum = taskType.PriorityNum.Value,
                                     DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
                                     Status = TaskStatusEnum.Pending,
@@ -310,6 +346,7 @@ namespace SmartFarmManager.Service.Services
                         // Tạo task cho buổi trưa ngày mai nếu có thuốc kê cho trưa
                         if (hasNoonMedication)
                         {
+                            var noonMedicationDetails = await GetMedicationDetailsBySessionAsync(newPrescription.Id, SessionTypeEnum.Afternoon);
                             var assignedUserId = await _userService.GetAssignedUserForCageAsync(cage.Id, tomorrow);
                             if (assignedUserId != null)
                             {
@@ -320,7 +357,7 @@ namespace SmartFarmManager.Service.Services
                                     AssignedToUserId = assignedUserId.Value,
                                     CreatedByUserId = null,
                                     TaskName = $"Uống thuốc",
-                                    Description = $"Uống thuốc ngày {tomorrow:dd/MM/yyyy} (Trưa)",
+                                    Description = $"Điều trị cho {newPrescription.QuantityAnimal} con. Thuốc: {noonMedicationDetails}.",
                                     PriorityNum = taskType.PriorityNum.Value,
                                     DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
                                     Status = TaskStatusEnum.Pending,
@@ -333,6 +370,7 @@ namespace SmartFarmManager.Service.Services
                         // Tạo task cho buổi chiều ngày mai nếu có thuốc kê cho chiều
                         if (hasAfternoonMedication)
                         {
+                            var afternoonMedicationDetails = await GetMedicationDetailsBySessionAsync(newPrescription.Id, SessionTypeEnum.Afternoon);
                             var assignedUserId = await _userService.GetAssignedUserForCageAsync(cage.Id, tomorrow);
                             if (assignedUserId != null)
                             {
@@ -343,7 +381,7 @@ namespace SmartFarmManager.Service.Services
                                     AssignedToUserId = assignedUserId.Value,
                                     CreatedByUserId = null,
                                     TaskName = $"Uống thuốc",
-                                    Description = $"Uống thuốc ngày {tomorrow:dd/MM/yyyy} (Chiều)",
+                                    Description = $"Điều trị cho  {newPrescription.QuantityAnimal}  con. Thuốc:  {afternoonMedicationDetails} .",
                                     PriorityNum = taskType.PriorityNum.Value,
                                     DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
                                     Status = TaskStatusEnum.Pending,
@@ -356,6 +394,7 @@ namespace SmartFarmManager.Service.Services
                         // Tạo task cho buổi tối ngày mai nếu có thuốc kê cho tối
                         if (hasEveningMedication)
                         {
+                            var eveningMedicationDetails = await GetMedicationDetailsBySessionAsync(newPrescription.Id, SessionTypeEnum.Afternoon);
                             var assignedUserId = await _userService.GetAssignedUserForCageAsync(cage.Id, tomorrow);
                             if (assignedUserId != null)
                             {
@@ -366,7 +405,7 @@ namespace SmartFarmManager.Service.Services
                                     AssignedToUserId = assignedUserId.Value,
                                     CreatedByUserId = null,
                                     TaskName = $"Uống thuốc",
-                                    Description = $"Uống thuốc ngày {tomorrow:dd/MM/yyyy} (Tối)",
+                                    Description = $"Điều trị cho {newPrescription.QuantityAnimal} con. Thuốc: {eveningMedicationDetails}.",
                                     PriorityNum = taskType.PriorityNum.Value,
                                     DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
                                     Status = TaskStatusEnum.Pending,
