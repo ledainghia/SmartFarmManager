@@ -250,7 +250,7 @@ namespace SmartFarmManager.Service.Services
                         .ToList();
 
                     // Kiểm tra và tạo task cho buổi sáng
-                    if (currentSession <= 1 && hasMorningMedication) // Buổi sáng
+                    if (currentSession <= 1 && currentSession > 0 && hasMorningMedication) // Buổi sáng
                     {
                         var morningMedications = sessionTasks[(int)SessionTypeEnum.Morning];
                         var medicationDetails = string.Join(", ", morningMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
@@ -274,7 +274,7 @@ namespace SmartFarmManager.Service.Services
                     }
 
                     // Kiểm tra và tạo task cho buổi trưa
-                    if (currentSession <= 2 && hasNoonMedication) // Buổi trưa
+                    if (currentSession <= 2 && currentSession > 0 && hasNoonMedication) // Buổi trưa
                     {
                         var noonMedications = sessionTasks[(int)SessionTypeEnum.Noon];
                         var medicationDetails = string.Join(", ", noonMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
@@ -296,7 +296,7 @@ namespace SmartFarmManager.Service.Services
                     }
 
                     // Kiểm tra và tạo task cho buổi chiều
-                    if (currentSession <= 3 && hasAfternoonMedication) // Buổi chiều
+                    if (currentSession <= 3 && currentSession > 0 && hasAfternoonMedication) // Buổi chiều
                     {
                         var afternoonMedications = sessionTasks[(int)SessionTypeEnum.Afternoon];
                         var medicationDetails = string.Join(", ", afternoonMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
@@ -318,7 +318,7 @@ namespace SmartFarmManager.Service.Services
                     }
 
                     // Kiểm tra và tạo task cho buổi tối
-                    if (currentSession <= 4 && hasEveningMedication) // Buổi tối
+                    if (currentSession <= 4 && currentSession > 0  && hasEveningMedication) // Buổi tối
                     {
                         var eveningMedications = sessionTasks[(int)SessionTypeEnum.Evening];
                         var medicationDetails = string.Join(", ", eveningMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
@@ -362,7 +362,7 @@ namespace SmartFarmManager.Service.Services
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
                                     CreatedByUserId = null,
-                                    TaskName = $"Uống thuốc",
+                                    TaskName = $"Uống thuốc (Sáng)",
                                     Description = $"Điều trị cho {newPrescription.QuantityAnimal} con. Thuốc: {medicationDetails}.",
                                     PriorityNum = taskType.PriorityNum.Value,
                                     DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
@@ -387,7 +387,7 @@ namespace SmartFarmManager.Service.Services
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
                                     CreatedByUserId = null,
-                                    TaskName = $"Uống thuốc",
+                                    TaskName = $"Uống thuốc (Trưa)",
                                     Description = $"Điều trị cho {newPrescription.QuantityAnimal} con. Thuốc: {medicationDetails}.",
                                     PriorityNum = taskType.PriorityNum.Value,
                                     DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
@@ -412,7 +412,7 @@ namespace SmartFarmManager.Service.Services
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
                                     CreatedByUserId = null,
-                                    TaskName = $"Uống thuốc",
+                                    TaskName = $"Uống thuốc (Chiều)",
                                     Description = $"Điều trị cho  {newPrescription.QuantityAnimal}  con. Thuốc:  {medicationDetails} .",
                                     PriorityNum = taskType.PriorityNum.Value,
                                     DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
@@ -437,7 +437,7 @@ namespace SmartFarmManager.Service.Services
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
                                     CreatedByUserId = null,
-                                    TaskName = $"Uống thuốc",
+                                    TaskName = $"Uống thuốc (Tối)",
                                     Description = $"Điều trị cho {newPrescription.QuantityAnimal} con. Thuốc: {medicationDetails}.",
                                     PriorityNum = taskType.PriorityNum.Value,
                                     DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
@@ -485,7 +485,6 @@ namespace SmartFarmManager.Service.Services
             {
                 return null;
             }
-            farmingBatches.AffectedQuantity += medicalSymptomModel.AffectedQuantity.Value;
             // Bước 1: Tạo đối tượng MedicalSymptom mà chưa có MedicalSymptomDetails và Pictures
             var medicalSymptom = new DataAccessObject.Models.MedicalSymptom
             {
@@ -496,7 +495,6 @@ namespace SmartFarmManager.Service.Services
                 Notes = medicalSymptomModel.Notes,
                 CreateAt = DateTimeUtils.VietnamNow()
             };
-            await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatches);
             // Bước 2: Lưu đối tượng MedicalSymptom vào cơ sở dữ liệu
             await _unitOfWork.MedicalSymptom.CreateAsync(medicalSymptom);
             await _unitOfWork.CommitAsync();
