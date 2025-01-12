@@ -53,5 +53,28 @@ namespace SmartFarmManager.Service.Services
             string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
             return response;
         }
+        public async Task<string> SendNotification(string token, string title, string body, object customData)
+        {
+            // Serialize custom object thành JSON string
+            var jsonData = Newtonsoft.Json.JsonConvert.SerializeObject(customData);
+
+            var message = new Message()
+            {
+                Token = token,
+                Notification = new FirebaseAdmin.Messaging.Notification()
+                {
+                    Title = title,
+                    Body = body
+                },
+                Data = new Dictionary<string, string>
+        {
+            { "custom_data", jsonData } // Thêm object vào payload
+        }
+            };
+
+            // Gửi thông báo qua Firebase
+            string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
+            return response; // Trả về ID của message đã gửi
+        }
     }
 }
