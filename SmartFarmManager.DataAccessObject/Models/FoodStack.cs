@@ -10,7 +10,7 @@ public partial class FoodStack : EntityBase
 
     public Guid FarmId { get; set; }
 
-    public string NameFood { get; set; }
+    public string FoodType { get; set; }
 
     public decimal? Quantity { get; set; }
 

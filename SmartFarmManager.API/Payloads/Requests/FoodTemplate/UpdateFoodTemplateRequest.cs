@@ -7,11 +7,7 @@ namespace SmartFarmManager.API.Payloads.Requests.FoodTemplate
     public class UpdateFoodTemplateRequest
     {
         [MaxLength(100)]
-        public string? FoodName { get; set; }
-
-        public decimal? RecommendedWeightPerSession { get; set; }
-        [ValidSessionType]
-        public int? Session { get; set; }
+        public string? FoodType { get; set; }
         public decimal? WeightBasedOnBodyMass { get; set; }
 
         public UpdateFoodTemplateModel MapToModel(Guid id)
@@ -19,9 +15,7 @@ namespace SmartFarmManager.API.Payloads.Requests.FoodTemplate
             return new UpdateFoodTemplateModel
             {
                 Id = id,
-                FoodName = this.FoodName,
-                RecommendedWeightPerSession = this.RecommendedWeightPerSession,
-                Session = this.Session,
+                FoodType = this.FoodType,
                 WeightBasedOnBodyMass = this.WeightBasedOnBodyMass
             };
         }

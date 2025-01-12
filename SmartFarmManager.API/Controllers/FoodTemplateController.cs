@@ -137,8 +137,7 @@ namespace SmartFarmManager.API.Controllers
                 var filterModel = new FoodTemplateFilterModel
                 {
                     StageTemplateId = filterRequest.StageTemplateId,
-                    FoodName = filterRequest.FoodName,
-                    Session = filterRequest.Session,
+                    FoodType = filterRequest.FoodType,
                     PageNumber = filterRequest.PageNumber,
                     PageSize = filterRequest.PageSize
                 };

@@ -25,29 +25,41 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<bool> CreateFoodTemplateAsync(CreateFoodTemplateModel model)
         {
+            // 1. Kiểm tra GrowthStageTemplate có tồn tại
             var stageTemplate = await _unitOfWork.GrowthStageTemplates
                 .FindByCondition(s => s.Id == model.StageTemplateId)
                 .FirstOrDefaultAsync();
 
             if (stageTemplate == null)
             {
-                throw new ArgumentException($"Growth Stage Template with ID {model.StageTemplateId} does not exist.");
+                throw new ArgumentException($"Giai đoạn phát triển với ID '{model.StageTemplateId}' không tồn tại.");
             }
 
+            // 2. Kiểm tra trùng lặp FoodType trong cùng GrowthStageTemplate
             var duplicateFoodNameExists = await _unitOfWork.FoodTemplates
-                .FindByCondition(f => f.StageTemplateId == model.StageTemplateId && f.FoodName == model.FoodName)
+                .FindByCondition(f => f.StageTemplateId == model.StageTemplateId && f.FoodType == model.FoodType)
                 .AnyAsync();
 
             if (duplicateFoodNameExists)
             {
-                throw new InvalidOperationException($"Food with name '{model.FoodName}' already exists in the specified Growth Stage Template.");
+                throw new InvalidOperationException($"Loại thức ăn '{model.FoodType}' đã tồn tại trong giai đoạn phát triển được chỉ định.");
             }
 
+            // 3. Kiểm tra loại thức ăn có tồn tại trong kho không
+            var foodInStock = await _unitOfWork.FoodStacks
+         .FindByCondition(fs => fs.FoodType == model.FoodType)
+         .FirstOrDefaultAsync();
+
+            if (foodInStock == null)
+            {
+                throw new ArgumentException($"Loại thức ăn '{model.FoodType}' không tồn tại trong kho của farm hiện tại.");
+            }
+
+            // 4. Tạo FoodTemplate
             var foodTemplate = new FoodTemplate
             {
                 StageTemplateId = model.StageTemplateId,
-                FoodName = model.FoodName,
-                RecommendedWeightPerSession = model.RecommendedWeightPerSession,
+                FoodType = model.FoodType,
                 WeightBasedOnBodyMass = model.WeightBasedOnBodyMass
             };
 
@@ -70,25 +82,20 @@ namespace SmartFarmManager.Service.Services
             }
 
             // 2. Cập nhật các trường nếu có giá trị mới
-            if (!string.IsNullOrEmpty(model.FoodName) && foodTemplate.FoodName != model.FoodName)
+            if (!string.IsNullOrEmpty(model.FoodType) && foodTemplate.FoodType != model.FoodType)
             {
                 // Kiểm tra trùng tên FoodName trong cùng GrowthStageTemplate
                 var duplicateFoodNameExists = await _unitOfWork.FoodTemplates
-                    .FindByCondition(f => f.StageTemplateId == foodTemplate.StageTemplateId && f.FoodName == model.FoodName && f.Id != model.Id)
+                    .FindByCondition(f => f.StageTemplateId == foodTemplate.StageTemplateId && f.FoodType == model.FoodType && f.Id != model.Id)
                     .AnyAsync();
 
                 if (duplicateFoodNameExists)
                 {
-                    throw new InvalidOperationException($"Food with name '{model.FoodName}' already exists in the specified Growth Stage Template.");
+                    throw new InvalidOperationException($"Food with name '{model.FoodType}' already exists in the specified Growth Stage Template.");
                 }
 
-                foodTemplate.FoodName = model.FoodName;
-            }
-
-            if (model.RecommendedWeightPerSession.HasValue)
-            {
-                foodTemplate.RecommendedWeightPerSession = model.RecommendedWeightPerSession.Value;
-            }
+                foodTemplate.FoodType = model.FoodType;
+            }         
 
           
 
@@ -130,23 +137,22 @@ namespace SmartFarmManager.Service.Services
                 query = query.Where(f => f.StageTemplateId == filter.StageTemplateId.Value);
             }
 
-            if (!string.IsNullOrEmpty(filter.FoodName))
+            if (!string.IsNullOrEmpty(filter.FoodType))
             {
-                query = query.Where(f => f.FoodName.Contains(filter.FoodName));
+                query = query.Where(f => f.FoodType.Contains(filter.FoodType));
             }
 
          
             var totalItems = await query.CountAsync();
             var items = await query
-                .OrderBy(f => f.FoodName)
+                .OrderBy(f => f.FoodType)
                 .Skip((filter.PageNumber - 1) * filter.PageSize)
                 .Take(filter.PageSize)
                 .Select(f => new FoodTemplateItemModel
                 {
                     Id = f.Id,
                     StageTemplateId = f.StageTemplateId,
-                    FoodName = f.FoodName,
-                    RecommendedWeightPerSession = f.RecommendedWeightPerSession,
+                    FoodType = f.FoodType,
                     WeightBasedOnBodyMass = f.WeightBasedOnBodyMass
                 })
                 .ToListAsync();
@@ -182,8 +188,7 @@ namespace SmartFarmManager.Service.Services
             {
                 Id = foodTemplate.Id,
                 StageTemplateId = foodTemplate.StageTemplateId,
-                FoodName = foodTemplate.FoodName,
-                RecommendedWeightPerSession = foodTemplate.RecommendedWeightPerSession,
+                FoodType = foodTemplate.FoodType,
                 WeightBasedOnBodyMass = foodTemplate.WeightBasedOnBodyMass,
                 GrowthStageTemplate = foodTemplate.StageTemplate == null ? null : new GrowthStageTemplateResponse
                 {

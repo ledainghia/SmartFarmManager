@@ -42,6 +42,7 @@ namespace SmartFarmManager.Repository.Interfaces
         ISymptomRepository Symptoms { get; }
         IDiseaseRepositoy Diseases { get; }
         IStandardPrescriptionRepository StandardPrescriptions { get; }
+        IFoodStackRepository FoodStacks { get; }
         Task<int> CommitAsync();
         System.Threading.Tasks.Task BeginTransactionAsync();
         System.Threading.Tasks.Task RollbackAsync();
