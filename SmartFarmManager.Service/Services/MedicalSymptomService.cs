@@ -124,6 +124,11 @@ namespace SmartFarmManager.Service.Services
                 {
                     throw new ArgumentException($"Trạng thái không hợp lệ: {updatedModel.Status}");
                 }
+                // Kiểm tra trạng thái đơn thuốc có hợp lệ không
+                if (updatedModel.Prescriptions.Status != PrescriptionStatusEnum.Active)
+                {
+                    throw new ArgumentException($"Trạng thái đơn thuốc không hợp lệ: {updatedModel.Prescriptions.Status}");
+                }
 
                 // Cập nhật thông tin
                 existingSymptom.Diagnosis = updatedModel.Diagnosis;
