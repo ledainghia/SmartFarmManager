@@ -96,7 +96,7 @@ namespace SmartFarmManager.API.Controllers
             }
         }
 
-        [HttpDelete("food-template/{id}")]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteFoodTemplate(Guid id)
         {
             try
@@ -116,7 +116,7 @@ namespace SmartFarmManager.API.Controllers
             }
         }
 
-        [HttpGet("food-templates")]
+        [HttpGet("")]
         public async Task<IActionResult> GetFoodTemplates([FromQuery] FoodTemplateFilterPagingRequest filterRequest)
         {
 
