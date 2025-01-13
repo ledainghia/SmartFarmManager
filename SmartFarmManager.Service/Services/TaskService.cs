@@ -1671,7 +1671,7 @@ namespace SmartFarmManager.Service.Services
             }
 
             // Generate Cleaning Task
-            if (farmingBatch.CleaningFrequency > 0 && (date - farmingBatch.StartDate.Value.Date).Days % farmingBatch.CleaningFrequency == 0)
+            if (farmingBatch.CleaningFrequency > 0 && (date - farmingBatch.StartDate.Value.Date).Days % farmingBatch.CleaningFrequency == 0&& farmingBatch.StartDate.Value.Date != date.Date)
             {
                 var assignedStaff = await GetAssignedStaffForCage(farmingBatch.CageId, date);
 
