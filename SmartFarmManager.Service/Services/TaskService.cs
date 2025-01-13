@@ -362,27 +362,60 @@ namespace SmartFarmManager.Service.Services
         //change status of task by task id and status id
         public async Task<bool> ChangeTaskStatusAsync(Guid taskId, string? status)
         {
+            // 1. Lấy thông tin Task
             var task = await _unitOfWork.Tasks.FindAsync(x => x.Id == taskId);
-            if (status == null ||
-    (status != TaskStatusEnum.Pending &&
-     status != TaskStatusEnum.InProgress &&
-     status != TaskStatusEnum.Done &&
-     status != TaskStatusEnum.Overdue))
+            if (task == null)
             {
-                throw new ArgumentException("Không đúng status");
+                throw new ArgumentException($"Không tìm thấy Task với ID '{taskId}'.");
             }
 
+            // 2. Kiểm tra trạng thái hợp lệ
+            if (string.IsNullOrEmpty(status) ||
+                (status != TaskStatusEnum.Pending &&
+                 status != TaskStatusEnum.InProgress &&
+                 status != TaskStatusEnum.Done &&
+                 status != TaskStatusEnum.Overdue))
+            {
+                throw new ArgumentException("Trạng thái không hợp lệ.");
+            }
+
+            // 3. Kiểm tra giờ của session
+            var currentTime = DateTimeUtils.VietnamNow().TimeOfDay;
+            if ((SessionTypeEnum)task.Session == SessionTypeEnum.Morning && (currentTime < SessionTime.Morning.Start || currentTime >= SessionTime.Morning.End) ||
+    (SessionTypeEnum)task.Session == SessionTypeEnum.Noon && (currentTime < SessionTime.Noon.Start || currentTime >= SessionTime.Noon.End) ||
+    (SessionTypeEnum)task.Session == SessionTypeEnum.Afternoon && (currentTime < SessionTime.Afternoon.Start || currentTime >= SessionTime.Afternoon.End) ||
+    (SessionTypeEnum)task.Session == SessionTypeEnum.Evening && (currentTime < SessionTime.Evening.Start || currentTime >= SessionTime.Evening.End))
+            {
+                throw new InvalidOperationException($"Nhiệm vụ chỉ có thể được cập nhật trong giờ của phiên '{(SessionTypeEnum)task.Session}'.");
+            }
 
             if (status == TaskStatusEnum.Done)
             {
-                task.CompletedAt = DateTime.UtcNow;
+                task.CompletedAt = DateTimeUtils.VietnamNow(); 
             }
+            else
+            {
+                task.CompletedAt = null; 
+            }
+
             task.Status = status;
+
+            var statusLog = new StatusLog
+            {
+                TaskId = task.Id,
+                UpdatedAt = DateTimeUtils.VietnamNow(),
+                Status = status
+            };
+
+            await _unitOfWork.StatusLogs.CreateAsync(statusLog);
+
+            // 6. Cập nhật Task và Commit
             await _unitOfWork.Tasks.UpdateAsync(task);
             await _unitOfWork.CommitAsync();
 
             return true;
         }
+
 
         //get task filter
         public async Task<List<TaskModel>> GetTasksAsync(TaskModel filter)
@@ -575,14 +608,23 @@ namespace SmartFarmManager.Service.Services
         public async Task<PagedResult<TaskDetailModel>> GetFilteredTasksAsync(TaskFilterModel filter)
         {
             // Query từ repository
-            var query = _unitOfWork.Tasks.FindAll(false, x => x.AssignedToUser, x => x.TaskType, x => x.StatusLogs).Include(x => x.Cage).Include(x => x.StatusLogs).AsQueryable();
+            var query = _unitOfWork.Tasks
+                .FindAll(false, x => x.AssignedToUser, x => x.TaskType, x => x.StatusLogs)
+                .Include(x => x.Cage)
+                .Include(x=>x.AssignedToUser)
+                .Include(x => x.StatusLogs)
+                .AsQueryable();
 
-            // Áp dụng bộ lọc
-            if (!string.IsNullOrEmpty(filter.TaskName))
+            // Áp dụng tìm kiếm nhanh theo KeySearch
+            if (!string.IsNullOrEmpty(filter.KeySearch))
             {
-                query = query.Where(t => t.TaskName.Contains(filter.TaskName));
+                query = query.Where(t =>
+                    t.TaskName.Contains(filter.KeySearch) ||
+                    (t.AssignedToUser != null && t.AssignedToUser.FullName.Contains(filter.KeySearch)) ||
+                    t.Status.Contains(filter.KeySearch));
             }
 
+            // Áp dụng các bộ lọc khác
             if (!string.IsNullOrEmpty(filter.Status))
             {
                 query = query.Where(t => t.Status == filter.Status);
@@ -605,12 +647,12 @@ namespace SmartFarmManager.Service.Services
 
             if (filter.DueDateFrom.HasValue)
             {
-                query = query.Where(t => t.DueDate >= filter.DueDateFrom.Value);
+                query = query.Where(t => t.DueDate.Value.Date >= filter.DueDateFrom.Value.Date);
             }
 
             if (filter.DueDateTo.HasValue)
             {
-                query = query.Where(t => t.DueDate <= filter.DueDateTo.Value);
+                query = query.Where(t => t.DueDate.Value.Date <= filter.DueDateTo.Value.Date);
             }
 
             if (filter.PriorityNum.HasValue)
@@ -680,6 +722,7 @@ namespace SmartFarmManager.Service.Services
                 .ToListAsync();
 
             var result = new PaginatedList<TaskDetailModel>(items, totalItems, filter.PageNumber, filter.PageSize);
+
             // Trả về kết quả
             return new PagedResult<TaskDetailModel>
             {
@@ -692,6 +735,7 @@ namespace SmartFarmManager.Service.Services
                 HasPreviousPage = result.HasPreviousPage
             };
         }
+
 
 
         public async Task<TaskDetailModel> GetTaskDetailAsync(Guid taskId)
@@ -1429,48 +1473,67 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<bool> UpdateAllTaskStatusesAsync()
         {
-            var today = DateTimeUtils.VietnamNow().Date; // Lấy ngày hôm nay
-            var currentTime = DateTimeUtils.VietnamNow().TimeOfDay; // Lấy giờ hiện tại
-
-            // Lấy session hiện tại
-            var currentSession = SessionTime.GetCurrentSession(currentTime);
-
-            if (currentSession == -1)
+            try
             {
-                throw new Exception("Current time is not within any defined session.");
-            }
+                var today = DateTimeUtils.VietnamNow().Date; // Lấy ngày hôm nay
+                var currentTime = DateTimeUtils.VietnamNow().TimeOfDay; // Lấy giờ hiện tại
 
-            // Lấy tất cả các task trong ngày hôm nay
-            var tasks = await _unitOfWork.Tasks
-                .FindByCondition(t => t.DueDate.Value.Date == today.Date)
-                .ToListAsync();
+                var currentSession = SessionTime.GetCurrentSession(currentTime);
 
-            foreach (var task in tasks)
-            {
-                if (task.Session < currentSession) // Session đã qua
+                if (currentSession == -1)
                 {
-                    if (task.Status == TaskStatusEnum.Pending || task.Status == TaskStatusEnum.InProgress)
+                    throw new Exception("Thời gian hiện tại không nằm trong bất kỳ phiên nào được định nghĩa.");
+                }
+
+                // Lấy tất cả các task trong ngày hôm nay
+                var tasks = await _unitOfWork.Tasks
+                    .FindByCondition(t => t.DueDate.Value.Date == today.Date)
+                    .ToListAsync();
+
+                foreach (var task in tasks)
+                {
+                    string previousStatus = task.Status; // Lưu trạng thái trước khi thay đổi
+
+                    if (task.Session < currentSession) // Session đã qua
                     {
-                        task.Status = TaskStatusEnum.Overdue; // Chuyển sang OverSchedules
+                        if (task.Status == TaskStatusEnum.Pending || task.Status == TaskStatusEnum.InProgress)
+                        {
+                            task.Status = TaskStatusEnum.Overdue; // Chuyển sang Overdue
+                        }
+                    }
+                    else if (task.Session == currentSession) // Session hiện tại
+                    {
+                        if (task.Status == TaskStatusEnum.Pending)
+                        {
+                            task.Status = TaskStatusEnum.InProgress; // Chuyển sang InProgress
+                        }
+                    }
+
+                    // Nếu trạng thái thay đổi, lưu log
+                    if (task.Status != previousStatus)
+                    {
+                        var statusLog = new StatusLog
+                        {
+                            TaskId = task.Id,
+                            UpdatedAt = DateTimeUtils.VietnamNow(),
+                            Status = task.Status
+                        };
+                        await _unitOfWork.StatusLogs.CreateAsync(statusLog);
+
+                        // Cập nhật task
                         await _unitOfWork.Tasks.UpdateAsync(task);
                     }
                 }
-                else if (task.Session == currentSession) // Session hiện tại
-                {
-                    if (task.Status == TaskStatusEnum.Pending)
-                    {
-                        task.Status = TaskStatusEnum.InProgress; // Chuyển sang InProgress
-                        await _unitOfWork.Tasks.UpdateAsync(task);
-                    }
-                }
+
+                await _unitOfWork.CommitAsync();
+                return true;
             }
-
-
-            await _unitOfWork.CommitAsync();
-
-
-            return true;
+            catch (Exception ex)
+            {
+                throw new Exception("Đã xảy ra lỗi khi cập nhật trạng thái nhiệm vụ. Vui lòng thử lại sau.");
+            }
         }
+
         public async Task<bool> GenerateTasksForFarmingBatchAsync(Guid farmingBatchId)
         {
             var today = DateTimeUtils.VietnamNow().Date;
@@ -1768,23 +1831,48 @@ namespace SmartFarmManager.Service.Services
         }
         public async Task<bool> UpdateEveningTaskStatusesAsync()
         {
-            var today = DateTimeUtils.VietnamNow().Date; // Lấy ngày hôm nay
-            var tasks = await _unitOfWork.Tasks
-                .FindByCondition(t => t.DueDate == today && t.Session == 3)
-                .ToListAsync();
-
-            foreach (var task in tasks)
+            try
             {
-                if (task.Status == TaskStatusEnum.Pending || task.Status == TaskStatusEnum.InProgress)
-                {
-                    task.Status = TaskStatusEnum.Overdue;
-                    await _unitOfWork.Tasks.UpdateAsync(task);
-                }
-            }
+                var today = DateTimeUtils.VietnamNow().Date; // Lấy ngày hôm nay
+                var tasks = await _unitOfWork.Tasks
+                    .FindByCondition(t => t.DueDate == today && t.Session == (int)SessionTypeEnum.Evening)
+                    .ToListAsync();
 
-            await _unitOfWork.CommitAsync();
-            return true;
+                foreach (var task in tasks)
+                {
+                    // Lưu trạng thái cũ trước khi thay đổi
+                    string previousStatus = task.Status;
+
+                    // Kiểm tra và cập nhật trạng thái nếu cần
+                    if (task.Status == TaskStatusEnum.Pending || task.Status == TaskStatusEnum.InProgress)
+                    {
+                        task.Status = TaskStatusEnum.Overdue; // Chuyển sang trạng thái quá hạn
+
+                        // Lưu log trạng thái
+                        var statusLog = new StatusLog
+                        {
+                            TaskId = task.Id,
+                            UpdatedAt = DateTimeUtils.VietnamNow(),
+                            Status = task.Status
+                        };
+                        await _unitOfWork.StatusLogs.CreateAsync(statusLog);
+
+                        // Cập nhật trạng thái nhiệm vụ
+                        await _unitOfWork.Tasks.UpdateAsync(task);
+                    }
+                }
+
+                // Lưu các thay đổi
+                await _unitOfWork.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Lỗi khi cập nhật trạng thái nhiệm vụ buổi tối: {ex.Message}");
+                throw new Exception("Đã xảy ra lỗi khi cập nhật trạng thái nhiệm vụ buổi tối. Vui lòng thử lại sau.");
+            }
         }
+
 
 
 

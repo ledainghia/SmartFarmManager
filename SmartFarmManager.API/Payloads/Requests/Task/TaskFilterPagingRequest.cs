@@ -3,7 +3,7 @@
     public class TaskFilterPagingRequest
     {
 
-        public string? TaskName { get; set; } // Tìm kiếm theo tên
+        public string? KeySearch { get; set; } // Tìm kiếm theo tên
         public string? Status { get; set; } // Lọc theo trạng thái
         public Guid? TaskTypeId { get;set; } // Lọc theo task type 
         public Guid? CageId { get; set; } // Lọc theo chuồng
