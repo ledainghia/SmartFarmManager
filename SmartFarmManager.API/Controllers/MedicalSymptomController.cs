@@ -55,6 +55,10 @@ namespace SmartFarmManager.API.Controllers
             };
 
             var id = await _medicalSymptomService.CreateMedicalSymptomAsync(medicalSymptomModel);
+            if (id == null)
+            {
+                return BadRequest(ApiResult<object>.Fail($"Số lượng vật nuôi bị bệnh lớn hơn sô lượng vật nuôi chuồng hiện có"));
+            }
             return CreatedAtAction(nameof(GetMedicalSymptomById), new { id }, ApiResult<object>.Succeed(new { id }));
         }
 

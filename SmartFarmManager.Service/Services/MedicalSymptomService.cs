@@ -124,12 +124,6 @@ namespace SmartFarmManager.Service.Services
                 {
                     throw new ArgumentException($"Trạng thái không hợp lệ: {updatedModel.Status}");
                 }
-                // Kiểm tra trạng thái đơn thuốc có hợp lệ không
-                if (updatedModel.Prescriptions.Status != PrescriptionStatusEnum.Active)
-                {
-                    throw new ArgumentException($"Trạng thái đơn thuốc không hợp lệ: {updatedModel.Prescriptions.Status}");
-                }
-
                 // Cập nhật thông tin
                 existingSymptom.Diagnosis = updatedModel.Diagnosis;
                 existingSymptom.Status = updatedModel.Status;
@@ -150,6 +144,11 @@ namespace SmartFarmManager.Service.Services
                         // Tính giá dựa trên tổng số liều và giá mỗi liều
                         return medication.PricePerDose.HasValue ? medication.PricePerDose.Value * totalDoses : 0;
                     });
+                    // Kiểm tra trạng thái đơn thuốc có hợp lệ không
+                    if (updatedModel.Prescriptions.Status != PrescriptionStatusEnum.Active)
+                    {
+                        throw new ArgumentException($"Trạng thái đơn thuốc không hợp lệ: {updatedModel.Prescriptions.Status}");
+                    }
                     var newPrescription = new Prescription
                     {
                         MedicalSymtomId = updatedModel.Id,
@@ -203,38 +202,55 @@ namespace SmartFarmManager.Service.Services
                     TimeSpan startTime = TimeSpan.Zero;
                     var assignedUserTodayId = await _userService.GetAssignedUserForCageAsync(cage.Id, startDate);
 
-                    // Lấy danh sách thuốc của đơn thuốc một lần duy nhất
-                    var prescriptionMedications = await _unitOfWork.PrescriptionMedications
-                        .FindByCondition(pm => pm.PrescriptionId == newPrescription.Id)
-                        .Include(pm => pm.Medication)
+                    var medicationIds = updatedModel.Prescriptions.Medications.Select(m => m.MedicationId).ToList();
+
+                    // Truy vấn từ cơ sở dữ liệu để lấy MedicationName dựa trên MedicationId
+                    var medicationList = await _unitOfWork.Medication
+                        .FindByCondition(m => medicationIds.Contains(m.Id))
+                        .Select(m => new { m.Id, m.Name })
                         .ToListAsync();
 
-                    // Tạo dictionary lưu danh sách thuốc theo buổi
+                    // Bước 1: Lấy danh sách MedicationId
+                    var medicationListIds = newPrescriptionMedication.Select(pm => pm.MedicationId).ToList();
+
+                    // Bước 2: Truy vấn cơ sở dữ liệu để lấy MedicationName
+                    var medicationsList = await _unitOfWork.Medication
+                        .FindByCondition(m => medicationIds.Contains(m.Id))
+                        .ToListAsync();
+                    var prescriptionMedicationsWithNames = newPrescriptionMedication.Select(pm => new
+                    {
+                        pm.MedicationId,
+                        MedicationName = medicationsList.FirstOrDefault(m => m.Id == pm.MedicationId)?.Name,
+                        pm.Morning,
+                        pm.Noon,
+                        pm.Afternoon,
+                        pm.Evening
+                    }).ToList();
+
                     var sessionTasks = new Dictionary<int, List<(string MedicationName, int Quantity)>>();
 
-                    // Lấy thông tin thuốc cho từng buổi
-                    sessionTasks[(int)SessionTypeEnum.Morning] = prescriptionMedications
+                    sessionTasks[(int)SessionTypeEnum.Morning] = prescriptionMedicationsWithNames
                         .Where(pm => pm.Morning > 0)
-                        .Select(pm => (pm.Medication.Name, pm.Morning))
+                        .Select(pm => (pm.MedicationName, pm.Morning))
                         .ToList();
 
-                    sessionTasks[(int)SessionTypeEnum.Noon] = prescriptionMedications
+                    sessionTasks[(int)SessionTypeEnum.Noon] = prescriptionMedicationsWithNames
                         .Where(pm => pm.Noon > 0)
-                        .Select(pm => (pm.Medication.Name, pm.Noon))
+                        .Select(pm => (pm.MedicationName, pm.Noon))
                         .ToList();
 
-                    sessionTasks[(int)SessionTypeEnum.Afternoon] = prescriptionMedications
+                    sessionTasks[(int)SessionTypeEnum.Afternoon] = prescriptionMedicationsWithNames
                         .Where(pm => pm.Afternoon > 0)
-                        .Select(pm => (pm.Medication.Name, pm.Afternoon))
+                        .Select(pm => (pm.MedicationName, pm.Afternoon))
                         .ToList();
 
-                    sessionTasks[(int)SessionTypeEnum.Evening] = prescriptionMedications
+                    sessionTasks[(int)SessionTypeEnum.Evening] = prescriptionMedicationsWithNames
                         .Where(pm => pm.Evening > 0)
-                        .Select(pm => (pm.Medication.Name, pm.Evening))
+                        .Select(pm => (pm.MedicationName, pm.Evening))
                         .ToList();
 
                     // Kiểm tra và tạo task cho buổi sáng
-                    if (currentSession <= 1 && hasMorningMedication) // Buổi sáng
+                    if (currentSession <= 1 && currentSession > 0 && hasMorningMedication) // Buổi sáng
                     {
                         var morningMedications = sessionTasks[(int)SessionTypeEnum.Morning];
                         var medicationDetails = string.Join(", ", morningMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
@@ -254,11 +270,13 @@ namespace SmartFarmManager.Service.Services
                             Status = TaskStatusEnum.Pending,
                             Session = (int)SessionTypeEnum.Morning,
                             CreatedAt = DateTimeUtils.VietnamNow(),
+                            PrescriptionId= newPrescription.Id,
+                            IsTreatmentTask = true
                         });
                     }
 
                     // Kiểm tra và tạo task cho buổi trưa
-                    if (currentSession <= 2 && hasNoonMedication) // Buổi trưa
+                    if (currentSession <= 2 && currentSession > 0 && hasNoonMedication) // Buổi trưa
                     {
                         var noonMedications = sessionTasks[(int)SessionTypeEnum.Noon];
                         var medicationDetails = string.Join(", ", noonMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
@@ -276,11 +294,13 @@ namespace SmartFarmManager.Service.Services
                             Status = TaskStatusEnum.Pending,
                             Session = (int)SessionTypeEnum.Noon,
                             CreatedAt = DateTimeUtils.VietnamNow(),
+                            PrescriptionId = newPrescription.Id,
+                            IsTreatmentTask = true
                         });
                     }
 
                     // Kiểm tra và tạo task cho buổi chiều
-                    if (currentSession <= 3 && hasAfternoonMedication) // Buổi chiều
+                    if (currentSession <= 3 && currentSession > 0 && hasAfternoonMedication) // Buổi chiều
                     {
                         var afternoonMedications = sessionTasks[(int)SessionTypeEnum.Afternoon];
                         var medicationDetails = string.Join(", ", afternoonMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
@@ -298,11 +318,13 @@ namespace SmartFarmManager.Service.Services
                             Status = TaskStatusEnum.Pending,
                             Session = (int)SessionTypeEnum.Afternoon,
                             CreatedAt = DateTimeUtils.VietnamNow(),
+                            PrescriptionId = newPrescription.Id,
+                            IsTreatmentTask = true
                         });
                     }
 
                     // Kiểm tra và tạo task cho buổi tối
-                    if (currentSession <= 4 && hasEveningMedication) // Buổi tối
+                    if (currentSession <= 4 && currentSession > 0  && hasEveningMedication) // Buổi tối
                     {
                         var eveningMedications = sessionTasks[(int)SessionTypeEnum.Evening];
                         var medicationDetails = string.Join(", ", eveningMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
@@ -320,6 +342,8 @@ namespace SmartFarmManager.Service.Services
                             Status = TaskStatusEnum.Pending,
                             Session = (int)SessionTypeEnum.Evening,
                             CreatedAt = DateTimeUtils.VietnamNow(),
+                            PrescriptionId = newPrescription.Id,
+                            IsTreatmentTask = true
                         });
                     }
 
@@ -346,13 +370,15 @@ namespace SmartFarmManager.Service.Services
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
                                     CreatedByUserId = null,
-                                    TaskName = $"Uống thuốc",
+                                    TaskName = $"Uống thuốc (Sáng)",
                                     Description = $"Điều trị cho {newPrescription.QuantityAnimal} con. Thuốc: {medicationDetails}.",
                                     PriorityNum = taskType.PriorityNum.Value,
                                     DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
                                     Status = TaskStatusEnum.Pending,
                                     Session = (int)SessionTypeEnum.Morning,
                                     CreatedAt = DateTimeUtils.VietnamNow(),
+                                    PrescriptionId = newPrescription.Id,
+                                    IsTreatmentTask = true
                                 });
                             }
                         }
@@ -371,13 +397,15 @@ namespace SmartFarmManager.Service.Services
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
                                     CreatedByUserId = null,
-                                    TaskName = $"Uống thuốc",
+                                    TaskName = $"Uống thuốc (Trưa)",
                                     Description = $"Điều trị cho {newPrescription.QuantityAnimal} con. Thuốc: {medicationDetails}.",
                                     PriorityNum = taskType.PriorityNum.Value,
                                     DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
                                     Status = TaskStatusEnum.Pending,
                                     Session = (int)SessionTypeEnum.Noon,
                                     CreatedAt = DateTimeUtils.VietnamNow(),
+                                    PrescriptionId = newPrescription.Id,
+                                    IsTreatmentTask = true
                                 });
                             }
                         }
@@ -396,13 +424,15 @@ namespace SmartFarmManager.Service.Services
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
                                     CreatedByUserId = null,
-                                    TaskName = $"Uống thuốc",
+                                    TaskName = $"Uống thuốc (Chiều)",
                                     Description = $"Điều trị cho  {newPrescription.QuantityAnimal}  con. Thuốc:  {medicationDetails} .",
                                     PriorityNum = taskType.PriorityNum.Value,
                                     DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
                                     Status = TaskStatusEnum.Pending,
                                     Session = (int)SessionTypeEnum.Afternoon,
                                     CreatedAt = DateTimeUtils.VietnamNow(),
+                                    PrescriptionId = newPrescription.Id,
+                                    IsTreatmentTask = true
                                 });
                             }
                         }
@@ -421,13 +451,15 @@ namespace SmartFarmManager.Service.Services
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
                                     CreatedByUserId = null,
-                                    TaskName = $"Uống thuốc",
+                                    TaskName = $"Uống thuốc (Tối)",
                                     Description = $"Điều trị cho {newPrescription.QuantityAnimal} con. Thuốc: {medicationDetails}.",
                                     PriorityNum = taskType.PriorityNum.Value,
                                     DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
                                     Status = TaskStatusEnum.Pending,
                                     Session = (int)SessionTypeEnum.Evening,
                                     CreatedAt = DateTimeUtils.VietnamNow(),
+                                    PrescriptionId = newPrescription.Id,
+                                    IsTreatmentTask = true
                                 });
                             }
                         }
@@ -451,8 +483,24 @@ namespace SmartFarmManager.Service.Services
                 throw new Exception("Failed to create Farming Batch. Details: " + ex.Message);
             }
         }
-        public async Task<Guid> CreateMedicalSymptomAsync(MedicalSymptomModel medicalSymptomModel)
+        public async Task<Guid?> CreateMedicalSymptomAsync(MedicalSymptomModel medicalSymptomModel)
         {
+            // Lấy ngày hiện tại theo múi giờ Việt Nam
+            DateOnly currentDate = DateOnly.FromDateTime(DateTimeUtils.VietnamNow());
+
+            // Tìm giai đoạn phát triển hiện tại
+            var growthStage = await _unitOfWork.GrowthStages
+                .FindByCondition(gs => gs.FarmingBatchId == medicalSymptomModel.FarmingBatchId &&
+                                       gs.AgeStartDate.HasValue &&
+                                       gs.AgeEndDate.HasValue &&
+                                       currentDate >= DateOnly.FromDateTime(gs.AgeStartDate.Value) &&
+                                       currentDate <= DateOnly.FromDateTime(gs.AgeEndDate.Value))
+                .FirstOrDefaultAsync();
+            var farmingBatches = await _unitOfWork.FarmingBatches.FindByCondition(fb => fb.Id == medicalSymptomModel.FarmingBatchId).FirstOrDefaultAsync();
+            if (medicalSymptomModel.AffectedQuantity > growthStage.Quantity - farmingBatches.AffectedQuantity) 
+            {
+                return null;
+            }
             // Bước 1: Tạo đối tượng MedicalSymptom mà chưa có MedicalSymptomDetails và Pictures
             var medicalSymptom = new DataAccessObject.Models.MedicalSymptom
             {
@@ -463,7 +511,6 @@ namespace SmartFarmManager.Service.Services
                 Notes = medicalSymptomModel.Notes,
                 CreateAt = DateTimeUtils.VietnamNow()
             };
-
             // Bước 2: Lưu đối tượng MedicalSymptom vào cơ sở dữ liệu
             await _unitOfWork.MedicalSymptom.CreateAsync(medicalSymptom);
             await _unitOfWork.CommitAsync();
