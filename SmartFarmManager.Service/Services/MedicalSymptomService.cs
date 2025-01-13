@@ -270,6 +270,8 @@ namespace SmartFarmManager.Service.Services
                             Status = TaskStatusEnum.Pending,
                             Session = (int)SessionTypeEnum.Morning,
                             CreatedAt = DateTimeUtils.VietnamNow(),
+                            PrescriptionId= newPrescription.Id,
+                            IsTreatmentTask = true
                         });
                     }
 
@@ -292,6 +294,8 @@ namespace SmartFarmManager.Service.Services
                             Status = TaskStatusEnum.Pending,
                             Session = (int)SessionTypeEnum.Noon,
                             CreatedAt = DateTimeUtils.VietnamNow(),
+                            PrescriptionId = newPrescription.Id,
+                            IsTreatmentTask = true
                         });
                     }
 
@@ -314,6 +318,8 @@ namespace SmartFarmManager.Service.Services
                             Status = TaskStatusEnum.Pending,
                             Session = (int)SessionTypeEnum.Afternoon,
                             CreatedAt = DateTimeUtils.VietnamNow(),
+                            PrescriptionId = newPrescription.Id,
+                            IsTreatmentTask = true
                         });
                     }
 
@@ -336,6 +342,8 @@ namespace SmartFarmManager.Service.Services
                             Status = TaskStatusEnum.Pending,
                             Session = (int)SessionTypeEnum.Evening,
                             CreatedAt = DateTimeUtils.VietnamNow(),
+                            PrescriptionId = newPrescription.Id,
+                            IsTreatmentTask = true
                         });
                     }
 
@@ -369,6 +377,8 @@ namespace SmartFarmManager.Service.Services
                                     Status = TaskStatusEnum.Pending,
                                     Session = (int)SessionTypeEnum.Morning,
                                     CreatedAt = DateTimeUtils.VietnamNow(),
+                                    PrescriptionId = newPrescription.Id,
+                                    IsTreatmentTask = true
                                 });
                             }
                         }
@@ -394,6 +404,8 @@ namespace SmartFarmManager.Service.Services
                                     Status = TaskStatusEnum.Pending,
                                     Session = (int)SessionTypeEnum.Noon,
                                     CreatedAt = DateTimeUtils.VietnamNow(),
+                                    PrescriptionId = newPrescription.Id,
+                                    IsTreatmentTask = true
                                 });
                             }
                         }
@@ -419,6 +431,8 @@ namespace SmartFarmManager.Service.Services
                                     Status = TaskStatusEnum.Pending,
                                     Session = (int)SessionTypeEnum.Afternoon,
                                     CreatedAt = DateTimeUtils.VietnamNow(),
+                                    PrescriptionId = newPrescription.Id,
+                                    IsTreatmentTask = true
                                 });
                             }
                         }
@@ -444,6 +458,8 @@ namespace SmartFarmManager.Service.Services
                                     Status = TaskStatusEnum.Pending,
                                     Session = (int)SessionTypeEnum.Evening,
                                     CreatedAt = DateTimeUtils.VietnamNow(),
+                                    PrescriptionId = newPrescription.Id,
+                                    IsTreatmentTask = true
                                 });
                             }
                         }
