@@ -84,6 +84,7 @@ namespace SmartFarmManager.Service.Services
                         AgeEnd = template.AgeEnd,
                         FoodType = template.FoodTemplates.FirstOrDefault()?.FoodType,
                         Status = GrowthStageStatusEnum.Planning,
+                        Quantity=model.Quantity,
                         AgeStartDate = null, // Sẽ được cập nhật khi trạng thái chuyển sang Active
                         AgeEndDate = null,
                         SaleTypeId= template.SaleTypeId,

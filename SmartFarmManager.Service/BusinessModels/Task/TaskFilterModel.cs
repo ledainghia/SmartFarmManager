@@ -8,7 +8,7 @@ namespace SmartFarmManager.Service.BusinessModels.Task
 {
     public class TaskFilterModel
     {
-        public string? TaskName { get; set; }
+        public string? KeySearch { get; set; }
         public string? Status { get; set; }
         public Guid? TaskTypeId { get; set; }
         public Guid? CageId { get; set; }

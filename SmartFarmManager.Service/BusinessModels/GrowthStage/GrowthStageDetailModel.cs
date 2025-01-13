@@ -17,6 +17,7 @@ namespace SmartFarmManager.Service.BusinessModels.GrowthStage
         public int? Quantity { get; set; }
         public int? AgeStart { get; set; }
         public int? AgeEnd { get; set; }
+        public string FoodType { get;set; }
         public DateTime? AgeStartDate { get; set; }
         public DateTime? AgeEndDate { get; set; }
         public string Status { get; set; }

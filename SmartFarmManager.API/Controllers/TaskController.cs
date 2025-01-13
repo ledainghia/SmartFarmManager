@@ -180,7 +180,7 @@ namespace SmartFarmManager.API.Controllers
                 var serviceFilter = new TaskFilterModel
                 {
                     
-                    TaskName = filterRequest.TaskName,
+                    KeySearch = filterRequest.KeySearch,
                     Status = filterRequest.Status,
                     TaskTypeId = filterRequest.TaskTypeId,
                     CageId = filterRequest.CageId,
