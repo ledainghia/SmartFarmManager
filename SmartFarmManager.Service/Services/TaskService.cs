@@ -701,6 +701,8 @@ namespace SmartFarmManager.Service.Services
                     Session = t.Session,
                     CompletedAt = t.CompletedAt,
                     CreatedAt = t.CreatedAt,
+                    PrescriptionId = t.PrescriptionId,
+                    IsTreatmentTask = t.IsTreatmentTask,
                     AssignedToUser = t.AssignedToUser == null ? null : new UserResponseModel
                     {
                         UserId = t.AssignedToUser.Id,
