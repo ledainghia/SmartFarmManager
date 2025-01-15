@@ -4,6 +4,7 @@ using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.MedicalSymptom;
 using SmartFarmManager.API.Payloads.Responses.MedicalSymptom;
 using SmartFarmManager.API.Payloads.Responses.Picture;
+using SmartFarmManager.API.Payloads.Responses.Prescription;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Service.BusinessModels.MedicalSymptom;
 using SmartFarmManager.Service.BusinessModels.MedicalSymptomDetail;
@@ -99,6 +100,15 @@ namespace SmartFarmManager.API.Controllers
                     Price = p.Price,
                     DaysToTake = p.DaysToTake,
                     EndDate = p.EndDate,
+                    Medications = p.Medications.Select(m => new PrescriptionMedicationResponse
+                    {
+                        MedicationId = m.MedicationId,
+                        MedicationName = m.Medication?.Name,
+                        Morning = m.Morning,
+                        Afternoon = m.Afternoon,
+                        Evening = m.Evening,
+                        Noon = m.Noon
+                    }).ToList()
                 }).ToList(),
             };
 
@@ -148,6 +158,15 @@ namespace SmartFarmManager.API.Controllers
                     Price = p.Price,
                     DaysToTake = p.DaysToTake,
                     EndDate = p.EndDate,
+                    Medications = p.Medications.Select(m => new PrescriptionMedicationResponse
+                    {
+                        MedicationId = m.MedicationId,
+                        MedicationName = m.Medication?.Name,
+                        Morning = m.Morning,
+                        Afternoon = m.Afternoon,
+                        Evening = m.Evening,
+                        Noon = m.Noon
+                    }).ToList()
                 }).ToList(),
 
             });
