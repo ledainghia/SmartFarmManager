@@ -97,7 +97,7 @@ namespace SmartFarmManager.API.Controllers
         [HttpGet("server-time")]
         public IActionResult GetServerTime()
         {
-            var serverTime = DateTime.Now;
+            var serverTime = DateTimeUtils.VietnamNow();
             var dayOfWeek = serverTime.ToString("dddd", new System.Globalization.CultureInfo("vi-VN")); // Lấy thứ bằng tiếng Việt
             var formattedTime = $"{dayOfWeek}, {serverTime:dd/MM/yyyy, HH:mm:ss}";
 
