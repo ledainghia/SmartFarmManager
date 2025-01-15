@@ -90,17 +90,17 @@ namespace SmartFarmManager.API.Controllers
                     Image = p.Image,
                     DateCaptured = p.DateCaptured
                 }).ToList(),
-                Prescriptions = medicalSymptom.Prescriptions.Select(p => new Payloads.Responses.Prescription.PrescriptionResponse
+                Prescriptions = medicalSymptom.Prescriptions == null ? null : new PrescriptionResponse
                 {
-                    Id = p.Id,
-                    PrescribedDate = p.PrescribedDate,
-                    Status = p.Status,
-                    QuantityAnimal = p.QuantityAnimal,
-                    Notes = p.Notes,
-                    Price = p.Price,
-                    DaysToTake = p.DaysToTake,
-                    EndDate = p.EndDate,
-                    Medications = p.Medications.Select(m => new PrescriptionMedicationResponse
+                    Id = medicalSymptom.Prescriptions.Id,
+                    PrescribedDate = medicalSymptom.Prescriptions.PrescribedDate,
+                    Status = medicalSymptom.Prescriptions.Status,
+                    QuantityAnimal = medicalSymptom.Prescriptions.QuantityAnimal,
+                    Notes = medicalSymptom.Prescriptions.Notes,
+                    Price = medicalSymptom.Prescriptions.Price,
+                    DaysToTake = medicalSymptom.Prescriptions.DaysToTake,
+                    EndDate = medicalSymptom.Prescriptions.EndDate,
+                    Medications = medicalSymptom.Prescriptions.Medications.Select(m => new PrescriptionMedicationResponse
                     {
                         MedicationId = m.MedicationId,
                         MedicationName = m.Medication?.Name,
@@ -109,7 +109,7 @@ namespace SmartFarmManager.API.Controllers
                         Evening = m.Evening,
                         Noon = m.Noon
                     }).ToList()
-                }).ToList(),
+                },
             };
 
             return Ok(ApiResult<MedicalSymptomResponse>.Succeed(response));
@@ -148,17 +148,17 @@ namespace SmartFarmManager.API.Controllers
                     Image = p.Image,
                     DateCaptured = p.DateCaptured
                 }).ToList(),
-                Prescriptions = ms.Prescriptions.Select(p => new Payloads.Responses.Prescription.PrescriptionResponse
+                Prescriptions = ms.Prescriptions == null ? null : new PrescriptionResponse
                 {
-                    Id = p.Id,
-                    PrescribedDate = p.PrescribedDate,
-                    Status = p.Status,
-                    QuantityAnimal = p.QuantityAnimal,
-                    Notes = p.Notes,
-                    Price = p.Price,
-                    DaysToTake = p.DaysToTake,
-                    EndDate = p.EndDate,
-                    Medications = p.Medications.Select(m => new PrescriptionMedicationResponse
+                    Id = ms.Prescriptions.Id,
+                    PrescribedDate = ms.Prescriptions.PrescribedDate,
+                    Status = ms.Prescriptions.Status,
+                    QuantityAnimal = ms.Prescriptions.QuantityAnimal,
+                    Notes = ms.Prescriptions.Notes,
+                    Price = ms.Prescriptions.Price,
+                    DaysToTake = ms.Prescriptions.DaysToTake,
+                    EndDate = ms.Prescriptions.EndDate,
+                    Medications = ms.Prescriptions.Medications.Select(m => new PrescriptionMedicationResponse
                     {
                         MedicationId = m.MedicationId,
                         MedicationName = m.Medication?.Name,
@@ -167,7 +167,7 @@ namespace SmartFarmManager.API.Controllers
                         Evening = m.Evening,
                         Noon = m.Noon
                     }).ToList()
-                }).ToList(),
+                },
 
             });
 
