@@ -44,7 +44,7 @@ namespace SmartFarmManager.API.BackgroundJobs.QuartzConfigurations
 
             quartzConfig.ScheduleJob<Jobs.UpdateEveningTaskStatusesJob>(trigger => trigger
                 .WithIdentity("UpdateEveningTaskStatusesJob")
-                .WithCronSchedule("0 59 23 * * ?", x => x.InTimeZone(vietnamTimeZone)) // 23:59 đêm
+                .WithCronSchedule("0 0 23 * * ?", x => x.InTimeZone(vietnamTimeZone)) // 23:59 đêm
             );
         }
     }
