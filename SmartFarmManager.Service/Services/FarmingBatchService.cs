@@ -173,33 +173,38 @@ namespace SmartFarmManager.Service.Services
                 .ThenInclude(gs => gs.VaccineSchedules)
                 .Include(fb => fb.GrowthStages)
                 .ThenInclude(gs => gs.TaskDailies)
+                .Include(fb => fb.MedicalSymptoms)
+                .ThenInclude(ms => ms.Prescriptions)
                 .FirstOrDefaultAsync();
 
             if (farmingBatch == null)
             {
-                throw new ArgumentException($"FarmingBatch with ID {farmingBatchId} does not exist.");
+                throw new ArgumentException($"FarmingBatch với ID {farmingBatchId} không tồn tại.");
             }
 
             // Kiểm tra trạng thái hiện tại
             if (farmingBatch.Status == newStatus)
             {
-                throw new InvalidOperationException($"FarmingBatch is already in '{newStatus}' status.");
+                throw new InvalidOperationException($"FarmingBatch đã ở trạng thái '{newStatus}'.");
             }
 
-            if (newStatus != FarmingBatchStatusEnum.Active && newStatus != FarmingBatchStatusEnum.Completed)
+            // Kiểm tra trạng thái hợp lệ
+            if (newStatus != FarmingBatchStatusEnum.Active &&
+                newStatus != FarmingBatchStatusEnum.Completed &&
+                newStatus != FarmingBatchStatusEnum.Cancelled)
             {
-                throw new ArgumentException($"Invalid status transition to '{newStatus}'.");
+                throw new ArgumentException($"Trạng thái chuyển đổi '{newStatus}' không hợp lệ.");
             }
 
             if (farmingBatch.Status == FarmingBatchStatusEnum.Planning && newStatus == FarmingBatchStatusEnum.Active)
             {
-                // Chuyển trạng thái sang Active
+                // **Chuyển trạng thái sang Active**
                 farmingBatch.Status = FarmingBatchStatusEnum.Active;
                 farmingBatch.StartDate = DateTimeUtils.VietnamNow();
 
-                var currentStartDate = farmingBatch.StartDate;  
+                var currentStartDate = farmingBatch.StartDate;
 
-                // Cập nhật GrowthStages
+                // **Cập nhật GrowthStages**
                 foreach (var stage in farmingBatch.GrowthStages.OrderBy(gs => gs.AgeStart))
                 {
                     stage.AgeStartDate = currentStartDate;
@@ -211,7 +216,7 @@ namespace SmartFarmManager.Service.Services
 
                     currentStartDate = stage.AgeEndDate.Value.AddDays(1);
 
-                    // Cập nhật TaskDaily
+                    // **Cập nhật TaskDaily**
                     foreach (var taskDaily in stage.TaskDailies)
                     {
                         taskDaily.StartAt = stage.AgeStartDate;
@@ -219,7 +224,7 @@ namespace SmartFarmManager.Service.Services
                         await _unitOfWork.TaskDailies.UpdateAsync(taskDaily);
                     }
 
-                    // Cập nhật VaccineSchedule
+                    // **Cập nhật VaccineSchedule**
                     foreach (var vaccineSchedule in stage.VaccineSchedules)
                     {
                         if (stage.AgeStartDate.HasValue)
@@ -257,7 +262,7 @@ namespace SmartFarmManager.Service.Services
             }
             else if (newStatus == FarmingBatchStatusEnum.Completed)
             {
-                // Chuyển trạng thái sang Completed
+                // **Chuyển trạng thái sang Completed**
                 farmingBatch.Status = FarmingBatchStatusEnum.Completed;
                 farmingBatch.CompleteAt = DateTimeUtils.VietnamNow();
 
@@ -281,9 +286,49 @@ namespace SmartFarmManager.Service.Services
                 await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatch);
                 await _unitOfWork.CommitAsync();
             }
+            else if (newStatus == FarmingBatchStatusEnum.Cancelled)
+            {
+                // **Chuyển trạng thái sang Cancelled**
+                farmingBatch.Status = FarmingBatchStatusEnum.Cancelled;
+
+                // **Hủy các Prescription liên quan đến MedicalSymptoms**
+                foreach (var medicalSymptom in farmingBatch.MedicalSymptoms)
+                {
+                    foreach (var prescription in medicalSymptom.Prescriptions)
+                    {
+                        if (prescription.Status == PrescriptionStatusEnum.Active)
+                        {
+                            prescription.Status = PrescriptionStatusEnum.Cancelled;
+                            await _unitOfWork.Prescription.UpdateAsync(prescription);
+                        }
+                    }
+                }
+
+                // **Cập nhật trạng thái GrowthStages và VaccineSchedules**
+                foreach (var stage in farmingBatch.GrowthStages)
+                {
+                    stage.Status = GrowthStageStatusEnum.Cancelled;
+
+                    foreach (var vaccineSchedule in stage.VaccineSchedules)
+                    {
+                        if (vaccineSchedule.Status == VaccineScheduleStatusEnum.Upcoming)
+                        {
+                            vaccineSchedule.Status = VaccineScheduleStatusEnum.Cancelled;
+                            await _unitOfWork.VaccineSchedules.UpdateAsync(vaccineSchedule);
+                        }
+                    }
+
+                    await _unitOfWork.GrowthStages.UpdateAsync(stage);
+                }
+
+                // Lưu thay đổi
+                await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatch);
+                await _unitOfWork.CommitAsync();
+            }
 
             return true;
         }
+
 
         public async Task<PagedResult<FarmingBatchModel>> GetFarmingBatchesAsync(string? status, string? cageName, string? name, string? species, DateTime? startDateFrom, DateTime? startDateTo, int pageNumber, int pageSize, Guid? cageId)
         {
