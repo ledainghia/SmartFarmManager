@@ -110,7 +110,7 @@ namespace SmartFarmManager.Service.Services
                             DoseQuantity = pm.Medication.DoseQuantity
                         }
                     }).ToList()
-                }).ToList(),
+                }).FirstOrDefault(),
                 Symtom = string.Join(", ", ms.MedicalSymptomDetails.Select(d => d.Symptom.SymptomName))
             });
         }
@@ -614,7 +614,7 @@ namespace SmartFarmManager.Service.Services
                             DoseQuantity = pm.Medication.DoseQuantity
                         }
                     }).ToList()
-                }).ToList(),
+                }).FirstOrDefault(),
             };
         }
         public async Task<IEnumerable<MedicalSymptomModel>> GetMedicalSymptomsByStaffAndBatchAsync(Guid? staffId, Guid? farmBatchId)

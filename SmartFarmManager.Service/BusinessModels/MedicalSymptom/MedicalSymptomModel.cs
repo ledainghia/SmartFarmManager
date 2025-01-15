@@ -32,6 +32,6 @@ namespace SmartFarmManager.Service.BusinessModels.MedicalSymptom
 
         public List<MedicalSymptomDetailModel> MedicalSymptomDetails { get; set; }
 
-        public List<PrescriptionModel> Prescriptions { get; set; }
+        public PrescriptionModel? Prescriptions { get; set; }
     }
 }
