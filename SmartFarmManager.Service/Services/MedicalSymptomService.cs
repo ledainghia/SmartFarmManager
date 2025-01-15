@@ -4,8 +4,10 @@ using Org.BouncyCastle.Utilities.Date;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels.MedicalSymptom;
+using SmartFarmManager.Service.BusinessModels.Medication;
 using SmartFarmManager.Service.BusinessModels.Picture;
 using SmartFarmManager.Service.BusinessModels.Prescription;
+using SmartFarmManager.Service.BusinessModels.PrescriptionMedication;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Shared;
@@ -35,8 +37,9 @@ namespace SmartFarmManager.Service.Services
         .FindAll()
         .Include(p => p.Pictures)
         .Include(p => p.FarmingBatch)
-        .Include(p => p.Prescriptions)
+        .Include(p => p.Prescriptions).ThenInclude(p => p.PrescriptionMedications).ThenInclude(pm => pm.Medication)
         .Include(p => p.MedicalSymptomDetails).ThenInclude(p => p.Symptom)
+
         .AsQueryable();
             // Lọc theo trạng thái nếu có
             if (!string.IsNullOrEmpty(status))
@@ -92,6 +95,21 @@ namespace SmartFarmManager.Service.Services
                     Price = p.Price,
                     DaysToTake = p.DaysToTake,
                     EndDate = p.EndDate,
+                    Medications = p.PrescriptionMedications.Select(pm => new PrescriptionMedicationModel
+                    {
+                        MedicationId = pm.MedicationId,
+                        Morning = pm.Morning,
+                        Afternoon = pm.Afternoon,
+                        Evening = pm.Evening,
+                        Noon = pm.Noon,
+                        Medication = new MedicationModel
+                        {
+                            Name = pm.Medication.Name,
+                            UsageInstructions = pm.Medication.UsageInstructions,
+                            Price = pm.Medication.Price,
+                            DoseQuantity = pm.Medication.DoseQuantity
+                        }
+                    }).ToList()
                 }).ToList(),
                 Symtom = string.Join(", ", ms.MedicalSymptomDetails.Select(d => d.Symptom.SymptomName))
             });
@@ -543,7 +561,11 @@ namespace SmartFarmManager.Service.Services
         public async Task<MedicalSymptomModel?> GetMedicalSymptomByIdAsync(Guid id)
         {
             var medicalSymptom = await _unitOfWork.MedicalSymptom.FindAll()
-                .Where(m => m.Id == id).Include(p => p.Pictures).Include(p => p.FarmingBatch).Include(p => p.Prescriptions).FirstOrDefaultAsync();
+                .Where(m => m.Id == id)
+                .Include(p => p.Pictures)
+                .Include(p => p.FarmingBatch)
+                .Include(p => p.Prescriptions).ThenInclude(p => p.PrescriptionMedications).ThenInclude(p => p.Medication)
+                .FirstOrDefaultAsync();
 
             if (medicalSymptom == null)
             {
@@ -577,6 +599,21 @@ namespace SmartFarmManager.Service.Services
                     Price = p.Price,
                     DaysToTake = p.DaysToTake,
                     EndDate = p.EndDate,
+                    Medications = p.PrescriptionMedications.Select(pm => new PrescriptionMedicationModel
+                    {
+                        MedicationId = pm.MedicationId,
+                        Morning = pm.Morning,
+                        Afternoon = pm.Afternoon,
+                        Evening = pm.Evening,
+                        Noon = pm.Noon,
+                        Medication = new MedicationModel
+                        {
+                            Name = pm.Medication.Name,
+                            UsageInstructions = pm.Medication.UsageInstructions,
+                            Price = pm.Medication.Price,
+                            DoseQuantity = pm.Medication.DoseQuantity
+                        }
+                    }).ToList()
                 }).ToList(),
             };
         }
