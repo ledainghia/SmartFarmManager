@@ -11,6 +11,7 @@ namespace SmartFarmManager.Service.Shared
         public const string Upcoming = "Upcoming"; 
         public const string Completed = "Completed"; 
         public const string Missed = "Missed";
+        public const string Cancelled = "Cancelled";
     }
 
 }
