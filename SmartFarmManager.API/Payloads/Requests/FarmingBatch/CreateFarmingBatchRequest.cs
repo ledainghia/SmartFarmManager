@@ -16,16 +16,10 @@ namespace SmartFarmManager.API.Payloads.Requests.FarmingBatch
         public string Name { get; set; }
 
         [Required]
-        [MaxLength(50)]
-        public string Species { get; set; }
-
-        [Required]
         public int CleaningFrequency { get; set; }
 
         [Required]
         public int Quantity { get; set; }
-
-
 
         public CreateFarmingBatchModel MapToModel()
         {
@@ -34,7 +28,6 @@ namespace SmartFarmManager.API.Payloads.Requests.FarmingBatch
                 TemplateId = this.TemplateId,
                 CageId = this.CageId,
                 Name = this.Name,
-                Species = this.Species,
                 CleaningFrequency = this.CleaningFrequency,
                 Quantity = this.Quantity,
             };
