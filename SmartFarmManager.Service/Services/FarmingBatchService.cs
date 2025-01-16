@@ -63,7 +63,7 @@ namespace SmartFarmManager.Service.Services
                     TemplateId = model.TemplateId,
                     CageId = model.CageId,
                     Name = model.Name,
-                    Species = model.Species,
+                    Species = model.Name,
                     CleaningFrequency = model.CleaningFrequency,
                     Quantity = model.Quantity,
                     FarmId = cage.FarmId,
