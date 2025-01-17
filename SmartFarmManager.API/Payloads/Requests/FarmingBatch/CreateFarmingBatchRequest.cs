@@ -21,8 +21,6 @@ namespace SmartFarmManager.API.Payloads.Requests.FarmingBatch
         [Required]
         public int Quantity { get; set; }
 
-
-
         public CreateFarmingBatchModel MapToModel()
         {
             return new CreateFarmingBatchModel
