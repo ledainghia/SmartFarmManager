@@ -1559,8 +1559,8 @@ namespace SmartFarmManager.Service.Services
 
             var tasksToCreate = new List<Task>();
 
-            // Generate tasks for today
-            tasksToCreate.AddRange(await GenerateTasksForDate(farmingBatch, today, currentTime));
+            //// Generate tasks for today
+            //tasksToCreate.AddRange(await GenerateTasksForDate(farmingBatch, today, currentTime));
 
             // Generate tasks for tomorrow
             tasksToCreate.AddRange(await GenerateTasksForDate(farmingBatch, tomorrow, null)); // Không cần kiểm tra thời gian

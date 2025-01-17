@@ -20,6 +20,7 @@ using Quartz.Spi;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Newtonsoft.Json;
+using SmartFarmManager.Service.Configuration;
 
 
 namespace SmartFarmManager.API.Extensions
@@ -236,6 +237,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IDiseaseService, DiseaseService>();
             services.AddScoped<IStandardPrescriptionService, StandardPrescriptionService>();
             services.AddScoped<ISaleTypeService, SaleTypeService>();
+            services.AddSingleton<SystemConfigurationService>();
 
 
             return services;
