@@ -13,9 +13,6 @@ public partial class FarmingBatch : EntityBase
     public Guid CageId { get; set; }
 
     public string Name { get; set; }
-
-    public string Species { get; set; }
-
     public DateTime? StartDate { get; set; }
     public DateTime? CompleteAt { get; set; }
     public DateTime? EndDate { get; set; }

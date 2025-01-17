@@ -322,6 +322,7 @@ namespace SmartFarmManager.Service.Services
                     Afternoon = pm.Afternoon,
                     Evening = pm.Evening,
                     Noon = pm.Noon,
+                    Notes = pm.Notes,
                     Medication = new MedicationModel
                     {
                         Name = pm.Medication.Name,
@@ -367,6 +368,7 @@ namespace SmartFarmManager.Service.Services
                     Afternoon = pm.Afternoon,
                     Evening = pm.Evening,
                     Noon = pm.Noon,
+                    Notes = pm.Notes,
                     Medication = new MedicationModel
                     {
                         Name = pm.Medication.Name,

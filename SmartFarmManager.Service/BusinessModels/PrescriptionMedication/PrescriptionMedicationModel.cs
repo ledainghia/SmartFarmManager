@@ -14,6 +14,7 @@ namespace SmartFarmManager.Service.BusinessModels.PrescriptionMedication
         public int Afternoon { get; set; }
         public int Evening { get; set; }
         public int Noon { get; set; }
+        public string? Notes { get; set; }
         public MedicationModel Medication { get; set; }
     }
 }

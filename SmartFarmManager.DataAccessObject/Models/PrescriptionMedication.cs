@@ -11,7 +11,7 @@ namespace SmartFarmManager.DataAccessObject.Models;
         public Guid PrescriptionId { get; set; }
 
         public Guid MedicationId { get; set; }
-
+        public string Notes { get; set; }
         public int Morning { get; set; } = 0;
         public int Afternoon { get; set; } = 0;
         public int Evening { get; set; } = 0;

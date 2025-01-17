@@ -552,7 +552,6 @@ public partial class SmartFarmContext : DbContext
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Name).HasMaxLength(100);
-            entity.Property(e => e.Species).HasMaxLength(50);
             entity.Property(e => e.StartDate)
                 .HasColumnType("datetime");
 
@@ -820,6 +819,7 @@ public partial class SmartFarmContext : DbContext
             entity.Property(e => e.Notes).HasMaxLength(255);
             entity.Property(e => e.PrescribedDate).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.Price).HasColumnType("decimal(10, 2)");
+            
 
             entity.HasOne(d => d.MedicalSymtom).WithMany(p => p.Prescriptions)
                 .HasForeignKey(d => d.MedicalSymtomId)
@@ -832,6 +832,7 @@ public partial class SmartFarmContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__Prescrip__CDB4BF945ED62D85");
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.Notes).HasMaxLength(255);
 
             entity.HasOne(d => d.Medication).WithMany(p => p.PrescriptionMedications)
                 .HasForeignKey(d => d.MedicationId)
