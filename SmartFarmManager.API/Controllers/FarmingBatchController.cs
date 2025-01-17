@@ -126,7 +126,7 @@ namespace SmartFarmManager.API.Controllers
 
             try
             {
-                var response = await _farmingBatchService.GetFarmingBatchesAsync(request.Status, request.CageName, request.Name, request.Species, request.StartDateFrom, request.StartDateTo, request.PageNumber, request.PageSize, request.CageId);
+                var response = await _farmingBatchService.GetFarmingBatchesAsync(request.Status, request.CageName, request.Name, request.Name, request.StartDateFrom, request.StartDateTo, request.PageNumber, request.PageSize, request.CageId);
 
                 return Ok(ApiResult<PagedResult<FarmingBatchModel>>.Succeed(response));
             }

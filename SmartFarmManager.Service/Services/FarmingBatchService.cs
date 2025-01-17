@@ -63,7 +63,6 @@ namespace SmartFarmManager.Service.Services
                     TemplateId = model.TemplateId,
                     CageId = model.CageId,
                     Name = model.Name,
-                    Species = model.Species,
                     CleaningFrequency = model.CleaningFrequency,
                     Quantity = model.Quantity,
                     FarmId = cage.FarmId,
@@ -352,10 +351,6 @@ namespace SmartFarmManager.Service.Services
             {
                 query = query.Where(x => x.Name.Contains(name));
             }
-            if (!string.IsNullOrEmpty(species))
-            {
-                query = query.Where(x => x.Species.Contains(species));
-            }
 
             if (startDateFrom.HasValue)
             {
@@ -380,7 +375,6 @@ namespace SmartFarmManager.Service.Services
                 {
                     Id = fb.Id,
                     Name = fb.Name,
-                    Species = fb.Species,
                     StartDate = fb.StartDate,
                     CompleteAt = fb.CompleteAt,
                     Status = fb.Status,
@@ -442,7 +436,6 @@ namespace SmartFarmManager.Service.Services
             {
                 Id = farmingBatch.Id,
                 Name = farmingBatch.Name,
-                Species = farmingBatch.Species,
                 StartDate = farmingBatch.StartDate,
                 CompleteAt = farmingBatch.CompleteAt,
                 Status = farmingBatch.Status,
@@ -470,7 +463,6 @@ namespace SmartFarmManager.Service.Services
             {
                 Id = fb.Id,
                 Name = fb.Name,
-                Species = fb.Species,
                 StartDate = fb.StartDate,
                 CompleteAt = fb.CompleteAt,
                 EndDate = fb.EndDate,

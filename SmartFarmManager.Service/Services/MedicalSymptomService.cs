@@ -62,8 +62,7 @@ namespace SmartFarmManager.Service.Services
             {
                 query = query.Where(ms =>
                     ms.Diagnosis.Contains(searchTerm) ||
-                    ms.Notes.Contains(searchTerm) ||
-                ms.FarmingBatch.Species.Contains(searchTerm) ||
+                    ms.Notes.Contains(searchTerm)||
                     ms.MedicalSymptomDetails.Any(md => md.Symptom.SymptomName.Contains(searchTerm)));
             }
 
@@ -77,7 +76,7 @@ namespace SmartFarmManager.Service.Services
                 AffectedQuantity = ms.AffectedQuantity,
                 Notes = ms.Notes,
                 Quantity = ms.FarmingBatch?.Quantity ?? 0,
-                NameAnimal = ms.FarmingBatch.Species,
+                NameAnimal = ms.FarmingBatch.Name,
                 CreateAt = ms.CreateAt,
                 Pictures = ms.Pictures.Select(p => new PictureModel
                 {
@@ -581,7 +580,7 @@ namespace SmartFarmManager.Service.Services
                 AffectedQuantity = medicalSymptom.AffectedQuantity,
                 Notes = medicalSymptom.Notes,
                 Quantity = medicalSymptom.FarmingBatch.Quantity,
-                NameAnimal = medicalSymptom.FarmingBatch.Species,
+                NameAnimal = medicalSymptom.FarmingBatch.Name,
                 CreateAt = medicalSymptom.CreateAt,
                 Pictures = medicalSymptom.Pictures.Select(p => new PictureModel
                 {
