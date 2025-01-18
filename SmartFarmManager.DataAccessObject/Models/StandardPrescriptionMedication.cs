@@ -12,14 +12,13 @@ namespace SmartFarmManager.DataAccessObject.Models
 
         public Guid MedicationId { get; set; }
 
-        public int Dosage { get; set; }
 
-        public bool Morning { get; set; }
-        public bool Noon { get; set; }
+        public int Morning { get; set; }
+        public int Noon { get; set; }
 
-        public bool Afternoon { get; set; }
+        public int Afternoon { get; set; }
 
-        public bool Evening { get; set; }
+        public int Evening { get; set; }
 
 
 
