@@ -10,6 +10,7 @@ namespace SmartFarmManager.Service.BusinessModels.StandardPrescriptionMedication
     {
         public Guid Id { get; set; }
         public Guid MedicationId { get; set; }
+        public string UsageInstructions { get; set; }
         public string MedicationName { get; set; }
         public int Morning { get; set; }
         public int Afternoon { get; set; }
