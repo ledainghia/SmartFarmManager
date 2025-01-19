@@ -42,6 +42,7 @@ namespace SmartFarmManager.Service.Services
                 {
                     Id = spm.Id,
                     MedicationId = spm.MedicationId,
+                    UsageInstructions=spm.Medication.UsageInstructions,
                     MedicationName = spm.Medication.Name,
                     Morning = spm.Morning,
                     Afternoon = spm.Afternoon,
