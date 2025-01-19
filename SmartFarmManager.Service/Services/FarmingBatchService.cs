@@ -404,7 +404,6 @@ namespace SmartFarmManager.Service.Services
                         Capacity = fb.Cage.Capacity,
                         FarmId = fb.Cage.FarmId,
                         Location = fb.Cage.Location,
-                        AnimalType = fb.Cage.AnimalType,
                         Area = fb.Cage.Area
 
                     },
