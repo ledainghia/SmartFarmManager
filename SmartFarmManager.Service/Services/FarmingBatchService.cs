@@ -204,6 +204,16 @@ namespace SmartFarmManager.Service.Services
 
             if (farmingBatch.Status == FarmingBatchStatusEnum.Planning && newStatus == FarmingBatchStatusEnum.Active)
             {
+                // **Kiểm tra xem chuồng này có FarmingBatch nào đang hoạt động không**
+                var activeBatchExists = await _unitOfWork.FarmingBatches
+                    .FindByCondition(fb => fb.CageId == farmingBatch.CageId && fb.Status == FarmingBatchStatusEnum.Active)
+                    .AnyAsync();
+
+                if (activeBatchExists)
+                {
+                    throw new InvalidOperationException($"Chuồng này đã có một FarmingBatch đang hoạt động. Không thể kích hoạt thêm.");
+                }
+
                 // **Chuyển trạng thái sang Active**
                 farmingBatch.Status = FarmingBatchStatusEnum.Active;
                 farmingBatch.StartDate = DateTimeUtils.VietnamNow();
