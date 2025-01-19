@@ -89,7 +89,6 @@ namespace SmartFarmManager.API.Controllers
                     Area = request.Area,
                     Capacity = request.Capacity,
                     Location = request.Location,
-                    AnimalType = request.AnimalType
                 });
 
                 var response = ApiResult<object>.Succeed(new { Id = cageId });
@@ -116,7 +115,6 @@ namespace SmartFarmManager.API.Controllers
                     Area = c.Area,
                     Capacity = c.Capacity,
                     Location = c.Location,
-                    AnimalType = c.AnimalType
                 });
 
                 return Ok(ApiResult<IEnumerable<CageResponse>>.Succeed(responses));
@@ -148,7 +146,6 @@ namespace SmartFarmManager.API.Controllers
                     Area = request.Area,
                     Capacity = request.Capacity,
                     Location = request.Location,
-                    AnimalType = request.AnimalType
                 });
 
                 if (!updated)

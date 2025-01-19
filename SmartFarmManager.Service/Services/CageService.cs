@@ -43,11 +43,6 @@ namespace SmartFarmManager.Service.Services
                 query = query.Where(c => c.FarmId == request.FarmId.Value);
             }
 
-            if (!string.IsNullOrEmpty(request.AnimalType))
-            {
-                query = query.Where(c => c.AnimalType.Contains(request.AnimalType));
-            }
-
             if (!string.IsNullOrEmpty(request.Name))
             {
                 query = query.Where(c => c.Name.Contains(request.Name));
@@ -153,7 +148,6 @@ namespace SmartFarmManager.Service.Services
                 Area = cage.Area,
                 Location = cage.Location,
                 Capacity = cage.Capacity,
-                AnimalType = cage.AnimalType,
                 BoardCode = cage.BoardCode,
                 BoardStatus = cage.BoardStatus,
                 CreatedDate = cage.CreatedDate,
@@ -204,7 +198,6 @@ namespace SmartFarmManager.Service.Services
                 Area = model.Area,
                 Capacity = model.Capacity,
                 Location = model.Location,
-                AnimalType = model.AnimalType,
                 CreatedDate = DateTimeUtils.VietnamNow(),
             };
 
@@ -226,7 +219,6 @@ namespace SmartFarmManager.Service.Services
                 Area = c.Area,
                 Capacity = c.Capacity,
                 Location = c.Location,
-                AnimalType = c.AnimalType
             });
         }
 
@@ -240,7 +232,6 @@ namespace SmartFarmManager.Service.Services
             cage.Area = model.Area;
             cage.Capacity = model.Capacity;
             cage.Location = model.Location;
-            cage.AnimalType = model.AnimalType;
             cage.ModifiedDate = DateTimeUtils.VietnamNow();
 
             await _unitOfWork.Cages.UpdateAsync(cage);

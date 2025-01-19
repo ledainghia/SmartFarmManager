@@ -343,7 +343,6 @@ public partial class SmartFarmContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__Cages__792D9F9AACADDF50");
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.AnimalType).HasMaxLength(255);
             entity.Property(e => e.BoardCode)
                 .IsRequired()
                 .HasMaxLength(50);

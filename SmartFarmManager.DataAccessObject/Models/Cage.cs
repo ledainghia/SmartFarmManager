@@ -17,7 +17,6 @@ public partial class Cage : EntityBase
 
     public int Capacity { get; set; }
 
-    public string AnimalType { get; set; }
 
     public string BoardCode { get; set; }
 
