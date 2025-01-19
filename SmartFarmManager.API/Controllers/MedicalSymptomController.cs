@@ -107,7 +107,8 @@ namespace SmartFarmManager.API.Controllers
                         Morning = m.Morning,
                         Afternoon = m.Afternoon,
                         Evening = m.Evening,
-                        Noon = m.Noon
+                        Noon = m.Noon,
+                        Notes = m.Notes
                     }).ToList()
                 },
             };
@@ -165,7 +166,8 @@ namespace SmartFarmManager.API.Controllers
                         Morning = m.Morning,
                         Afternoon = m.Afternoon,
                         Evening = m.Evening,
-                        Noon = m.Noon
+                        Noon = m.Noon,
+                        Notes = m.Notes
                     }).ToList()
                 },
 

@@ -16,7 +16,6 @@ namespace SmartFarmManager.Service.BusinessModels.Cages
         public double Area { get; set; }
         public string Location { get; set; }
         public int Capacity { get; set; }
-        public string AnimalType { get; set; }
         public string BoardCode { get; set; }
         public bool BoardStatus { get; set; }
         public DateTime CreatedDate { get; set; }
