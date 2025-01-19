@@ -184,6 +184,7 @@ namespace SmartFarmManager.Service.Services
                     var newPrescriptionMedication = updatedModel.Prescriptions.Medications.Select(m => new PrescriptionMedication
                     {
                         PrescriptionId = newPrescription.Id,
+                        Notes=m.Notes,
                         MedicationId = m.MedicationId,
                         Morning = m.Morning,
                         Afternoon = m.Afternoon,
@@ -239,6 +240,7 @@ namespace SmartFarmManager.Service.Services
                     {
                         pm.MedicationId,
                         MedicationName = medicationsList.FirstOrDefault(m => m.Id == pm.MedicationId)?.Name,
+                        pm.Notes,
                         pm.Morning,
                         pm.Noon,
                         pm.Afternoon,
@@ -603,6 +605,8 @@ namespace SmartFarmManager.Service.Services
                     Medications = p.PrescriptionMedications.Select(pm => new PrescriptionMedicationModel
                     {
                         MedicationId = pm.MedicationId,
+                        
+                      
                         Morning = pm.Morning,
                         Afternoon = pm.Afternoon,
                         Evening = pm.Evening,
