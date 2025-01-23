@@ -52,6 +52,20 @@ namespace SmartFarmManager.Service.Services
             {
                 query = query.Where(c => c.BoardStatus == request.BoardStatus.Value);
             }
+            if (request.HasFarmingBatch.HasValue)
+            {
+                if (request.HasFarmingBatch.Value)
+                {
+                    query = query.Where(c => c.FarmingBatches.Any(fb =>
+                        fb.StartDate < DateTimeUtils.VietnamNow() &&
+                        fb.CompleteAt == null &&
+                        fb.Status == FarmingBatchStatusEnum.Active));
+                }
+                else
+                {
+                    query = query.Where(c => !c.FarmingBatches.Any());
+                }
+            }
             // Đếm tổng số bản ghi (chạy trên SQL)
             var totalCount = await query.CountAsync();
 
