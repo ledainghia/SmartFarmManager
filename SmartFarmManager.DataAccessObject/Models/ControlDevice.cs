@@ -16,6 +16,5 @@ namespace SmartFarmManager.DataAccessObject.Models
         public DateTime CreatedAt { get; set; } // Ngày tạo
         public Guid CageId { get; set; } // FK với Cage
         public virtual Cage Cage { get; set; } // Navigation property
-        public virtual ICollection<Job> Jobs { get; set; } = new List<Job>();
     }
 }

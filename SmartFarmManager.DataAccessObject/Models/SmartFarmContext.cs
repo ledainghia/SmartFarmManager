@@ -778,10 +778,6 @@ public partial class SmartFarmContext : DbContext
                 .HasForeignKey(d => d.SensorId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Jobs__SensorId__04AFB25B");
-            entity.HasOne(e => e.ControlDevice) // Quan hệ với ControlDevice
-            .WithMany(cd => cd.Jobs)
-            .HasForeignKey(e => e.ControlId)
-            .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<JobLog>(entity =>

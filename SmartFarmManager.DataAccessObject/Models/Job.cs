@@ -15,7 +15,6 @@ public partial class Job : EntityBase
     public Guid SensorId { get; set; }
 
     public Guid JobTypeId { get; set; }
-    public Guid? ControlId { get; set; }
 
     public string JobCode { get; set; }
 
@@ -48,5 +47,4 @@ public partial class Job : EntityBase
     public virtual Schedule Schedule { get; set; }
 
     public virtual Sensor Sensor { get; set; }
-    public virtual ControlDevice ControlDevice { get; set; }
 }
