@@ -100,6 +100,18 @@ namespace SmartFarmManager.API.Controllers
             var serverTime = DateTimeOffset.Now;
             return Ok(ApiResult<DateTimeOffset>.Succeed(serverTime));
         }
+        [HttpGet("check-timezone")]
+        public IActionResult CheckTimeZone()
+        {
+            return Ok(new
+            {
+                ServerTime = DateTime.Now,
+                UTCTime = DateTime.UtcNow,
+                TimeZone = TimeZoneInfo.Local.Id
+            });
+        }
+
+
         [HttpPut("{userId}/device")]
         public async Task<IActionResult> UpdateUserDeviceId(Guid userId, [FromBody] string deviceId )
         {
