@@ -23,6 +23,9 @@ services:
     container_name: backend
     ports:
       - '5051:8080' # Map HTTP từ container ra host
+    volumes:
+      - /etc/localtime:/etc/localtime:ro  # Đồng bộ thời gian với máy chủ
+      - /etc/timezone:/etc/timezone:ro
     environment:
       - 'ConnectionStrings:ProductConnection=Server=database,1433;Database=Farm;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;'
       - SECRET_KEY=adjkasdbyuaasgcndsjfngljkdsjflgsdfklgnslkdfnslkdnfkjsahdfkjsahjlkfsa
