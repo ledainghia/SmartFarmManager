@@ -230,6 +230,27 @@ namespace SmartFarmManager.Service.Services
             return cageStaff?.StaffFarmId;
         }
 
+        public async Task<bool> UpdateUserDeviceIdAsync(Guid userId, string deviceId)
+        {
+            // Lấy thông tin người dùng từ database
+            var user = await _unitOfWork.Users.GetByIdAsync(userId);
 
+            // Kiểm tra người dùng có tồn tại không
+            if (user == null)
+            {
+                throw new ArgumentException("Không tìm thấy người dùng");
+            }
+
+            // Cập nhật DeviceId mới
+            user.DeviceId = deviceId;
+
+            // Cập nhật thông tin người dùng
+            await _unitOfWork.Users.UpdateAsync(user);
+
+            // Lưu thay đổi vào database
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
     }
 }

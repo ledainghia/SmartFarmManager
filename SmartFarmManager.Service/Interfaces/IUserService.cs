@@ -19,6 +19,7 @@ namespace SmartFarmManager.Service.Interfaces
         Task<UserDetailsModel> GetUserDetailsAsync(Guid userId);
         Task<PagedResult<FarmModel>> GetFarmsByAdminStaffIdAsync(Guid userId, int pageIndex, int pageSize);
         Task<Guid?> GetAssignedUserForCageAsync(Guid cageId, DateOnly date);
+        Task<bool> UpdateUserDeviceIdAsync(Guid userId, string deviceId);
 
     }
 }
