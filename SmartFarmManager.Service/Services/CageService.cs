@@ -57,7 +57,7 @@ namespace SmartFarmManager.Service.Services
                 if (request.HasFarmingBatch.Value)
                 {
                     query = query.Where(c => c.FarmingBatches.Any(fb =>
-                        fb.StartDate < DateTimeUtils.VietnamNow() &&
+                        fb.StartDate < DateTimeUtils.GetServerTimeInVietnamTime() &&
                         fb.CompleteAt == null &&
                         fb.Status == FarmingBatchStatusEnum.Active));
                 }
@@ -90,7 +90,7 @@ namespace SmartFarmManager.Service.Services
                     StaffName = c.CageStaffs.FirstOrDefault().StaffFarm.FullName,
                     // Lấy thông tin FarmingBatch phù hợp
                     FarmingBatch = c.FarmingBatches
-                .Where(fb => fb.StartDate < DateTimeUtils.VietnamNow() && fb.CompleteAt == null && fb.Status == FarmingBatchStatusEnum.Active)
+                .Where(fb => fb.StartDate < DateTimeUtils.GetServerTimeInVietnamTime() && fb.CompleteAt == null && fb.Status == FarmingBatchStatusEnum.Active)
                 .Select(fb => new FarmingBatchModel
                 {
                     Id = fb.Id,
@@ -104,8 +104,8 @@ namespace SmartFarmManager.Service.Services
                     GrowthStageDetails = fb.GrowthStages.Where(gs =>
                         gs.AgeStartDate.HasValue &&
                         gs.AgeEndDate.HasValue &&
-                        gs.AgeStartDate.Value.Date <= DateTimeUtils.VietnamNow().Date &&
-                        gs.AgeEndDate.Value.Date >= DateTimeUtils.VietnamNow().Date)
+                        gs.AgeStartDate.Value.Date <= DateTimeUtils.GetServerTimeInVietnamTime().Date &&
+                        gs.AgeEndDate.Value.Date >= DateTimeUtils.GetServerTimeInVietnamTime().Date)
                         .Select(gs => new GrowthStageDetailModel
                         {
                             Id = gs.Id,
@@ -212,7 +212,7 @@ namespace SmartFarmManager.Service.Services
                 Area = model.Area,
                 Capacity = model.Capacity,
                 Location = model.Location,
-                CreatedDate = DateTimeUtils.VietnamNow(),
+                CreatedDate = DateTimeUtils.GetServerTimeInVietnamTime(),
             };
 
             var id = await _unitOfWork.Cages.CreateAsync(cage);
@@ -246,7 +246,7 @@ namespace SmartFarmManager.Service.Services
             cage.Area = model.Area;
             cage.Capacity = model.Capacity;
             cage.Location = model.Location;
-            cage.ModifiedDate = DateTimeUtils.VietnamNow();
+            cage.ModifiedDate = DateTimeUtils.GetServerTimeInVietnamTime();
 
             await _unitOfWork.Cages.UpdateAsync(cage);
             await _unitOfWork.CommitAsync();
@@ -259,7 +259,7 @@ namespace SmartFarmManager.Service.Services
             if (cage == null) return false;
 
             cage.IsDeleted = true;
-            cage.DeletedDate = DateTimeUtils.VietnamNow();
+            cage.DeletedDate = DateTimeUtils.GetServerTimeInVietnamTime();
 
             await _unitOfWork.Cages.UpdateAsync(cage);
             await _unitOfWork.CommitAsync();

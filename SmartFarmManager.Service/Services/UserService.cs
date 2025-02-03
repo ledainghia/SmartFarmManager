@@ -53,7 +53,7 @@ namespace SmartFarmManager.Service.Services
                 Address = request.Address,
                 RoleId = request.RoleId,
                 IsActive = true,
-                CreatedAt = DateTimeUtils.VietnamNow()
+                CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
             };
 
             var userId = await _unitOfWork.Users.CreateAsync(user);

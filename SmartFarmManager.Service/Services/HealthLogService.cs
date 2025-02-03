@@ -43,7 +43,7 @@ namespace SmartFarmManager.Service.Services
             var hasEveningMedication = prescription.PrescriptionMedications.Any(m => m.Evening > 0);
 
             // Lấy thời gian hiện tại
-            var now = DateTimeUtils.VietnamNow();
+            var now = DateTimeUtils.GetServerTimeInVietnamTime();
             var currentTime = now.TimeOfDay;
             var currentSession = SessionTime.GetCurrentSession(currentTime);
 
@@ -82,7 +82,7 @@ namespace SmartFarmManager.Service.Services
             var newLog = new HealthLog
             {
                 PrescriptionId = prescription.Id,
-                Date = DateTimeUtils.VietnamNow(),
+                Date = DateTimeUtils.GetServerTimeInVietnamTime(),
                 Notes = model.Notes,
                 Photo = model.Photo,
                 TaskId = model.TaskId

@@ -203,7 +203,7 @@ namespace SmartFarmManager.Service.Services
 
                     //create task in today and tomorow
                     // Lấy thời gian hiện tại và buổi hiện tại
-                    var currentTime = DateTimeUtils.VietnamNow().TimeOfDay;
+                    var currentTime = DateTimeUtils.GetServerTimeInVietnamTime().TimeOfDay;
                     var currentSession = SessionTime.GetCurrentSession(currentTime);
 
                     // Kiểm tra đơn thuốc có thuốc kê cho các buổi sáng, trưa, chiều, tối hay không
@@ -217,7 +217,7 @@ namespace SmartFarmManager.Service.Services
                     var taskType = await _unitOfWork.TaskTypes.FindByCondition(t => t.TaskTypeName == "Cho uống thuốc").FirstOrDefaultAsync();
 
                     // Tạo task cho ngày hiện tại
-                    DateOnly startDate = DateOnly.FromDateTime(DateTimeUtils.VietnamNow());
+                    DateOnly startDate = DateOnly.FromDateTime(DateTimeUtils.GetServerTimeInVietnamTime());
                     TimeSpan startTime = TimeSpan.Zero;
                     var assignedUserTodayId = await _userService.GetAssignedUserForCageAsync(cage.Id, startDate);
 
@@ -290,7 +290,7 @@ namespace SmartFarmManager.Service.Services
                             //Status = currentSession == 1 ? TaskStatusEnum.InProgress : TaskStatusEnum.Pending,
                             Status = TaskStatusEnum.Pending,
                             Session = (int)SessionTypeEnum.Morning,
-                            CreatedAt = DateTimeUtils.VietnamNow(),
+                            CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
                             PrescriptionId = newPrescription.Id,
                             IsTreatmentTask = true
                         });
@@ -314,7 +314,7 @@ namespace SmartFarmManager.Service.Services
                             DueDate = startDate.ToDateTime(TimeOnly.MinValue),
                             Status = TaskStatusEnum.Pending,
                             Session = (int)SessionTypeEnum.Noon,
-                            CreatedAt = DateTimeUtils.VietnamNow(),
+                            CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
                             PrescriptionId = newPrescription.Id,
                             IsTreatmentTask = true
                         });
@@ -338,7 +338,7 @@ namespace SmartFarmManager.Service.Services
                             DueDate = startDate.ToDateTime(TimeOnly.MinValue),
                             Status = TaskStatusEnum.Pending,
                             Session = (int)SessionTypeEnum.Afternoon,
-                            CreatedAt = DateTimeUtils.VietnamNow(),
+                            CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
                             PrescriptionId = newPrescription.Id,
                             IsTreatmentTask = true
                         });
@@ -362,7 +362,7 @@ namespace SmartFarmManager.Service.Services
                             DueDate = startDate.ToDateTime(TimeOnly.MinValue),
                             Status = TaskStatusEnum.Pending,
                             Session = (int)SessionTypeEnum.Evening,
-                            CreatedAt = DateTimeUtils.VietnamNow(),
+                            CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
                             PrescriptionId = newPrescription.Id,
                             IsTreatmentTask = true
                         });
@@ -397,7 +397,7 @@ namespace SmartFarmManager.Service.Services
                                     DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
                                     Status = TaskStatusEnum.Pending,
                                     Session = (int)SessionTypeEnum.Morning,
-                                    CreatedAt = DateTimeUtils.VietnamNow(),
+                                    CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
                                     PrescriptionId = newPrescription.Id,
                                     IsTreatmentTask = true
                                 });
@@ -424,7 +424,7 @@ namespace SmartFarmManager.Service.Services
                                     DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
                                     Status = TaskStatusEnum.Pending,
                                     Session = (int)SessionTypeEnum.Noon,
-                                    CreatedAt = DateTimeUtils.VietnamNow(),
+                                    CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
                                     PrescriptionId = newPrescription.Id,
                                     IsTreatmentTask = true
                                 });
@@ -451,7 +451,7 @@ namespace SmartFarmManager.Service.Services
                                     DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
                                     Status = TaskStatusEnum.Pending,
                                     Session = (int)SessionTypeEnum.Afternoon,
-                                    CreatedAt = DateTimeUtils.VietnamNow(),
+                                    CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
                                     PrescriptionId = newPrescription.Id,
                                     IsTreatmentTask = true
                                 });
@@ -478,7 +478,7 @@ namespace SmartFarmManager.Service.Services
                                     DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
                                     Status = TaskStatusEnum.Pending,
                                     Session = (int)SessionTypeEnum.Evening,
-                                    CreatedAt = DateTimeUtils.VietnamNow(),
+                                    CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
                                     PrescriptionId = newPrescription.Id,
                                     IsTreatmentTask = true
                                 });
@@ -507,7 +507,7 @@ namespace SmartFarmManager.Service.Services
         public async Task<Guid?> CreateMedicalSymptomAsync(MedicalSymptomModel medicalSymptomModel)
         {
             // Lấy ngày hiện tại theo múi giờ Việt Nam
-            DateOnly currentDate = DateOnly.FromDateTime(DateTimeUtils.VietnamNow());
+            DateOnly currentDate = DateOnly.FromDateTime(DateTimeUtils.GetServerTimeInVietnamTime());
 
             // Tìm giai đoạn phát triển hiện tại
             var growthStage = await _unitOfWork.GrowthStages
@@ -530,7 +530,7 @@ namespace SmartFarmManager.Service.Services
                 Status = MedicalSymptomStatuseEnum.Pending,
                 AffectedQuantity = medicalSymptomModel.AffectedQuantity,
                 Notes = medicalSymptomModel.Notes,
-                CreateAt = DateTimeUtils.VietnamNow()
+                CreateAt = DateTimeUtils.GetServerTimeInVietnamTime()
             };
             // Bước 2: Lưu đối tượng MedicalSymptom vào cơ sở dữ liệu
             await _unitOfWork.MedicalSymptom.CreateAsync(medicalSymptom);

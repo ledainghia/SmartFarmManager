@@ -91,7 +91,7 @@ namespace SmartFarmManager.Service.Services
             {
                 CageId = cageId,
                 StaffFarmId = userId,
-                AssignedDate = DateTimeUtils.VietnamNow()
+                AssignedDate = DateTimeUtils.GetServerTimeInVietnamTime()
             };
 
             await _unitOfWork.CageStaffs.CreateAsync(cageStaff);

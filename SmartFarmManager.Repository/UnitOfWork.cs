@@ -48,6 +48,8 @@ namespace SmartFarmManager.Repository
         public IDiseaseRepositoy Diseases { get; }
         public IStandardPrescriptionRepository StandardPrescriptions { get; }
         public IFoodStackRepository FoodStacks { get; }
+
+        public INotificationRepository Notifications { get; }
         public UnitOfWork(SmartFarmContext context, IUserRepository users,
             ITaskTypeRepository taskTypes,
             ITaskRepository tasks,

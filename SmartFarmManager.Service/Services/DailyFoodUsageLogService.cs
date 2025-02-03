@@ -54,7 +54,7 @@ namespace SmartFarmManager.Service.Services
                 ActualWeight = model.ActualWeight,
                 Notes = model.Notes,
                 Photo = model.Photo,
-                LogTime = DateTimeUtils.VietnamNow(),
+                LogTime = DateTimeUtils.GetServerTimeInVietnamTime(),
                 TaskId = model.TaskId,
             };
 
