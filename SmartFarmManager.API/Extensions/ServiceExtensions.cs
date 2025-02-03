@@ -35,6 +35,8 @@ namespace SmartFarmManager.API.Extensions
                         x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
                         x.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
                     }); // Ngăn không tuần tự hóa vòng lặp
+            
+
 
             services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
             services.AddMemoryCache();

@@ -97,7 +97,7 @@ namespace SmartFarmManager.API.Controllers
         [HttpGet("server-time")]
         public IActionResult GetServerTime()
         {
-            var serverTime = DateTimeOffset.Now;
+            var serverTime = DateTimeOffset.Now.ToOffset(TimeSpan.FromHours(7));
             return Ok(ApiResult<DateTimeOffset>.Succeed(serverTime));
         }
         [HttpGet("check-timezone")]
