@@ -224,7 +224,8 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<ITaskTypeService, TaskTypeService>();
             services.AddScoped<IRoleService, RoleService>(); 
             services.AddScoped<IFarmService, FarmService>();
-            services.AddScoped<INotificationService,NotificationService>();
+            services.AddScoped<INotificationService,NotificationUserService>();
+            services.AddScoped<NotificationService>();
             services.AddScoped<IAnimalTemplateService, AnimalTemplateService>();
             services.AddScoped<IGrowthStageTemplateService,GrowthStageTemplateService>();
             services.AddScoped<ITaskDailyTemplateService, TaskDailyTemplateService>();
