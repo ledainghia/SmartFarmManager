@@ -97,12 +97,60 @@ namespace SmartFarmManager.API.Controllers
         [HttpGet("server-time")]
         public IActionResult GetServerTime()
         {
-            var serverTime = DateTime.Now;
-            //var dayOfWeek = serverTime.ToString("dddd", new System.Globalization.CultureInfo("vi-VN")); // Lấy thứ bằng tiếng Việt
-            //var formattedTime = $"{dayOfWeek}, {serverTime:dd/MM/yyyy, HH:mm:ss}";
-            return Ok(ApiResult<DateTime>.Succeed(serverTime));
+            var serverTime = DateTimeOffset.Now.ToOffset(TimeSpan.FromHours(7));
+            return Ok(ApiResult<DateTimeOffset>.Succeed(serverTime));
+        }
+        [HttpGet("check-timezone")]
+        public IActionResult CheckTimeZone()
+        {
+            return Ok(new
+            {
+                ServerTime = DateTime.Now,
+                UTCTime = DateTime.UtcNow,
+                TimeZone = TimeZoneInfo.Local.Id
+            });
         }
 
 
+        [HttpPut("{userId}/device")]
+        public async Task<IActionResult> UpdateUserDeviceId(Guid userId, [FromBody] string deviceId )
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
+                {
+                    { "Errors", errors.ToArray() }
+                }));
+            }
+
+            try
+            {
+                var result = await _userService.UpdateUserDeviceIdAsync(userId, deviceId);
+
+                if (!result)
+                {
+                    return BadRequest(ApiResult<string>.Fail("Lỗi không thể cập nhật. Vui lòng thử lại"));
+                }
+
+                return Ok(ApiResult<string>.Succeed("Cập nhật id thiết bị thành công"));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred. Please contact support."));
+            }
+        }
     }
 }

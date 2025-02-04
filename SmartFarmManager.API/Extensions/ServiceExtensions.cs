@@ -35,6 +35,8 @@ namespace SmartFarmManager.API.Extensions
                         x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
                         x.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
                     }); // Ngăn không tuần tự hóa vòng lặp
+            
+
 
             services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
             services.AddMemoryCache();
@@ -202,6 +204,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IDiseaseRepositoy, DiseaseRepository>();
             services.AddScoped<IStandardPrescriptionRepository, StandardPrescriptionRepository>();
             services.AddScoped<IFoodStackRepository, FoodStackRepository>();
+            services.AddScoped<INotificationRepository, NotificationRepository>();
             return services;
         }
 
@@ -221,7 +224,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<ITaskTypeService, TaskTypeService>();
             services.AddScoped<IRoleService, RoleService>(); 
             services.AddScoped<IFarmService, FarmService>();
-            services.AddScoped<NotificationService>();
+            services.AddScoped<INotificationService,NotificationService>();
             services.AddScoped<IAnimalTemplateService, AnimalTemplateService>();
             services.AddScoped<IGrowthStageTemplateService,GrowthStageTemplateService>();
             services.AddScoped<ITaskDailyTemplateService, TaskDailyTemplateService>();

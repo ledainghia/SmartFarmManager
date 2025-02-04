@@ -216,7 +216,7 @@ namespace SmartFarmManager.Service.Services
 
                 // **Chuyển trạng thái sang Active**
                 farmingBatch.Status = FarmingBatchStatusEnum.Active;
-                farmingBatch.StartDate = DateTimeUtils.VietnamNow();
+                farmingBatch.StartDate = DateTimeUtils.GetServerTimeInVietnamTime();
 
                 var currentStartDate = farmingBatch.StartDate;
 
@@ -249,11 +249,11 @@ namespace SmartFarmManager.Service.Services
                                 (vaccineSchedule.ApplicationAge ?? 0) - (stage.AgeStart ?? 0)
                             );
 
-                            if (vaccineSchedule.Date > DateTimeUtils.VietnamNow().Date)
+                            if (vaccineSchedule.Date > DateTimeUtils.GetServerTimeInVietnamTime().Date)
                             {
                                 vaccineSchedule.Status = VaccineScheduleStatusEnum.Upcoming;
                             }
-                            else if (vaccineSchedule.Date == DateTimeUtils.VietnamNow().Date)
+                            else if (vaccineSchedule.Date == DateTimeUtils.GetServerTimeInVietnamTime().Date)
                             {
                                 vaccineSchedule.Status = VaccineScheduleStatusEnum.Completed;
                             }
@@ -280,7 +280,7 @@ namespace SmartFarmManager.Service.Services
             {
                 // **Chuyển trạng thái sang Completed**
                 farmingBatch.Status = FarmingBatchStatusEnum.Completed;
-                farmingBatch.CompleteAt = DateTimeUtils.VietnamNow();
+                farmingBatch.CompleteAt = DateTimeUtils.GetServerTimeInVietnamTime();
 
                 foreach (var stage in farmingBatch.GrowthStages)
                 {
@@ -434,7 +434,7 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<FarmingBatchModel> GetActiveFarmingBatchByCageIdAsync(Guid cageId)
         {
-            var currentDate = DateOnly.FromDateTime(DateTimeUtils.VietnamNow());
+            var currentDate = DateOnly.FromDateTime(DateTimeUtils.GetServerTimeInVietnamTime());
 
             // Tìm FarmingBatch theo CageId và các điều kiện
             var farmingBatch = await _unitOfWork.FarmingBatches.FindByCondition(

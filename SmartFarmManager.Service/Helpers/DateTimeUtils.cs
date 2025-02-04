@@ -27,5 +27,16 @@ namespace SmartFarmManager.Service.Helpers
         {
             return ConvertToVietnamTime(DateTime.UtcNow);
         }
+        public static DateTime GetServerTimeInVietnamTime()
+        {
+            // Lấy giờ theo múi giờ server
+            DateTime serverTime = DateTime.Now;
+
+            // Chuyển giờ server sang múi giờ UTC
+            DateTimeOffset serverTimeOffset = new DateTimeOffset(serverTime, TimeZoneInfo.Local.GetUtcOffset(serverTime));
+
+            // Chuyển từ giờ server sang múi giờ Việt Nam
+            return TimeZoneInfo.ConvertTime(serverTimeOffset, VietnamTimeZone).DateTime;
+        }
     }
 }

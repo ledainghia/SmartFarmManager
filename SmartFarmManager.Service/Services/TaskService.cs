@@ -110,7 +110,7 @@ namespace SmartFarmManager.Service.Services
         public async Task<bool> CreateTaskAsync(CreateTaskModel model)
         {
             // 1. Kiểm tra DueDate
-            if (model.DueDate < DateTimeUtils.VietnamNow())
+            if (model.DueDate < DateTimeUtils.GetServerTimeInVietnamTime())
             {
                 throw new ArgumentException("Ngày thực hiện phải ở tương lai.");
             }
@@ -237,7 +237,7 @@ namespace SmartFarmManager.Service.Services
                     Description = model.Description,
                     DueDate = model.DueDate,
                     Session = session,
-                    CreatedAt = DateTimeUtils.VietnamNow(),
+                    CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
                     Status = TaskStatusEnum.Pending
                 };
 
@@ -380,7 +380,7 @@ namespace SmartFarmManager.Service.Services
             }
 
             // 3. Kiểm tra giờ của session
-            var currentTime = DateTimeUtils.VietnamNow().TimeOfDay;
+            var currentTime = DateTimeUtils.GetServerTimeInVietnamTime().TimeOfDay;
             if ((SessionTypeEnum)task.Session == SessionTypeEnum.Morning && (currentTime < SessionTime.Morning.Start || currentTime >= SessionTime.Morning.End) ||
     (SessionTypeEnum)task.Session == SessionTypeEnum.Noon && (currentTime < SessionTime.Noon.Start || currentTime >= SessionTime.Noon.End) ||
     (SessionTypeEnum)task.Session == SessionTypeEnum.Afternoon && (currentTime < SessionTime.Afternoon.Start || currentTime >= SessionTime.Afternoon.End) ||
@@ -391,7 +391,7 @@ namespace SmartFarmManager.Service.Services
 
             if (status == TaskStatusEnum.Done)
             {
-                task.CompletedAt = DateTimeUtils.VietnamNow(); 
+                task.CompletedAt = DateTimeUtils.GetServerTimeInVietnamTime(); 
             }
             else
             {
@@ -403,7 +403,7 @@ namespace SmartFarmManager.Service.Services
             var statusLog = new StatusLog
             {
                 TaskId = task.Id,
-                UpdatedAt = DateTimeUtils.VietnamNow(),
+                UpdatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
                 Status = status
             };
 
@@ -999,7 +999,7 @@ namespace SmartFarmManager.Service.Services
             if (newDueDate.HasValue)
             {
                 // 4.1 Kiểm tra ngày hợp lệ (chỉ cho phép hôm nay hoặc ngày mai)
-                var currentDate = DateTimeUtils.VietnamNow().Date;
+                var currentDate = DateTimeUtils.GetServerTimeInVietnamTime().Date;
                 if (newDueDate.Value.Date < currentDate || newDueDate.Value.Date > currentDate.AddDays(1))
                 {
                     throw new InvalidOperationException("You can only update tasks scheduled for today or tomorrow.");
@@ -1075,7 +1075,7 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<bool> GenerateTasksForTodayAsync()
         {
-            var today = DateTimeUtils.VietnamNow().Date;
+            var today = DateTimeUtils.GetServerTimeInVietnamTime().Date;
 
             // Lấy tất cả các FarmingBatch đang ở trạng thái Active
             var activeBatches = await _unitOfWork.FarmingBatches
@@ -1133,7 +1133,7 @@ namespace SmartFarmManager.Service.Services
                                     DueDate = today,
                                     Session = taskDaily.Session,
                                     Status = TaskStatusEnum.Pending,
-                                    CreatedAt = DateTimeUtils.VietnamNow()
+                                    CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
                                 });
                             }
                         }
@@ -1165,7 +1165,7 @@ namespace SmartFarmManager.Service.Services
                                     DueDate = today,
                                     Session = 1,
                                     Status = TaskStatusEnum.Pending,
-                                    CreatedAt = DateTimeUtils.VietnamNow()
+                                    CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
                                 });
 
                                 // Cập nhật trạng thái của VaccineSchedule
@@ -1202,7 +1202,7 @@ namespace SmartFarmManager.Service.Services
                         DueDate = today,    
                         Session = 1,
                         Status = TaskStatusEnum.Pending,
-                        CreatedAt = DateTimeUtils.VietnamNow()
+                        CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
                     });
                 }
             }
@@ -1220,7 +1220,7 @@ namespace SmartFarmManager.Service.Services
         public async Task<bool> GenerateTasksForTomorrowAsync()
         {
             // Lấy ngày hôm nay theo giờ Việt Nam
-            var today = DateTimeUtils.VietnamNow().Date;
+            var today = DateTimeUtils.GetServerTimeInVietnamTime().Date;
 
             // Lấy ngày cần generate task (ngày mai)
             var targetDate = today.AddDays(1);
@@ -1275,7 +1275,7 @@ namespace SmartFarmManager.Service.Services
                                 DueDate = targetDate,
                                 Session = taskDaily.Session,
                                 Status = TaskStatusEnum.Pending,
-                                CreatedAt = DateTimeUtils.VietnamNow()
+                                CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
                             });
                         }
 
@@ -1296,7 +1296,7 @@ namespace SmartFarmManager.Service.Services
                                     DueDate = targetDate,
                                     Session = vaccineSchedule.Session,
                                     Status = TaskStatusEnum.Pending,
-                                    CreatedAt = DateTimeUtils.VietnamNow()
+                                    CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
                                 });
 
                                 vaccineSchedule.Status = VaccineScheduleStatusEnum.Completed;
@@ -1320,7 +1320,7 @@ namespace SmartFarmManager.Service.Services
         public async Task<bool> GenerateTreatmentTasksAsync()
         {
             // Lấy ngày hôm nay theo giờ Việt Nam
-            var today = DateTimeUtils.VietnamNow().Date;
+            var today = DateTimeUtils.GetServerTimeInVietnamTime().Date;
 
             // Lấy ngày cần generate task (ngày mai)
             var targetDate = today.AddDays(1);
@@ -1384,7 +1384,7 @@ namespace SmartFarmManager.Service.Services
                             DueDate = targetDate,
                             Session = sessionTask.Session,
                             Status = TaskStatusEnum.Pending,
-                            CreatedAt = DateTimeUtils.VietnamNow(),
+                            CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
                             IsTreatmentTask = true,
                             PrescriptionId = prescription.Id
                         });
@@ -1477,8 +1477,8 @@ namespace SmartFarmManager.Service.Services
         {
             try
             {
-                var today = DateTimeUtils.VietnamNow().Date; // Lấy ngày hôm nay
-                var currentTime = DateTimeUtils.VietnamNow().TimeOfDay; // Lấy giờ hiện tại
+                var today = DateTimeUtils.GetServerTimeInVietnamTime().Date; // Lấy ngày hôm nay
+                var currentTime = DateTimeUtils.GetServerTimeInVietnamTime().TimeOfDay; // Lấy giờ hiện tại
 
                 var currentSession = SessionTime.GetCurrentSession(currentTime);
 
@@ -1517,7 +1517,7 @@ namespace SmartFarmManager.Service.Services
                         var statusLog = new StatusLog
                         {
                             TaskId = task.Id,
-                            UpdatedAt = DateTimeUtils.VietnamNow(),
+                            UpdatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
                             Status = task.Status
                         };
                         await _unitOfWork.StatusLogs.CreateAsync(statusLog);
@@ -1538,8 +1538,8 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<bool> GenerateTasksForFarmingBatchAsync(Guid farmingBatchId)
         {
-            var today = DateTimeUtils.VietnamNow().Date;
-            var currentTime = DateTimeUtils.VietnamNow().TimeOfDay;
+            var today = DateTimeUtils.GetServerTimeInVietnamTime().Date;
+            var currentTime = DateTimeUtils.GetServerTimeInVietnamTime().TimeOfDay;
             var tomorrow = today.AddDays(1);
 
             // Lấy FarmingBatch
@@ -1629,7 +1629,7 @@ namespace SmartFarmManager.Service.Services
                                 DueDate = date.Add(sessionEndTime),
                                 Session = taskDaily.Session,
                                 Status = TaskStatusEnum.Pending,
-                                CreatedAt = DateTimeUtils.VietnamNow()
+                                CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
                             });
                         }
                     }
@@ -1661,7 +1661,7 @@ namespace SmartFarmManager.Service.Services
                                 DueDate = date.Add(GetSessionEndTime(1)),
                                 Session = vaccineSchedule.Session,
                                 Status = TaskStatusEnum.Pending,
-                                CreatedAt = DateTimeUtils.VietnamNow()
+                                CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
                             });
 
                             // Cập nhật trạng thái của VaccineSchedule
@@ -1698,7 +1698,7 @@ namespace SmartFarmManager.Service.Services
                     DueDate = date.Add(GetSessionEndTime(1)),
                     Session = 1,
                     Status = TaskStatusEnum.Pending,
-                    CreatedAt = DateTimeUtils.VietnamNow()
+                    CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
                 });
             }
 
@@ -1707,7 +1707,7 @@ namespace SmartFarmManager.Service.Services
         public async Task<bool> GenerateTreatmentTasksAsyncV2()
         {
             // Lấy ngày hôm nay theo giờ Việt Nam
-            var today = DateTimeUtils.VietnamNow().Date;
+            var today = DateTimeUtils.GetServerTimeInVietnamTime().Date;
 
             // Lấy ngày cần generate task (ngày mai)
             var targetDate = today.AddDays(1);
@@ -1790,7 +1790,7 @@ namespace SmartFarmManager.Service.Services
                         DueDate = targetDate,
                         Session = session,
                         Status = TaskStatusEnum.Pending,
-                        CreatedAt = DateTimeUtils.VietnamNow(),
+                        CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
                         IsTreatmentTask = true,
                         PrescriptionId = prescription.Id
                     });
@@ -1835,7 +1835,7 @@ namespace SmartFarmManager.Service.Services
         {
             try
             {
-                var today = DateTimeUtils.VietnamNow().Date; // Lấy ngày hôm nay
+                var today = DateTimeUtils.GetServerTimeInVietnamTime().Date; // Lấy ngày hôm nay
                 var tasks = await _unitOfWork.Tasks
                     .FindByCondition(t => t.DueDate == today && t.Session == (int)SessionTypeEnum.Evening)
                     .ToListAsync();
@@ -1854,7 +1854,7 @@ namespace SmartFarmManager.Service.Services
                         var statusLog = new StatusLog
                         {
                             TaskId = task.Id,
-                            UpdatedAt = DateTimeUtils.VietnamNow(),
+                            UpdatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
                             Status = task.Status
                         };
                         await _unitOfWork.StatusLogs.CreateAsync(statusLog);
