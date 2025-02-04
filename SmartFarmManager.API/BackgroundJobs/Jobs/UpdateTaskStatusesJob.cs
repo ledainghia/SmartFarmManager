@@ -1,4 +1,5 @@
 ﻿using Quartz;
+using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 
 namespace SmartFarmManager.API.BackgroundJobs.Jobs
@@ -16,7 +17,7 @@ namespace SmartFarmManager.API.BackgroundJobs.Jobs
         {
             try
             {
-                Console.WriteLine($"Running UpdateTaskStatusesJob at: {DateTime.UtcNow}");
+                Console.WriteLine($"Running UpdateTaskStatusesJob at: {DateTimeUtils.GetServerTimeInVietnamTime()}");
                 var result = await _taskService.UpdateAllTaskStatusesAsync();
                 Console.WriteLine($"UpdateTaskStatusesJob completed with result: {result}");
             }
