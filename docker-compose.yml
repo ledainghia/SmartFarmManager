@@ -37,8 +37,6 @@ services:
       - CLOUDMESSAGE_AUTH_PROVIDER_X509_CERT_URL=https://www.googleapis.com/oauth2/v1/certs
       - CLOUDMESSAGE_CLIENT_X509_CERT_URL=https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-3z8ou%40smartfarm-b1eb0.iam.gserviceaccount.com
       - CLOUDMESSAGE_UNIVERSE_DOMAIN=googleapis.com
-    depends_on:
-      - database
     restart: unless-stopped
 
 volumes:
