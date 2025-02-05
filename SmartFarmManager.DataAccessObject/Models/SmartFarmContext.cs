@@ -49,7 +49,8 @@ public partial class SmartFarmContext : DbContext
     {
 
 
-        optionsBuilder.UseSqlServer("Server=103.48.193.165,5053;Database=Farm3;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;");
+        optionsBuilder.UseSqlServer("Server=89.40.1.82,5053;Database=Farm;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;");
+            //optionsBuilder.UseSqlServer("Server=103.48.193.165,5053;Database=Farm3;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;");
 
     }
 
