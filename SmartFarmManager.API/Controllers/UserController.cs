@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Org.BouncyCastle.Security;
 using SmartFarmManager.API.Common;
+using SmartFarmManager.API.Payloads.Requests.User;
 using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Cages;
 using SmartFarmManager.Service.BusinessModels.Farm;
@@ -113,7 +114,7 @@ namespace SmartFarmManager.API.Controllers
 
 
         [HttpPut("{userId}/device")]
-        public async Task<IActionResult> UpdateUserDeviceId(Guid userId, [FromBody] string deviceId )
+        public async Task<IActionResult> UpdateUserDeviceId(Guid userId, [FromBody] UpdateDeviceIdRequest deviceIdRequest )
         {
             if (!ModelState.IsValid)
             {
@@ -130,7 +131,7 @@ namespace SmartFarmManager.API.Controllers
 
             try
             {
-                var result = await _userService.UpdateUserDeviceIdAsync(userId, deviceId);
+                var result = await _userService.UpdateUserDeviceIdAsync(userId, deviceIdRequest.DeviceId);
 
                 if (!result)
                 {
