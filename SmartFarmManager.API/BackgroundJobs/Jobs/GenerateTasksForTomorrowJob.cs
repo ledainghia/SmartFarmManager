@@ -14,7 +14,7 @@
 
         public async Task Execute(IJobExecutionContext context)
         {
-            Console.WriteLine("Generating tasks for tomorrow...");
+            Console.WriteLine($"Generating tasks for tomorrow... {DateTime.Now}");
             await _taskService.GenerateTasksForTomorrowAsync();
             await _taskService.GenerateTreatmentTasksAsyncV2();
         }
