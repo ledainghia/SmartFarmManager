@@ -39,7 +39,7 @@ namespace SmartFarmManager.API.Controllers
                 Content = "This is a sample notification",
                 CreatedAt = DateTime.UtcNow,
                 IsRead = false,
-                FarmId = 1,
+                //FarmId = 1,
                 CageId = 2
             };
 
