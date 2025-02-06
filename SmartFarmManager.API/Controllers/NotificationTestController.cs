@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Service.Services;
 
 namespace SmartFarmManager.API.Controllers
@@ -24,6 +25,26 @@ namespace SmartFarmManager.API.Controllers
         {
             var response = await _notificationService.SendNotification(Token, Title, Body);
             return Ok(response);
+        }
+
+        [HttpPost("notification-body")]
+        [AllowAnonymous]
+        public async Task<IActionResult> PushNotification(string Token, string Title)
+        {
+            // Tạo mẫu dữ liệu Notification
+            var sampleNotification = new Notification
+            {
+                UserId = Guid.NewGuid(),
+                NotiTypeId = Guid.NewGuid(),
+                Content = "This is a sample notification",
+                CreatedAt = DateTime.UtcNow,
+                IsRead = false,
+                FarmId = 1,
+                CageId = 2
+            };
+
+            var response = await _notificationService.SendNotification(Token, Title, sampleNotification);
+            return Ok(new { MessageId = response });
         }
     }
 }
