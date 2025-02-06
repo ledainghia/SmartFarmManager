@@ -20,7 +20,7 @@ public partial class Notification : EntityBase
     public Guid? TaskId { get; set; }
     public Guid? MedicalSymptomId {get;set;}
 
-    public int? CageId { get; set; }
+    public Guid? CageId { get; set; }
 
     public virtual NotificationType NotiType { get; set; }
 

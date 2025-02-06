@@ -44,6 +44,7 @@ namespace SmartFarmManager.Repository.Interfaces
         IStandardPrescriptionRepository StandardPrescriptions { get; }
         IFoodStackRepository FoodStacks { get; }
         INotificationRepository Notifications { get; }
+        INotificationTypeRepository NotificationsTypes { get; }
         Task<int> CommitAsync();
         System.Threading.Tasks.Task BeginTransactionAsync();
         System.Threading.Tasks.Task RollbackAsync();
