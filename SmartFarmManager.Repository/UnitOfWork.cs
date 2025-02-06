@@ -48,8 +48,8 @@ namespace SmartFarmManager.Repository
         public IDiseaseRepositoy Diseases { get; }
         public IStandardPrescriptionRepository StandardPrescriptions { get; }
         public IFoodStackRepository FoodStacks { get; }
-
         public INotificationRepository Notifications { get; }
+        public INotificationTypeRepository NotificationsTypes { get; }
         public UnitOfWork(SmartFarmContext context, IUserRepository users,
             ITaskTypeRepository taskTypes,
             ITaskRepository tasks,
@@ -83,7 +83,9 @@ namespace SmartFarmManager.Repository
             ISymptomRepository symptoms,
             IDiseaseRepositoy diseases,
             IStandardPrescriptionRepository standardPrescriptions,
-            IFoodStackRepository foodStacks)
+            IFoodStackRepository foodStacks,
+            INotificationRepository notifications,
+            INotificationTypeRepository notificationTypes)
         {
             _context = context;
             Users = users;
@@ -121,6 +123,8 @@ namespace SmartFarmManager.Repository
             Diseases = diseases;
             StandardPrescriptions = standardPrescriptions;
             FoodStacks = foodStacks;
+            Notifications = notifications;
+            NotificationsTypes = notificationTypes;
         }
          
 

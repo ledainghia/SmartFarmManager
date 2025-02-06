@@ -1,5 +1,6 @@
 ﻿using MailKit.Search;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 using Org.BouncyCastle.Utilities.Date;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
@@ -24,11 +25,13 @@ namespace SmartFarmManager.Service.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserService _userService;
+        private readonly NotificationService notificationService;
 
-        public MedicalSymptomService(IUnitOfWork unitOfWork, IUserService userService)
+        public MedicalSymptomService(IUnitOfWork unitOfWork, IUserService userService, NotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _userService = userService;
+            this.notificationService = notificationService;
         }
 
         public async Task<IEnumerable<MedicalSymptomModel>> GetMedicalSymptomsAsync(string? status, DateTime? startDate, DateTime? endDate, string? searchTerm)
@@ -550,12 +553,26 @@ namespace SmartFarmManager.Service.Services
                 DateCaptured = p.DateCaptured
             }).ToList();
 
-
+            //Notification realtime
+            var vetFarm = await _unitOfWork.Users.FindByCondition(u => u.Role.RoleName == "Vet").FirstOrDefaultAsync();
+            var notiType = await _unitOfWork.NotificationsTypes.FindByCondition(nt => nt.NotiTypeName == "MedicalSymptom").FirstOrDefaultAsync();
+            var notification = new Notification
+            {
+                UserId = vetFarm.Id,
+                NotiTypeId = notiType.Id,
+                Content = "Có báo cáo triệu chứng mới",
+                CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                IsRead = false,
+                MedicalSymptomId = medicalSymptom.Id,
+                //CageId = farmingBatches.CageId
+            };
+            await notificationService.SendNotification(vetFarm.DeviceId, "Có báo cáo triệu chứng mới", notification);
 
             // Bước 6: Cập nhật lại MedicalSymptom
             await _unitOfWork.Pictures.CreateListAsync(pictures);
             await _unitOfWork.MedicalSymptomDetails.CreateListAsync(medicalSymptomDetails);
             await _unitOfWork.CommitAsync();
+
 
             return medicalSymptom.Id;
         }

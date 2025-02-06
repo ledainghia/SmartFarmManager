@@ -205,6 +205,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IStandardPrescriptionRepository, StandardPrescriptionRepository>();
             services.AddScoped<IFoodStackRepository, FoodStackRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
+            services.AddScoped<INotificationTypeRepository, NotifitcationTypeRepository>();
             return services;
         }
 
