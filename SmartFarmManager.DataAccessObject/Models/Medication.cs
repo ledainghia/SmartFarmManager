@@ -7,13 +7,17 @@ namespace SmartFarmManager.DataAccessObject.Models;
 
 public partial class Medication : EntityBase
 {
-    public string Name { get; set; }
+    public string Name { get; set; } // Tên thuốc
 
-    public string UsageInstructions { get; set; }
+    public string UsageInstructions { get; set; } // Hướng dẫn sử dụng
 
-    public decimal? Price { get; set; }
+    public decimal? Price { get; set; } // Giá của thuốc
 
-    public int? DoseQuantity { get; set; }
+    public int? DoseWeight { get; set; } // Khối lượng liều (tính theo mg)
+
+    public int? Weight { get; set; } // Khối lượng thuốc (tính theo mg)
+
+    public int? DoseQuantity { get; set; } // Số lượng liều (tính theo mg)
 
     public decimal? PricePerDose { get; set; }
 

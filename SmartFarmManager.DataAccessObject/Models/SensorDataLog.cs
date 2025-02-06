@@ -10,7 +10,7 @@ public partial class SensorDataLog : EntityBase
 
     public Guid SensorId { get; set; }
 
-    public decimal Data { get; set; }
+    public string Data { get; set; }
 
     public DateTime CreatedDate { get; set; }
 
