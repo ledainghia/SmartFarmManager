@@ -17,8 +17,8 @@ public partial class Notification : EntityBase
     public DateTime? CreatedAt { get; set; }
 
     public bool? IsRead { get; set; }
-
-    public int? FarmId { get; set; }
+    public Guid? TaskId { get; set; }
+    public Guid? MedicalSymptomId {get;set;}
 
     public int? CageId { get; set; }
 
