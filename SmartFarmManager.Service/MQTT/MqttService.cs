@@ -162,9 +162,19 @@ namespace SmartFarmManager.Service.MQTT
         // Nhận thông điệp từ MQTT broker
         private Task OnMessageReceivedHandler(MqttApplicationMessageReceivedEventArgs e)
         {
-            //var message = e.ApplicationMessage;
-            //var payload = Encoding.UTF8.GetString(message.PayloadSegment);
-            //OnMessageReceived?.Invoke(this, payload);
+            // Lấy thông điệp MQTT và nội dung của nó
+            var message = e.ApplicationMessage;
+            var payload = Encoding.UTF8.GetString(message.PayloadSegment);  // Chuyển payload từ byte sang string
+
+            // Lấy topic mà thông điệp đã được gửi tới
+            var topic = message.Topic ?? string.Empty;
+
+            // Log thông tin thông điệp nhận được
+            _logger.LogInformation("Received message from topic: {Topic}, Message: {Message}", topic, payload);
+
+            // Gọi event để thông báo cho các phần khác trong hệ thống về thông điệp
+            OnMessageReceived?.Invoke(this, payload);
+
             return Task.CompletedTask;
         }
     }
