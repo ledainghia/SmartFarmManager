@@ -8,7 +8,6 @@ namespace SmartFarmManager.DataAccessObject.Models
 {
     public partial class MasterData : EntityBase
     {
-        public Guid Id { get; set; } // Khóa chính
 
         public string CostType { get; set; } // Loại chi phí (Điện, Nước, Nhân công, v.v.)
 
