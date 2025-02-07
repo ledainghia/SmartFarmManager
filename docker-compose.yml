@@ -14,10 +14,11 @@ services:
     deploy:
       resources:
         limits:
-          memory: 3g
+          memory: 2g
 
   backend:
     build:
+       context: .
       dockerfile: Dockerfile
     container_name: backend
     ports:
