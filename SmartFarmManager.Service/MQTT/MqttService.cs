@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Options;
 using MQTTnet.Packets;
 using MQTTnet.Protocol;
+using MQTTnet.Client;
 using MQTTnet;
 using SmartFarmManager.Service.Settings;
 using System;

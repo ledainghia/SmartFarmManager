@@ -21,6 +21,7 @@ using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Newtonsoft.Json;
 using SmartFarmManager.Service.Configuration;
+using SmartFarmManager.Service.MQTT;
 
 
 namespace SmartFarmManager.API.Extensions
@@ -130,7 +131,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddCors(option =>
                option.AddPolicy("CORS", builder =>
                    builder.AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin()));
-            services.AddInfrastructureServices();
+            services.AddInfrastructureServices(configuration);
             services.AddSignalR();
 
 
@@ -155,13 +156,14 @@ namespace SmartFarmManager.API.Extensions
             
             return services;
         }
-        private static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
+        private static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
 
             services.AddRepositories();
             services.AddApplicationServices();
             services.AddConfigurations();
             services.AddQuartzServices();
+            services.AddMqttClientService(configuration);
 
             return services;
         }
@@ -254,6 +256,15 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<JwtSettings>();
             services.AddSingleton<JwtSecurityTokenHandler>();
             return services;
+        }
+        private static void AddMqttClientService(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.Configure<MqttClientSetting>(configuration.GetSection(MqttClientSetting.Section));
+
+         
+            services.AddSingleton<IMqttService, MqttService>();
+
+            
         }
 
 
