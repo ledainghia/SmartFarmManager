@@ -564,7 +564,7 @@ namespace SmartFarmManager.Service.Services
                 CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
                 IsRead = false,
                 MedicalSymptomId = medicalSymptom.Id,
-                //CageId = farmingBatches.CageId
+                CageId = farmingBatches.CageId
             };
             await notificationService.SendNotification(vetFarm.DeviceId, "Có báo cáo triệu chứng mới", notification);
 
