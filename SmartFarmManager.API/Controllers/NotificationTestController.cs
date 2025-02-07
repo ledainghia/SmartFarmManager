@@ -40,7 +40,7 @@ namespace SmartFarmManager.API.Controllers
                 CreatedAt = DateTime.UtcNow,
                 IsRead = false,
                 //FarmId = 1,
-                CageId = 2
+                CageId = Guid.NewGuid()
             };
 
             var response = await _notificationService.SendNotification(Token, Title, sampleNotification);

@@ -13,6 +13,9 @@ namespace SmartFarmManager.Service.BusinessModels.Notification
         public string Content { get; set; }
         public DateTime? CreatedAt { get; set; }
         public bool? IsRead { get; set; }
+        public Guid? TaskId { get; set; }
+        public Guid? MedicalSymptomId { get; set; }
+        public Guid? CageId { get; set; }
     }
 
 }
