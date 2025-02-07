@@ -43,4 +43,6 @@ public partial class Farm : EntityBase
     public virtual ICollection<Cage> Cages { get; set; } = new List<Cage>();
 
     public virtual ICollection<WaterLog> WaterLogs { get; set; } = new List<WaterLog>();
+    public virtual ICollection<MasterData> MasterData { get; set; } = new List<MasterData>();
+    public virtual ICollection<CostingReport> CostingReports { get; set; } = new List<CostingReport>();
 }
