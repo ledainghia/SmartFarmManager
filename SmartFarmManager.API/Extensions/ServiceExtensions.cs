@@ -22,6 +22,7 @@ using Google.Apis.Auth.OAuth2;
 using Newtonsoft.Json;
 using SmartFarmManager.Service.Configuration;
 using SmartFarmManager.Service.MQTT;
+using SmartFarmManager.Service.Helpers;
 
 
 namespace SmartFarmManager.API.Extensions
@@ -56,6 +57,16 @@ namespace SmartFarmManager.API.Extensions
             {
                 Key = secretKey
             };
+            //Get config mail form environment
+            services.Configure<MailSettings>(options =>
+            {
+                options.Server = Environment.GetEnvironmentVariable("MailSettings__Server");
+                options.Port = int.Parse(Environment.GetEnvironmentVariable("MailSettings__Port") ?? "0");
+                options.SenderName = Environment.GetEnvironmentVariable("MailSettings__SenderName");
+                options.SenderEmail = Environment.GetEnvironmentVariable("MailSettings__SenderEmail");
+                options.UserName = Environment.GetEnvironmentVariable("MailSettings__UserName");
+                options.Password = Environment.GetEnvironmentVariable("MailSettings__Password");
+            });
             ConfigureFirebaseAdminSDK(configuration);
             services.Configure<JwtSettings>(options => { options.Key = jwtSettings.Key; });
             services.Configure<CookiePolicyOptions>(options =>
@@ -208,6 +219,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IFoodStackRepository, FoodStackRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
             services.AddScoped<INotificationTypeRepository, NotifitcationTypeRepository>();
+            services.AddScoped<EmailService>();
             return services;
         }
 
