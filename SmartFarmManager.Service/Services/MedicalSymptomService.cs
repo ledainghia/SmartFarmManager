@@ -567,6 +567,7 @@ namespace SmartFarmManager.Service.Services
                 CageId = farmingBatches.CageId
             };
             await notificationService.SendNotification(vetFarm.DeviceId, "Có báo cáo triệu chứng mới", notification);
+            await _unitOfWork.Notifications.CreateAsync(notification);
 
             // Bước 6: Cập nhật lại MedicalSymptom
             await _unitOfWork.Pictures.CreateListAsync(pictures);
