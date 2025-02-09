@@ -244,7 +244,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IDiseaseService, DiseaseService>();
             services.AddScoped<IStandardPrescriptionService, StandardPrescriptionService>();
             services.AddScoped<ISaleTypeService, SaleTypeService>();
-            services.AddSingleton<SystemConfigurationService>();
+            
 
 
             return services;
@@ -255,6 +255,7 @@ namespace SmartFarmManager.API.Extensions
             // Đăng ký các configuration (ví dụ: JWT settings, database settings)
             services.AddScoped<JwtSettings>();
             services.AddSingleton<JwtSecurityTokenHandler>();
+            services.AddSingleton<SystemConfigurationService>();
             return services;
         }
         private static void AddMqttClientService(this IServiceCollection services, IConfiguration configuration)
