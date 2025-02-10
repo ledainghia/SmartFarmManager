@@ -1,4 +1,5 @@
-﻿using MailKit.Search;
+﻿using FirebaseAdmin.Messaging;
+using MailKit.Search;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using Org.BouncyCastle.Utilities.Date;
@@ -556,7 +557,8 @@ namespace SmartFarmManager.Service.Services
             //Notification realtime
             var vetFarm = await _unitOfWork.Users.FindByCondition(u => u.Role.RoleName == "Vet").FirstOrDefaultAsync();
             var notiType = await _unitOfWork.NotificationsTypes.FindByCondition(nt => nt.NotiTypeName == "MedicalSymptom").FirstOrDefaultAsync();
-            var notification = new Notification
+            var adminFarm = await _unitOfWork.Users.FindByCondition(u => u.Role.RoleName == "Admin").FirstOrDefaultAsync();
+            var notificationVet = new DataAccessObject.Models.Notification
             {
                 UserId = vetFarm.Id,
                 NotiTypeId = notiType.Id,
@@ -566,8 +568,20 @@ namespace SmartFarmManager.Service.Services
                 MedicalSymptomId = medicalSymptom.Id,
                 CageId = farmingBatches.CageId
             };
-            await notificationService.SendNotification(vetFarm.DeviceId, "Có báo cáo triệu chứng mới", notification);
-            await _unitOfWork.Notifications.CreateAsync(notification);
+            var notificationAdmin = new DataAccessObject.Models.Notification
+            {
+                UserId = adminFarm.Id,
+                NotiTypeId = notiType.Id,
+                Content = "Có báo cáo triệu chứng mới",
+                CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                IsRead = false,
+                MedicalSymptomId = medicalSymptom.Id,
+                CageId = farmingBatches.CageId
+            };
+            await notificationService.SendNotification(vetFarm.DeviceId, "Có báo cáo triệu chứng mới", notificationVet);
+            await _unitOfWork.Notifications.CreateAsync(notificationVet);
+            await notificationService.SendNotification(adminFarm.DeviceId, "Có báo cáo triệu chứng mới", notificationAdmin);
+            await _unitOfWork.Notifications.CreateAsync(notificationAdmin);
 
             // Bước 6: Cập nhật lại MedicalSymptom
             await _unitOfWork.Pictures.CreateListAsync(pictures);
