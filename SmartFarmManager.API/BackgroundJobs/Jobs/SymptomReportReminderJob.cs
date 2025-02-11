@@ -22,30 +22,35 @@ namespace SmartFarmManager.API.BackgroundJobs.Jobs
             _systemConfig = systemConfig.Value;
         }
 
-        public async Task Execute(IJobExecutionContext context)
+        public Task Execute(IJobExecutionContext context)
         {
-            var symptoms = await _unitOfWork.MedicalSymptom.FindByCondition(s => s.Status == MedicalSymptomStatuseEnum.Pending).ToListAsync();
-
-            foreach (var symptom in symptoms)
-            {
-                if (symptom.FirstReminderSentAt == null && symptom.CreateAt <= DateTime.Now.AddHours(-_systemConfig.FirstReminderTimeHours))
-                {
-                    await _notificationService.SendReminderToDoctor(symptom.DoctorId, symptom);
-                    symptom.FirstReminderSentAt = DateTime.Now;
-                    await _unitOfWork.MedicalSymptom.UpdateAsync(symptom);
-                }
-
-                if (symptom.SecondReminderSentAt == null && symptom.FirstReminderSentAt.HasValue && symptom.FirstReminderSentAt.Value <= DateTime.Now.AddHours(-_systemConfig.SecondReminderTimeHours))
-                {
-                    await _notificationService.SendReminderToDoctor(symptom.DoctorId, symptom);
-                    await _notificationService.SendReminderToAdmin(symptom.DoctorId, symptom);
-
-                    symptom.SecondReminderSentAt = DateTime.Now;
-                    await _unitOfWork.MedicalSymptom.UpdateAsync(symptom);
-                }
-
-                await _unitOfWork.CommitAsync();
-            }
+            throw new NotImplementedException();
         }
+
+        //public async Task Execute(IJobExecutionContext context)
+        //{
+        //    var symptoms = await _unitOfWork.MedicalSymptom.FindByCondition(s => s.Status == MedicalSymptomStatuseEnum.Pending).ToListAsync();
+
+        //    foreach (var symptom in symptoms)
+        //    {
+        //        if (symptom.FirstReminderSentAt == null && symptom.CreateAt <= DateTime.Now.AddHours(-_systemConfig.FirstReminderTimeHours))
+        //        {
+        //            await _notificationService.SendReminderToDoctor(symptom.DoctorId, symptom);
+        //            symptom.FirstReminderSentAt = DateTime.Now;
+        //            await _unitOfWork.MedicalSymptom.UpdateAsync(symptom);
+        //        }
+
+        //        if (symptom.SecondReminderSentAt == null && symptom.FirstReminderSentAt.HasValue && symptom.FirstReminderSentAt.Value <= DateTime.Now.AddHours(-_systemConfig.SecondReminderTimeHours))
+        //        {
+        //            await _notificationService.SendReminderToDoctor(symptom.DoctorId, symptom);
+        //            await _notificationService.SendReminderToAdmin(symptom.DoctorId, symptom);
+
+        //            symptom.SecondReminderSentAt = DateTime.Now;
+        //            await _unitOfWork.MedicalSymptom.UpdateAsync(symptom);
+        //        }
+
+        //        await _unitOfWork.CommitAsync();
+        //    }
+        //}
     }
 }
