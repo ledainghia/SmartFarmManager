@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Build Docker Images') {
             steps {
-                echo 'Removing old container (if exists) as'
+                echo 'Removing old container (if exists) a'
                 sh 'docker rm -f backend || true'  // Remove the container if it exists
                 echo 'Building Docker Images using Docker Compose'
                 sh 'docker-compose -f "docker-compose.yml" up -d --build'
