@@ -69,13 +69,6 @@ namespace SmartFarmManager.Service.Services
                         farmingBatch.AffectedQuantity -= prescription.QuantityAnimal;
                         await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatch);
                     }
-                    else
-                    {
-                        return null;
-                    }
-                }
-                else {
-                    return null;
                 }
             }
             // Tạo log
