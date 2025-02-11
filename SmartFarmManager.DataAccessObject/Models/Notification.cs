@@ -11,7 +11,7 @@ public partial class Notification : EntityBase
     public Guid UserId { get; set; }
 
     public Guid NotiTypeId { get; set; }
-
+    public string Title { get; set; }
     public string Content { get; set; }
 
     public DateTime? CreatedAt { get; set; }
