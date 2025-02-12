@@ -181,7 +181,7 @@ namespace SmartFarmManager.Service.Services
                         Status = updatedModel.Prescriptions.Status,
                         QuantityAnimal = updatedModel.Prescriptions.QuantityAnimal.Value,
                         EndDate = updatedModel.Prescriptions.PrescribedDate.Value.AddDays((double)updatedModel.Prescriptions.DaysToTake),
-                        Price = totalPrice * updatedModel.Prescriptions.DaysToTake
+                        Price = totalPrice * updatedModel.Prescriptions.DaysToTake * updatedModel.Prescriptions.QuantityAnimal.Value
                     };
 
                     await _unitOfWork.Prescription.CreateAsync(newPrescription);
@@ -521,7 +521,7 @@ namespace SmartFarmManager.Service.Services
                                        currentDate >= DateOnly.FromDateTime(gs.AgeStartDate.Value) &&
                                        currentDate <= DateOnly.FromDateTime(gs.AgeEndDate.Value))
                 .FirstOrDefaultAsync();
-            var farmingBatches = await _unitOfWork.FarmingBatches.FindByCondition(fb => fb.Id == medicalSymptomModel.FarmingBatchId).FirstOrDefaultAsync();
+            var farmingBatches = await _unitOfWork.FarmingBatches.FindByCondition(fb => fb.Id == medicalSymptomModel.FarmingBatchId).Include(fb => fb.Cage).FirstOrDefaultAsync();
             if (medicalSymptomModel.AffectedQuantity > growthStage.Quantity - farmingBatches.AffectedQuantity)
             {
                 return null;
@@ -562,7 +562,8 @@ namespace SmartFarmManager.Service.Services
             {
                 UserId = vetFarm.Id,
                 NotiTypeId = notiType.Id,
-                Content = "Có báo cáo triệu chứng mới",
+                Content = $"Một báo cáo triệu chứng mới từ {farmingBatches.Cage.Name} đã được gửi vào lúc {DateTimeUtils.GetServerTimeInVietnamTime()}.\r\nVui lòng kiểm tra và xử lý kịp thời để đảm bảo sức khỏe cho vật nuôi.",
+                Title = "Bạn có báo cáo bệnh mới",
                 CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
                 IsRead = false,
                 MedicalSymptomId = medicalSymptom.Id,
@@ -572,7 +573,8 @@ namespace SmartFarmManager.Service.Services
             {
                 UserId = adminFarm.Id,
                 NotiTypeId = notiType.Id,
-                Content = "Có báo cáo triệu chứng mới",
+                Content = $"Một báo cáo triệu chứng mới từ {farmingBatches.Cage.Name} đã được gửi vào lúc {DateTimeUtils.GetServerTimeInVietnamTime()}.\r\nVui lòng kiểm tra và xử lý kịp thời để đảm bảo sức khỏe cho vật nuôi.",
+                Title = "Bạn có báo cáo bệnh mới",
                 CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
                 IsRead = false,
                 MedicalSymptomId = medicalSymptom.Id,
