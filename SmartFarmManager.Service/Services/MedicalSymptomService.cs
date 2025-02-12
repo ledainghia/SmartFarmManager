@@ -151,6 +151,7 @@ namespace SmartFarmManager.Service.Services
                 existingSymptom.Status = updatedModel.Status;
                 existingSymptom.Notes = updatedModel.Notes;
                 var cage = await _unitOfWork.Cages.FindByCondition(c => c.IsDeleted == false && c.IsSolationCage == true).FirstOrDefaultAsync();
+                Guid newPrescriptionId;
                 // Tạo mới Prescription nếu có
                 if (updatedModel.Prescriptions != null)
                 {
@@ -175,12 +176,14 @@ namespace SmartFarmManager.Service.Services
                     {
                         MedicalSymtomId = updatedModel.Id,
                         CageId = cage.Id,
-                        PrescribedDate = updatedModel.Prescriptions.PrescribedDate,
+                        //PrescribedDate = updatedModel.Prescriptions.PrescribedDate,
+                        PrescribedDate = DateTimeUtils.GetServerTimeInVietnamTime(),
                         Notes = updatedModel.Prescriptions.Notes,
                         DaysToTake = updatedModel.Prescriptions.DaysToTake,
                         Status = updatedModel.Prescriptions.Status,
                         QuantityAnimal = updatedModel.Prescriptions.QuantityAnimal.Value,
-                        EndDate = updatedModel.Prescriptions.PrescribedDate.Value.AddDays((double)updatedModel.Prescriptions.DaysToTake),
+                        //EndDate = updatedModel.Prescriptions.PrescribedDate.Value.AddDays((double)updatedModel.Prescriptions.DaysToTake),
+                        EndDate = DateTimeUtils.GetServerTimeInVietnamTime().AddDays((double)updatedModel.Prescriptions.DaysToTake),
                         Price = totalPrice * updatedModel.Prescriptions.DaysToTake * updatedModel.Prescriptions.QuantityAnimal.Value
                     };
 
@@ -196,7 +199,7 @@ namespace SmartFarmManager.Service.Services
                         Noon = m.Noon
                     }).ToList();
                     await _unitOfWork.PrescriptionMedications.CreateListAsync(newPrescriptionMedication);
-
+                    newPrescriptionId = newPrescription.Id;
                     //update affectedQuantity in farmingBatch
                     var symtom = await _unitOfWork.MedicalSymptom.FindByCondition(ms => ms.Id == updatedModel.Id).Include(ms => ms.FarmingBatch).FirstOrDefaultAsync();
                     var farmingBatch = await _unitOfWork.FarmingBatches.FindByCondition(c => c.Id == symtom.FarmingBatch.Id).FirstOrDefaultAsync();
@@ -374,7 +377,10 @@ namespace SmartFarmManager.Service.Services
 
                     var lastDate = startDate.AddDays((updatedModel.Prescriptions.DaysToTake.Value - 1));
 
-
+                    if (currentSession > (int)SessionTypeEnum.Morning)
+                    {
+                        lastDate = lastDate.AddDays(1); // Thêm ngày mai nếu kê đơn vào buổi trưa, chiều, tối
+                    }
                     // Tạo task cho ngày mai nếu có thuốc kê cho buổi sáng, trưa, chiều, tối
                     var tomorrow = startDate.AddDays(1);
 
@@ -382,7 +388,7 @@ namespace SmartFarmManager.Service.Services
                     if (tomorrow <= lastDate)
                     {
                         // Kiểm tra và tạo task cho buổi sáng ngày mai nếu có thuốc kê cho sáng
-                        if (hasMorningMedication)
+                        if (hasMorningMedication && currentSession >= 1)
                         {
                             var morningMedications = sessionTasks[(int)SessionTypeEnum.Morning];
                             var medicationDetails = string.Join(", ", morningMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
@@ -409,7 +415,7 @@ namespace SmartFarmManager.Service.Services
                         }
 
                         // Tạo task cho buổi trưa ngày mai nếu có thuốc kê cho trưa
-                        if (hasNoonMedication)
+                        if (hasNoonMedication && currentSession >= 2)
                         {
                             var noonMedications = sessionTasks[(int)SessionTypeEnum.Noon];
                             var medicationDetails = string.Join(", ", noonMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
@@ -436,7 +442,7 @@ namespace SmartFarmManager.Service.Services
                         }
 
                         // Tạo task cho buổi chiều ngày mai nếu có thuốc kê cho chiều
-                        if (hasAfternoonMedication)
+                        if (hasAfternoonMedication && currentSession >= 3)
                         {
                             var afternoonMedications = sessionTasks[(int)SessionTypeEnum.Afternoon];
                             var medicationDetails = string.Join(", ", afternoonMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
@@ -463,7 +469,7 @@ namespace SmartFarmManager.Service.Services
                         }
 
                         // Tạo task cho buổi tối ngày mai nếu có thuốc kê cho tối
-                        if (hasEveningMedication)
+                        if (hasEveningMedication && currentSession >= 4)
                         {
                             var eveningMedications = sessionTasks[(int)SessionTypeEnum.Evening];
                             var medicationDetails = string.Join(", ", eveningMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
@@ -495,9 +501,34 @@ namespace SmartFarmManager.Service.Services
                     {
                         await _unitOfWork.Tasks.CreateListAsync(taskList);
                     }
+                    var firstTask = await _unitOfWork.Tasks
+    .FindByCondition(t => t.PrescriptionId == newPrescription.Id)
+    .OrderBy(t => t.CreatedAt)  // Ưu tiên sắp xếp theo CreatedAt trước
+    .ThenBy(t => t.Session)      // Sau đó sắp xếp theo Session
+    .FirstOrDefaultAsync();
+                    var staffFarm = await _unitOfWork.Users
+                            .FindByCondition(u => u.CageStaffs.Any(cs => cs.CageId == cage.Id))
+                            .FirstOrDefaultAsync();
+                    var notiType = await _unitOfWork.NotificationsTypes.FindByCondition(nt => nt.NotiTypeName == "Task").FirstOrDefaultAsync();
+                    var notificationStaff = new DataAccessObject.Models.Notification
+                    {
+                        UserId = staffFarm.Id,
+                        NotiTypeId = notiType.Id,
+                        Content = $"Một ngày mới bắt đầu! Bạn có công việc mới được giao. Hãy kiểm tra danh sách nhiệm vụ và hoàn thành đúng thời gian nhé!",
+                        Title = "Bạn nhận được công việc mới!",
+                        CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                        IsRead = false,
+                        TaskId = firstTask.Id,
+                        CageId = cage.Id
+                    };
+                    await notificationService.SendNotification(staffFarm.DeviceId, "Bạn nhận được công việc mới!", notificationStaff);
+                    await _unitOfWork.Notifications.CreateAsync(notificationStaff);
+
                 }
                 await _unitOfWork.MedicalSymptom.UpdateAsync(existingSymptom);
                 await _unitOfWork.CommitAsync();
+
+                
 
                 return true;
             }
