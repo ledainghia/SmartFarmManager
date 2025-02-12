@@ -181,7 +181,7 @@ namespace SmartFarmManager.Service.Services
                         Status = updatedModel.Prescriptions.Status,
                         QuantityAnimal = updatedModel.Prescriptions.QuantityAnimal.Value,
                         EndDate = updatedModel.Prescriptions.PrescribedDate.Value.AddDays((double)updatedModel.Prescriptions.DaysToTake),
-                        Price = totalPrice
+                        Price = totalPrice * updatedModel.Prescriptions.DaysToTake
                     };
 
                     await _unitOfWork.Prescription.CreateAsync(newPrescription);

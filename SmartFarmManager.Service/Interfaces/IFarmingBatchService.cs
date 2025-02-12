@@ -17,5 +17,6 @@ namespace SmartFarmManager.Service.Interfaces
         Task<PagedResult<FarmingBatchModel>> GetFarmingBatchesAsync(string? status, string? cageName, string? name, string? species, DateTime? startDateFrom, DateTime? startDateTo, int page, int pageSize, Guid? cageId);
         Task<FarmingBatchModel> GetActiveFarmingBatchByCageIdAsync(Guid cageId);
         Task<List<FarmingBatchModel>> GetActiveFarmingBatchesByUserAsync(Guid userId);
+        Task<FarmingBatchReportResponse> GetFarmingBatchReportAsync(Guid farmingBatchId);
     }
 }
