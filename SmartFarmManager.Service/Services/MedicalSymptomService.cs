@@ -151,7 +151,7 @@ namespace SmartFarmManager.Service.Services
                 existingSymptom.Status = updatedModel.Status;
                 existingSymptom.Notes = updatedModel.Notes;
                 var cage = await _unitOfWork.Cages.FindByCondition(c => c.IsDeleted == false && c.IsSolationCage == true).FirstOrDefaultAsync();
-                Guid newPrescriptionId;
+                Guid? newPrescriptionId = null;
                 // Tạo mới Prescription nếu có
                 if (updatedModel.Prescriptions != null)
                 {
@@ -496,7 +496,7 @@ namespace SmartFarmManager.Service.Services
                     else
                     {
                         // Kiểm tra có thuốc kê cho buổi sáng, trưa, chiều, tối ngày mai
-                        if (tomorrow <= lastDate)
+                        if (tomorrow < lastDate)
                         {
                             // Kiểm tra và tạo task cho buổi sáng ngày mai nếu có thuốc kê cho sáng
                             if (hasMorningMedication)
@@ -613,34 +613,34 @@ namespace SmartFarmManager.Service.Services
                     {
                         await _unitOfWork.Tasks.CreateListAsync(taskList);
                     }
-                    var firstTask = await _unitOfWork.Tasks
-    .FindByCondition(t => t.PrescriptionId == newPrescription.Id)
-    .OrderBy(t => t.CreatedAt)  // Ưu tiên sắp xếp theo CreatedAt trước
-    .ThenBy(t => t.Session)      // Sau đó sắp xếp theo Session
-    .FirstOrDefaultAsync();
-                    var staffFarm = await _unitOfWork.Users
-                            .FindByCondition(u => u.CageStaffs.Any(cs => cs.CageId == cage.Id))
-                            .FirstOrDefaultAsync();
-                    var notiType = await _unitOfWork.NotificationsTypes.FindByCondition(nt => nt.NotiTypeName == "Task").FirstOrDefaultAsync();
-                    var notificationStaff = new DataAccessObject.Models.Notification
-                    {
-                        UserId = staffFarm.Id,
-                        NotiTypeId = notiType.Id,
-                        Content = $"Một ngày mới bắt đầu! Bạn có công việc mới được giao. Hãy kiểm tra danh sách nhiệm vụ và hoàn thành đúng thời gian nhé!",
-                        Title = "Bạn nhận được công việc mới!",
-                        CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
-                        IsRead = false,
-                        TaskId = firstTask.Id,
-                        CageId = cage.Id
-                    };
-                    await notificationService.SendNotification(staffFarm.DeviceId, "Bạn nhận được công việc mới!", notificationStaff);
-                    await _unitOfWork.Notifications.CreateAsync(notificationStaff);
-
+                    
                 }
                 await _unitOfWork.MedicalSymptom.UpdateAsync(existingSymptom);
                 await _unitOfWork.CommitAsync();
 
-                
+                var firstTask = await _unitOfWork.Tasks
+    .FindByCondition(t => t.PrescriptionId == newPrescriptionId)
+    .OrderBy(t => t.CreatedAt)  // Ưu tiên sắp xếp theo CreatedAt trước
+    .ThenBy(t => t.Session)      // Sau đó sắp xếp theo Session
+    .FirstOrDefaultAsync();
+                var staffFarm = await _unitOfWork.Users
+                        .FindByCondition(u => u.CageStaffs.Any(cs => cs.CageId == cage.Id))
+                        .FirstOrDefaultAsync();
+                var notiType = await _unitOfWork.NotificationsTypes.FindByCondition(nt => nt.NotiTypeName == "Task").FirstOrDefaultAsync();
+                var notificationStaff = new DataAccessObject.Models.Notification
+                {
+                    UserId = staffFarm.Id,
+                    NotiTypeId = notiType.Id,
+                    Content = $"Một ngày mới bắt đầu! Bạn có công việc mới được giao. Hãy kiểm tra danh sách nhiệm vụ và hoàn thành đúng thời gian nhé!",
+                    Title = "Bạn nhận được công việc mới!",
+                    CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                    IsRead = false,
+                    TaskId = firstTask.Id,
+                    CageId = cage.Id
+                };
+                await notificationService.SendNotification(staffFarm.DeviceId, "Bạn nhận được công việc mới!", notificationStaff);
+                await _unitOfWork.Notifications.CreateAsync(notificationStaff);
+
 
                 return true;
             }
