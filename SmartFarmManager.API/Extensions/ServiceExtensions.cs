@@ -23,6 +23,9 @@ using Newtonsoft.Json;
 using SmartFarmManager.Service.Configuration;
 using SmartFarmManager.Service.MQTT;
 using SmartFarmManager.Service.Helpers;
+using Quartz.Impl;
+using SmartFarmManager.API.HostedServices;
+using SmartFarmManager.API.BackgroundJobs.QuartzConfigurations;
 
 
 namespace SmartFarmManager.API.Extensions
@@ -170,10 +173,12 @@ namespace SmartFarmManager.API.Extensions
         private static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
 
+
             services.AddRepositories();
             services.AddApplicationServices();
             services.AddConfigurations();
             services.AddQuartzServices();
+            services.AddAppHostedService();
             services.AddMqttClientService(configuration);
 
             return services;
@@ -223,6 +228,10 @@ namespace SmartFarmManager.API.Extensions
             return services;
         }
 
+        private static void AddAppHostedService(this IServiceCollection services)
+        {
+            services.AddHostedService<AppHostedService>();
+        }
         private static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
             // Đăng ký các service logic
@@ -283,18 +292,27 @@ namespace SmartFarmManager.API.Extensions
 
         public static IServiceCollection AddQuartzServices(this IServiceCollection services)
         {
-            // Cấu hình Quartz
+            // Đăng ký Quartz Scheduler
             services.AddQuartz(config =>
-            { 
-                SmartFarmManager.API.BackgroundJobs.QuartzConfigurations.QuartzScheduler.ConfigureJobs(config);
-            });
-
-            // Thêm Quartz Hosted Service
-            services.AddQuartzHostedService(options =>
             {
-                options.WaitForJobsToComplete = true; // Đợi các job hoàn tất trước khi tắt ứng dụng
+                config.UseMicrosoftDependencyInjectionJobFactory();
             });
 
+            // Đăng ký Job Factory
+            services.AddSingleton<IJobFactory, ScopedJobFactory>();
+
+            // Đăng ký Scheduler Factory
+            services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();
+            
+            // Đăng ký Scheduler vào DI Container
+            services.AddSingleton(provider =>
+            {
+                var scheduler = provider.GetRequiredService<ISchedulerFactory>().GetScheduler().Result;
+                scheduler.JobFactory = provider.GetRequiredService<IJobFactory>();
+                return scheduler;
+            });
+            services.AddSingleton<IQuartzService, QuartzService>();
+            services.AddTransient<SmartFarmManager.Service.Jobs.HelloWorldJob>();
             return services;
         }
 
