@@ -28,7 +28,48 @@ namespace SmartFarmManager.Service.Services
             await ScheduleJob<Jobs.UpdateTaskStatusesJob>("UpdateTaskStatusesJob-Afternoon", "0 0 14 * * ?", serverTimeZone, cancellationToken);
             await ScheduleJob<Jobs.UpdateTaskStatusesJob>("UpdateTaskStatusesJob-Evening", "0 0 18 * * ?", serverTimeZone, cancellationToken);
             await ScheduleJob<Jobs.UpdateEveningTaskStatusesJob>("UpdateEveningTaskStatusesJob", "0 0 23 * * ?", serverTimeZone, cancellationToken);
-            await ScheduleJob<Jobs.HelloWorldJob>("HelloWorldJob", "*/5 * * * * ?", serverTimeZone, cancellationToken);
+            //await ScheduleJob<Jobs.HelloWorldJob>("HelloWorldJob", "*/5 * * * * ?", serverTimeZone, cancellationToken);
+        }
+
+        /// <summary>
+        /// Tạo các reminder job và chỉ chạy một lần theo thời gian định sẵn
+        /// </summary>
+        public async Task CreateReminderJobs(Guid medicalSymptomId, DateTime reportDate)
+        {
+            var firstReminderTime = DateTimeOffset.Now.AddMinutes(1); // Chạy lần 1 sau 1 phút
+            var secondReminderTime = DateTimeOffset.Now.AddMinutes(2); // Chạy lần 2 sau 2 phút
+
+            // ✅ Tạo Job lần 1
+            var firstReminderJob = JobBuilder.Create<Jobs.MedicalSymptomReminderJob>()
+                .WithIdentity($"MedicalSymptomReminderJob-{medicalSymptomId}")
+                .UsingJobData("MedicalSymptomId", medicalSymptomId.ToString()) // Truyền dữ liệu vào job
+                .Build();
+
+            var firstReminderTrigger = TriggerBuilder.Create()
+                .WithIdentity($"MedicalSymptomReminderTrigger-{medicalSymptomId}")
+                .StartAt(firstReminderTime) // 🔥 Chạy MỘT LẦN tại thời điểm cụ thể
+                .WithSchedule(SimpleScheduleBuilder.Create().WithMisfireHandlingInstructionFireNow()) // Đảm bảo job vẫn chạy nếu bị bỏ lỡ
+                .ForJob(firstReminderJob)
+                .Build();
+
+            // ✅ Tạo Job lần 2
+            var secondReminderJob = JobBuilder.Create<Jobs.MedicalSymptomReminderJob>()
+                .WithIdentity($"MedicalSymptomReminderJobLater-{medicalSymptomId}")
+                .UsingJobData("MedicalSymptomId", medicalSymptomId.ToString())
+                .Build();
+
+            var secondReminderTrigger = TriggerBuilder.Create()
+                .WithIdentity($"MedicalSymptomReminderTriggerLater-{medicalSymptomId}")
+                .StartAt(secondReminderTime) // 🔥 Chạy MỘT LẦN tại thời điểm cụ thể
+                .WithSchedule(SimpleScheduleBuilder.Create().WithMisfireHandlingInstructionFireNow())
+                .ForJob(secondReminderJob)
+                .Build();
+
+
+
+            await _scheduler.ScheduleJob(firstReminderJob, firstReminderTrigger);
+            await _scheduler.ScheduleJob(secondReminderJob, secondReminderTrigger);
+            Console.WriteLine($"Jobs have been scheduled for MedicalSymptomId: {medicalSymptomId}");
         }
 
         public async Task<bool> PauseJobAsync(string jobName, CancellationToken cancellationToken)

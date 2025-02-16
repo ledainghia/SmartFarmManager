@@ -27,12 +27,16 @@ namespace SmartFarmManager.Service.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IUserService _userService;
         private readonly NotificationService notificationService;
+        private readonly INotificationService _notificationUserService;
+        private readonly IQuartzService _quartzService;
 
-        public MedicalSymptomService(IUnitOfWork unitOfWork, IUserService userService, NotificationService notificationService)
+        public MedicalSymptomService(IUnitOfWork unitOfWork, IUserService userService, NotificationService notificationService, IQuartzService quartzService, INotificationService notificationUserService)
         {
             _unitOfWork = unitOfWork;
             _userService = userService;
             this.notificationService = notificationService;
+            _quartzService = quartzService;
+            _notificationUserService = notificationUserService;
         }
 
         public async Task<IEnumerable<MedicalSymptomModel>> GetMedicalSymptomsAsync(string? status, DateTime? startDate, DateTime? endDate, string? searchTerm)
@@ -734,9 +738,87 @@ namespace SmartFarmManager.Service.Services
             await _unitOfWork.CommitAsync();
 
 
+            await _quartzService.CreateReminderJobs(medicalSymptom.Id,DateTimeOffset.Now.LocalDateTime);
+
             return medicalSymptom.Id;
         }
+        public async System.Threading.Tasks.Task ProcessMedicalSymptomReminderAsync(Guid medicalSymptomId)
+        {
 
+
+            var medicalSymptom = await _unitOfWork.MedicalSymptom
+                .FindByCondition(ms => ms.Id == medicalSymptomId)
+                .FirstOrDefaultAsync();
+
+            if (medicalSymptom == null) return;
+
+            // Kiểm tra trạng thái của MedicalSymptom
+            if (medicalSymptom.Status == MedicalSymptomStatuseEnum.Pending)
+            {
+                // Lấy thông tin bác sĩ
+                var vetFarm = await _unitOfWork.Users
+                    .FindByCondition(u => u.Role.RoleName == "Vet")
+                    .FirstOrDefaultAsync();
+
+                var notiType = await _unitOfWork.NotificationsTypes.FindByCondition(nt => nt.NotiTypeName == "MedicalSymptom").FirstOrDefaultAsync();
+
+                // Gửi thông báo lần 1 nếu chưa gửi
+                if (medicalSymptom.FirstReminderSentAt == null)
+                {
+                    var notification = new DataAccessObject.Models.Notification
+                    {
+                        UserId = vetFarm.Id,
+                        NotiTypeId = notiType.Id,
+                        Content = "Có báo cáo triệu chứng mới chưa được chuẩn đoán.",
+                        CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                        MedicalSymptomId = medicalSymptom.Id,
+                        IsRead = false
+                    };
+
+                    await _notificationUserService.CreateNotificationAsync(notification);
+                    await notificationService.SendNotification(vetFarm.DeviceId, "Nhắc nhở bác sĩ", notification);
+                    medicalSymptom.FirstReminderSentAt = DateTimeUtils.GetServerTimeInVietnamTime();
+                }
+                // Gửi thông báo lần 2 nếu chưa gửi
+                else
+                {
+                    var notification = new DataAccessObject.Models.Notification
+                    {
+                        UserId = vetFarm.Id,
+                        NotiTypeId = notiType.Id,
+                        Content = "Bác sĩ vẫn chưa chuẩn đoán triệu chứng. Cần phải hành động ngay.",
+                        CreatedAt = DateTime.UtcNow,
+                        MedicalSymptomId = medicalSymptom.Id,
+                        IsRead = false
+                    };
+
+                    await _notificationUserService.CreateNotificationAsync(notification);
+                    await notificationService.SendNotification(vetFarm.DeviceId, "Nhắc nhở bác sĩ lần 2", notification);
+                    medicalSymptom.SecondReminderSentAt = DateTimeUtils.GetServerTimeInVietnamTime();
+
+                    // Gửi thông báo cho admin
+                    var admin = await _unitOfWork.Users
+                        .FindByCondition(u => u.Role.RoleName == "Admin")
+                        .FirstOrDefaultAsync();
+
+                    var adminNotification = new DataAccessObject.Models.Notification
+                    {
+                        UserId = admin.Id,
+                        NotiTypeId = notiType.Id,
+                        Content = "Triệu chứng vẫn chưa được chuẩn đoán. Cần admin can thiệp.",
+                        CreatedAt = DateTime.UtcNow,
+                        MedicalSymptomId = medicalSymptom.Id,
+                        IsRead = false
+                    };
+
+                    await notificationService.SendNotification(admin.DeviceId, "Triệu chứng chưa được chuẩn đoán", adminNotification);
+                }
+
+                // Cập nhật lại MedicalSymptom
+                await _unitOfWork.MedicalSymptom.UpdateAsync(medicalSymptom);
+                await _unitOfWork.CommitAsync();
+            }
+        }
 
         public async Task<MedicalSymptomModel?> GetMedicalSymptomByIdAsync(Guid id)
         {

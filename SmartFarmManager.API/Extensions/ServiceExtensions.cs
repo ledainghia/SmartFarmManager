@@ -313,6 +313,10 @@ namespace SmartFarmManager.API.Extensions
             });
             services.AddSingleton<IQuartzService, QuartzService>();
             services.AddTransient<SmartFarmManager.Service.Jobs.HelloWorldJob>();
+            services.AddTransient<SmartFarmManager.Service.Jobs.GenerateTasksForTomorrowJob>();
+            services.AddTransient<SmartFarmManager.Service.Jobs.UpdateTaskStatusesJob>();
+            services.AddTransient<SmartFarmManager.Service.Jobs.UpdateEveningTaskStatusesJob>();
+            services.AddTransient<SmartFarmManager.Service.Jobs.MedicalSymptomReminderJob>();
             return services;
         }
 
