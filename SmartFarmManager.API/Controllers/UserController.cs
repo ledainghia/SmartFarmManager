@@ -266,6 +266,21 @@ namespace SmartFarmManager.API.Controllers
             }
             return Unauthorized(ApiResult<SendOtpResponse>.Succeed(new SendOtpResponse { Message = "Invalid OTP" }));
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetUsers(
+    [FromQuery] string? username,
+    [FromQuery] string? email,
+    [FromQuery] string? phoneNumber,
+    [FromQuery] Guid? roleId,
+    [FromQuery] bool? isActive,
+    [FromQuery] string? fullName,
+    [FromQuery] string? address)
+        {
+            var users = await _userService.GetUsersAsync(username, email, phoneNumber, roleId, isActive, fullName, address);
+            return Ok(ApiResult<IEnumerable<UserModel>>.Succeed(users));
+        }
+
     }
 
 }

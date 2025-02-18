@@ -377,5 +377,46 @@ namespace SmartFarmManager.Service.Services
             }
             return true;
         }
+        public async Task<IEnumerable<BusinessModels.User.UserModel>> GetUsersAsync(string? username, string? email, string? phoneNumber, Guid? roleId, bool? isActive, string? fullName, string? address)
+        {
+            var query = _unitOfWork.Users.FindAll();
+
+            if (!string.IsNullOrWhiteSpace(username))
+                query = query.Where(u => u.Username.Contains(username));
+
+            if (!string.IsNullOrWhiteSpace(email))
+                query = query.Where(u => u.Email.Contains(email));
+
+            if (!string.IsNullOrWhiteSpace(phoneNumber))
+                query = query.Where(u => u.PhoneNumber.Contains(phoneNumber));
+
+            if (roleId.HasValue)
+                query = query.Where(u => u.RoleId == roleId.Value);
+
+            if (isActive.HasValue)
+                query = query.Where(u => u.IsActive == isActive.Value);
+
+            if (!string.IsNullOrWhiteSpace(fullName))
+                query = query.Where(u => u.FullName.Contains(fullName));
+
+            if (!string.IsNullOrWhiteSpace(address))
+                query = query.Where(u => u.Address.Contains(address));
+
+            var users = await query.ToListAsync();
+
+            return users.Select(user => new BusinessModels.User.UserModel
+            {
+                Id = user.Id,
+                Username = user.Username,
+                FullName = user.FullName,
+                Email = user.Email,
+                PhoneNumber = user.PhoneNumber,
+                Address = user.Address,
+                IsActive = user.IsActive,
+                CreatedAt = user.CreatedAt,
+                RoleId = user.RoleId
+            });
+        }
+
     }
 }
