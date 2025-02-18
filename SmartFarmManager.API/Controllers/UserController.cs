@@ -9,7 +9,7 @@ using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Cages;
 using SmartFarmManager.Service.BusinessModels.Farm;
 using SmartFarmManager.Service.BusinessModels.Task;
-using SmartFarmManager.Service.BusinessModels.User;
+using SmartFarmManager.Service.BusinessModels.Users;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Services;
@@ -199,12 +199,12 @@ namespace SmartFarmManager.API.Controllers
             return Ok(ApiResult<object>.Succeed("User deleted successfully."));
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetUsers()
-        {
-            var users = await _userService.GetUsersAsync();
-            return Ok(ApiResult<IEnumerable<UserModel>>.Succeed(users));
-        }
+        //[HttpGet]
+        //public async Task<IActionResult> GetUsers()
+        //{
+        //    var users = await _userService.GetUsersAsync();
+        //    return Ok(ApiResult<IEnumerable<UserModel>>.Succeed(users));
+        //}
 
         private async Task SendOtpAsync(string email, string subject)
         {
@@ -221,7 +221,7 @@ namespace SmartFarmManager.API.Controllers
             await _emailService.SendEmailAsync(mailData);
         }
 
-        [HttpPost("user/otp/send")]
+        [HttpPost("otp/send")]
         public async Task<IActionResult> SendOtp([FromBody] SendOtpRequest request)
         {
             Regex regex = new Regex(@"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
@@ -249,7 +249,7 @@ namespace SmartFarmManager.API.Controllers
             }
             return NotFound(ApiResult<Dictionary<string, string[]>>.Fail(new Exception("User is not found")));
         }
-        [HttpPost("customer/otp/verify")]
+        [HttpPost("otp/verify")]
         public IActionResult VerifyOtp([FromBody] VerifyOtpRequest request)
         {
             Regex regex = new Regex(@"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");

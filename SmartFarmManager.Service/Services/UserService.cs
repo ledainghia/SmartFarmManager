@@ -4,7 +4,7 @@ using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Auth;
 using SmartFarmManager.Service.BusinessModels.Farm;
-using SmartFarmManager.Service.BusinessModels.User;
+using SmartFarmManager.Service.BusinessModels.Users;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using System;
@@ -254,7 +254,7 @@ namespace SmartFarmManager.Service.Services
 
             return true;
         }
-        public async Task<BusinessModels.User.UserModel> CreateUserAsync(UserCreateModel request)
+        public async Task<BusinessModels.Users.UserModel> CreateUserAsync(UserCreateModel request)
         {
             var existingUser = await _unitOfWork.Users
                 .FindByCondition(u => u.Username == request.Username)
@@ -280,7 +280,7 @@ namespace SmartFarmManager.Service.Services
             await _unitOfWork.Users.CreateAsync(newUser);
             await _unitOfWork.CommitAsync();
 
-            return new BusinessModels.User.UserModel
+            return new BusinessModels.Users.UserModel
             {
                 Id = newUser.Id,
                 Username = newUser.Username,
@@ -337,10 +337,10 @@ namespace SmartFarmManager.Service.Services
             return await _unitOfWork.CommitAsync() > 0;
         }
 
-        public async Task<IEnumerable<BusinessModels.User.UserModel>> GetUsersAsync()
+        public async Task<IEnumerable<BusinessModels.Users.UserModel>> GetUsersAsync()
         {
             var users = await _unitOfWork.Users.FindAll().ToListAsync();
-            return users.Select(user => new BusinessModels.User.UserModel
+            return users.Select(user => new BusinessModels.Users.UserModel
             {
                 Id = user.Id,
                 Username = user.Username,
@@ -377,7 +377,7 @@ namespace SmartFarmManager.Service.Services
             }
             return true;
         }
-        public async Task<IEnumerable<BusinessModels.User.UserModel>> GetUsersAsync(string? username, string? email, string? phoneNumber, Guid? roleId, bool? isActive, string? fullName, string? address)
+        public async Task<IEnumerable<BusinessModels.Users.UserModel>> GetUsersAsync(string? username, string? email, string? phoneNumber, Guid? roleId, bool? isActive, string? fullName, string? address)
         {
             var query = _unitOfWork.Users.FindAll();
 
@@ -404,7 +404,7 @@ namespace SmartFarmManager.Service.Services
 
             var users = await query.ToListAsync();
 
-            return users.Select(user => new BusinessModels.User.UserModel
+            return users.Select(user => new BusinessModels.Users.UserModel
             {
                 Id = user.Id,
                 Username = user.Username,
