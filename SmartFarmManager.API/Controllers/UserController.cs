@@ -1,15 +1,19 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using Org.BouncyCastle.Security;
 using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.User;
+using SmartFarmManager.API.Payloads.Responses;
 using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Cages;
 using SmartFarmManager.Service.BusinessModels.Farm;
 using SmartFarmManager.Service.BusinessModels.Task;
+using SmartFarmManager.Service.BusinessModels.User;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Services;
+using System.Text.RegularExpressions;
 
 namespace SmartFarmManager.API.Controllers
 {
@@ -20,12 +24,16 @@ namespace SmartFarmManager.API.Controllers
         private readonly ITaskService _taskService;
         private readonly ICageService _cageService;
         private readonly IUserService _userService;
+        private readonly IMemoryCache _cache;
+        private readonly EmailService _emailService;
 
-        public UserController(ITaskService taskService, ICageService cageService, IUserService userService)
+        public UserController(ITaskService taskService, ICageService cageService, IUserService userService, IMemoryCache cache, EmailService emailService)
         {
             _taskService = taskService;
             _cageService = cageService;
             _userService = userService;
+            _cache = cache;
+            _emailService = emailService;
         }
 
         [HttpGet("{userId}/tasks")]
@@ -70,7 +78,7 @@ namespace SmartFarmManager.API.Controllers
             }
             catch (Exception ex)
             {
-                
+
                 return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred."));
             }
         }
@@ -114,7 +122,7 @@ namespace SmartFarmManager.API.Controllers
 
 
         [HttpPut("{userId}/device")]
-        public async Task<IActionResult> UpdateUserDeviceId(Guid userId, [FromBody] UpdateDeviceIdRequest deviceIdRequest )
+        public async Task<IActionResult> UpdateUserDeviceId(Guid userId, [FromBody] UpdateDeviceIdRequest deviceIdRequest)
         {
             if (!ModelState.IsValid)
             {
@@ -153,5 +161,111 @@ namespace SmartFarmManager.API.Controllers
                 return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred. Please contact support."));
             }
         }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateUser([FromBody] UserCreateModel request)
+        {
+            var user = await _userService.CreateUserAsync(request);
+            return Ok(ApiResult<UserModel>.Succeed(user));
+        }
+
+        [HttpPut("{userId}")]
+        public async Task<IActionResult> UpdateUser(Guid userId, [FromBody] UserUpdateModel request)
+        {
+            var success = await _userService.UpdateUserAsync(userId, request);
+            if (!success)
+                return BadRequest(ApiResult<object>.Fail("Update failed."));
+
+            return Ok(ApiResult<object>.Succeed("User updated successfully."));
+        }
+
+        [HttpPut("{userId}/update-password")]
+        public async Task<IActionResult> UpdatePassword(Guid userId, [FromBody] PasswordUpdateModel request)
+        {
+            var success = await _userService.UpdatePasswordAsync(userId, request);
+            if (!success)
+                return BadRequest(ApiResult<object>.Fail("Password update failed."));
+
+            return Ok(ApiResult<object>.Succeed("Password updated successfully."));
+        }
+
+        [HttpDelete("{userId}")]
+        public async Task<IActionResult> DeleteUser(Guid userId)
+        {
+            var success = await _userService.DeleteUserAsync(userId);
+            if (!success)
+                return NotFound(ApiResult<object>.Fail("User not found."));
+
+            return Ok(ApiResult<object>.Succeed("User deleted successfully."));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetUsers()
+        {
+            var users = await _userService.GetUsersAsync();
+            return Ok(ApiResult<IEnumerable<UserModel>>.Succeed(users));
+        }
+
+        private async Task SendOtpAsync(string email, string subject)
+        {
+            var otp = new Random().Next(100000, 999999).ToString();
+            _cache.Set(email, otp, TimeSpan.FromMinutes(10));
+            var mailData = new MailData
+            {
+                EmailToId = email,
+                EmailToName = email,
+                EmailSubject = subject,
+                EmailBody = $"Your OTP is: {otp}"
+            };
+
+            await _emailService.SendEmailAsync(mailData);
+        }
+
+        [HttpPost("user/otp/send")]
+        public async Task<IActionResult> SendOtp([FromBody] SendOtpRequest request)
+        {
+            Regex regex = new Regex(@"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
+            if (!regex.IsMatch(request.Email))
+            {
+                var result = ApiResult<Dictionary<string, string[]>>.Fail(new Exception("Invalid email format."));
+                return BadRequest(result);
+            }
+            var checkCustomer = await _userService.CheckUserByEmail(request.Email);
+            if (checkCustomer.Value)
+            {
+                if (request.IsResend)
+                {
+                    if (!_cache.TryGetValue(request.Email, out string _))
+                    {
+                        var result = ApiResult<Dictionary<string, string[]>>.Fail(new Exception("Email not found. Please initiate the forget password process first."));
+                        return NotFound(result);
+                    }
+                }
+
+                await SendOtpAsync(request.Email, request.IsResend ? "Resend OTP" : "Reset Password OTP");
+
+                var response = ApiResult<SendOtpResponse>.Succeed(new SendOtpResponse { Message = "OTP sent successfully." });
+                return Ok(response);
+            }
+            return NotFound(ApiResult<Dictionary<string, string[]>>.Fail(new Exception("User is not found")));
+        }
+        [HttpPost("customer/otp/verify")]
+        public IActionResult VerifyOtp([FromBody] VerifyOtpRequest request)
+        {
+            Regex regex = new Regex(@"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
+            if (!regex.IsMatch(request.Email))
+            {
+                var result = ApiResult<Dictionary<string, string[]>>.Fail(new Exception("Invalid email format."));
+                return BadRequest(result);
+            }
+            if (_cache.TryGetValue(request.Email, out string otp) && otp == request.Otp)
+            {
+                _cache.Remove(request.Email);
+                var response = ApiResult<SendOtpResponse>.Succeed(new SendOtpResponse { Message = "OTP verified. You can now reset your password." });
+                return Ok(response);
+            }
+            return Unauthorized(ApiResult<SendOtpResponse>.Succeed(new SendOtpResponse { Message = "Invalid OTP" }));
+        }
     }
+
 }
