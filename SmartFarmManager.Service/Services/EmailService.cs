@@ -22,6 +22,10 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<bool> SendEmailAsync(MailData mailData)
         {
+            Console.WriteLine(_mailSettings.SenderName);
+            Console.WriteLine(_mailSettings.SenderEmail);
+            Console.WriteLine(_mailSettings.UserName);
+            Console.WriteLine(_mailSettings.Password);
             try
             {
                 using (var emailMessage = new MimeMessage())
