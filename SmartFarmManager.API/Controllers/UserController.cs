@@ -206,104 +206,10 @@ namespace SmartFarmManager.API.Controllers
         //    return Ok(ApiResult<IEnumerable<UserModel>>.Succeed(users));
         //}
 
-        //private async Task<bool> SendOtpAsync(string email, string subject)
-        //{
-        //    var otp = new Random().Next(100000, 999999).ToString();
-        //    _cache.Set(email, otp, TimeSpan.FromMinutes(10));
-        //    var mailData = new MailData
-        //    {
-        //        EmailToId = email,
-        //        EmailToName = email,
-        //        EmailSubject = subject,
-        //        EmailBody = $"Your OTP is: {otp}"
-        //    };
-
-        //    return await _emailService.SendEmailAsync(mailData);
-        //}
-
-        //[HttpPost("otp/send")]
-        //public async Task<IActionResult> SendOtp([FromBody] SendOtpRequest request)
-        //{
-        //    Regex regex = new Regex(@"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
-        //    if (!regex.IsMatch(request.Email))
-        //    {
-        //        var result = ApiResult<Dictionary<string, string[]>>.Fail(new Exception("Invalid email format."));
-        //        return BadRequest(result);
-        //    }
-        //    var checkCustomer = await _userService.CheckUserByEmail(request.Email);
-        //    if (checkCustomer.Value)
-        //    {
-        //        if (request.IsResend)
-        //        {
-        //            if (!_cache.TryGetValue(request.Email, out string _))
-        //            {
-        //                var result = ApiResult<Dictionary<string, string[]>>.Fail(new Exception("Email not found. Please initiate the forget password process first."));
-        //                return NotFound(result);
-        //            }
-        //        }
-
-        //        var isSend = await SendOtpAsync(request.Email, request.IsResend ? "Resend OTP" : "Reset Password OTP");
-        //        if(isSend) 
-        //        {
-        //            var response = ApiResult<SendOtpResponse>.Succeed(new SendOtpResponse { Message = "OTP sent successfully." });
-        //            return Ok(response);
-        //        }
-        //        else
-        //        {
-        //            return BadRequest(ApiResult<SendOtpResponse>.Succeed(new SendOtpResponse { Message = "Something wrong!!!" }));
-        //        }
-
-        //    }
-        //    return NotFound(ApiResult<Dictionary<string, string[]>>.Fail(new Exception("User is not found")));
-        //}
-        [HttpPost("otp/send")]
-        public async Task<IActionResult> SendOtp([FromBody] SendOtpRequest request)
+        private async Task<bool> SendOtpAsync(string email, string subject)
         {
-            Regex regex = new Regex(@"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
-            if (!regex.IsMatch(request.Email))
-            {
-                var result = ApiResult<Dictionary<string, string[]>>.Fail(new Exception("Invalid email format."));
-                return BadRequest(result);
-            }
-
-            var checkCustomer = await _userService.CheckUserByEmail(request.Email);
-            if (checkCustomer.Value)
-            {
-                string otp;
-                if (_cache.TryGetValue(request.Email, out otp))
-                {
-                    if (!request.IsResend)
-                    {
-                        // If not resend but OTP exists, consider invalid scenario
-                        var result = ApiResult<Dictionary<string, string[]>>.Fail(new Exception("OTP already generated. Please wait for it to expire or request a resend."));
-                        return BadRequest(result);
-                    }
-                }
-                else
-                {
-                    // OTP does not exist or expired, generate new one
-                    otp = new Random().Next(100000, 999999).ToString();
-                    _cache.Set(request.Email, otp, TimeSpan.FromMinutes(10));
-                }
-
-                var isSend = await SendOtpAsync(request.Email, request.IsResend ? "Resend OTP" : "Reset Password OTP", otp);
-
-                if (isSend)
-                {
-                    var response = ApiResult<SendOtpResponse>.Succeed(new SendOtpResponse { Message = "OTP sent successfully." });
-                    return Ok(response);
-                }
-                else
-                {
-                    return BadRequest(ApiResult<SendOtpResponse>.Fail(new Exception("Something went wrong!!!")));
-                }
-            }
-
-            return NotFound(ApiResult<Dictionary<string, string[]>>.Fail(new Exception("User is not found")));
-        }
-
-        private async Task<bool> SendOtpAsync(string email, string subject, string otp)
-        {
+            var otp = new Random().Next(100000, 999999).ToString();
+            _cache.Set(email, otp, TimeSpan.FromMinutes(10));
             var mailData = new MailData
             {
                 EmailToId = email,
@@ -314,6 +220,100 @@ namespace SmartFarmManager.API.Controllers
 
             return await _emailService.SendEmailAsync(mailData);
         }
+
+        [HttpPost("otp/send")]
+        public async Task<IActionResult> SendOtp([FromBody] SendOtpRequest request)
+        {
+            Regex regex = new Regex(@"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
+            if (!regex.IsMatch(request.Email))
+            {
+                var result = ApiResult<Dictionary<string, string[]>>.Fail(new Exception("Invalid email format."));
+                return BadRequest(result);
+            }
+            var checkCustomer = await _userService.CheckUserByEmail(request.Email);
+            if (checkCustomer.Value)
+            {
+                if (request.IsResend)
+                {
+                    if (!_cache.TryGetValue(request.Email, out string _))
+                    {
+                        var result = ApiResult<Dictionary<string, string[]>>.Fail(new Exception("Email not found. Please initiate the forget password process first."));
+                        return NotFound(result);
+                    }
+                }
+
+                var isSend = await SendOtpAsync(request.Email, request.IsResend ? "Resend OTP" : "Reset Password OTP");
+                if (isSend)
+                {
+                    var response = ApiResult<SendOtpResponse>.Succeed(new SendOtpResponse { Message = "OTP sent successfully." });
+                    return Ok(response);
+                }
+                else
+                {
+                    return BadRequest(ApiResult<SendOtpResponse>.Succeed(new SendOtpResponse { Message = "Something wrong!!!" }));
+                }
+
+            }
+            return NotFound(ApiResult<Dictionary<string, string[]>>.Fail(new Exception("User is not found")));
+        }
+        //[HttpPost("otp/send")]
+        //public async Task<IActionResult> SendOtp([FromBody] SendOtpRequest request)
+        //{
+        //    Regex regex = new Regex(@"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
+        //    if (!regex.IsMatch(request.Email))
+        //    {
+        //        var result = ApiResult<Dictionary<string, string[]>>.Fail(new Exception("Invalid email format."));
+        //        return BadRequest(result);
+        //    }
+
+        //    var checkCustomer = await _userService.CheckUserByEmail(request.Email);
+        //    if (checkCustomer.Value)
+        //    {
+        //        string otp;
+        //        if (_cache.TryGetValue(request.Email, out otp))
+        //        {
+        //            if (!request.IsResend)
+        //            {
+        //                // If not resend but OTP exists, consider invalid scenario
+        //                var result = ApiResult<Dictionary<string, string[]>>.Fail(new Exception("OTP already generated. Please wait for it to expire or request a resend."));
+        //                return BadRequest(result);
+        //            }
+        //        }
+        //        else
+        //        {
+        //            // OTP does not exist or expired, generate new one
+        //            otp = new Random().Next(100000, 999999).ToString();
+        //            _cache.Set(request.Email, otp, TimeSpan.FromMinutes(10));
+        //        }
+
+        //        var isSend = await SendOtpAsync(request.Email, request.IsResend ? "Resend OTP" : "Reset Password OTP", otp);
+
+        //        if (isSend)
+        //        {
+        //            var response = ApiResult<SendOtpResponse>.Succeed(new SendOtpResponse { Message = "OTP sent successfully." });
+        //            return Ok(response);
+        //        }
+        //        else
+        //        {
+        //            return BadRequest(ApiResult<SendOtpResponse>.Fail(new Exception("Something went wrong!!!")));
+        //        }
+        //    }
+
+        //    return NotFound(ApiResult<Dictionary<string, string[]>>.Fail(new Exception("User is not found")));
+        //}
+
+        //private async Task<bool> SendOtpAsync(string email, string subject, string otp)
+        //{
+        //    var mailData = new MailData
+        //    {
+        //        EmailToId = email,
+        //        EmailToName = email,
+        //        EmailSubject = subject,
+        //        EmailBody = $"Your OTP is: {otp}"
+        //    };
+
+        //    return await _emailService.SendEmailAsync(mailData);
+        //}
         [HttpPost("otp/verify")]
         public IActionResult VerifyOtp([FromBody] VerifyOtpRequest request)
         {
