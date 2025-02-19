@@ -206,7 +206,7 @@ namespace SmartFarmManager.API.Controllers
         //    return Ok(ApiResult<IEnumerable<UserModel>>.Succeed(users));
         //}
 
-        private async Task SendOtpAsync(string email, string subject)
+        private async Task<bool> SendOtpAsync(string email, string subject)
         {
             var otp = new Random().Next(100000, 999999).ToString();
             _cache.Set(email, otp, TimeSpan.FromMinutes(10));
@@ -218,7 +218,7 @@ namespace SmartFarmManager.API.Controllers
                 EmailBody = $"Your OTP is: {otp}"
             };
 
-            await _emailService.SendEmailAsync(mailData);
+            return await _emailService.SendEmailAsync(mailData);
         }
 
         [HttpPost("otp/send")]
@@ -242,10 +242,17 @@ namespace SmartFarmManager.API.Controllers
                     }
                 }
 
-                await SendOtpAsync(request.Email, request.IsResend ? "Resend OTP" : "Reset Password OTP");
-
-                var response = ApiResult<SendOtpResponse>.Succeed(new SendOtpResponse { Message = "OTP sent successfully." });
-                return Ok(response);
+                var isSend = await SendOtpAsync(request.Email, request.IsResend ? "Resend OTP" : "Reset Password OTP");
+                if(isSend) 
+                {
+                    var response = ApiResult<SendOtpResponse>.Succeed(new SendOtpResponse { Message = "OTP sent successfully." });
+                    return Ok(response);
+                }
+                else
+                {
+                    return BadRequest(ApiResult<SendOtpResponse>.Succeed(new SendOtpResponse { Message = "Something wrong!!!" }));
+                }
+                
             }
             return NotFound(ApiResult<Dictionary<string, string[]>>.Fail(new Exception("User is not found")));
         }
