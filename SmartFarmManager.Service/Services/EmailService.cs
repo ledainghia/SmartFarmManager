@@ -47,6 +47,7 @@ namespace SmartFarmManager.Service.Services
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.ToString());
                 // Log the exception or handle it as per your application's requirement
                 return false;
             }
