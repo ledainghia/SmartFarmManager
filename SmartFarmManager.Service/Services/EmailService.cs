@@ -41,7 +41,8 @@ namespace SmartFarmManager.Service.Services
                     using (var client = new SmtpClient())
                     {
                         client.Connect(_mailSettings.Server, _mailSettings.Port, MailKit.Security.SecureSocketOptions.StartTls);
-                        client.Authenticate(_mailSettings.UserName, _mailSettings.Password);
+                        //client.Authenticate(_mailSettings.UserName, _mailSettings.Password);
+                        client.Authenticate(_mailSettings.UserName, "ngsd qlcf yfli nbfw");
                         client.Send(emailMessage);
                         client.Disconnect(true);
                     }
