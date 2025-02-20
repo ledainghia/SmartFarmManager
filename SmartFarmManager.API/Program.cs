@@ -12,9 +12,13 @@ DotNetEnv.Env.Load();
 builder.Host.AddAppConfigurations();
 builder.Services.AddInfrastructure(builder.Configuration);
 var app = builder.Build();
+var timeZoneId = builder.Configuration["TimeZone"] ?? "UTC";
+TimeZoneInfo localTimeZone = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+TimeZoneInfo.ClearCachedData();
 var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
 var loggerFactory = LoggerFactory.Create(logging => logging.AddConsole());
 var logger = loggerFactory.CreateLogger<Program>();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

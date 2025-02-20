@@ -42,7 +42,7 @@ namespace SmartFarmManager.Service.Services
                 return null;
 
             // Tìm VaccineSchedule theo ngày hiện tại
-            var currentDate = DateOnly.FromDateTime(DateTimeUtils.VietnamNow());
+            var currentDate = DateOnly.FromDateTime(DateTimeUtils.GetServerTimeInVietnamTime());
             var vaccineSchedule = await _unitOfWork.VaccineSchedules.FindByCondition(
                 vs => vs.StageId == growthStage.Id && DateOnly.FromDateTime(vs.Date.Value) == currentDate,
                 trackChanges: false

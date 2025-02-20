@@ -188,5 +188,15 @@ namespace SmartFarmManager.API.Controllers
             var activeBatches = await _farmingBatchService.GetActiveFarmingBatchesByUserAsync(userId);
             return Ok(ApiResult<List<FarmingBatchModel>>.Succeed(activeBatches));
         }
+
+        [HttpGet("{farmingBatchId}/report")]
+        public async Task<IActionResult> GetFarmingBatchReport(Guid farmingBatchId)
+        {
+            var report = await _farmingBatchService.GetFarmingBatchReportAsync(farmingBatchId);
+            if (report == null)
+                return NotFound(ApiResult<object>.Fail("Farming batch not found."));
+
+            return Ok(ApiResult<FarmingBatchReportResponse>.Succeed(report));
+        }
     }
 }

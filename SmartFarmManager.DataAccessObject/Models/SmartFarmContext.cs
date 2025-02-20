@@ -49,6 +49,7 @@ public partial class SmartFarmContext : DbContext
     {
 
 
+        //optionsBuilder.UseSqlServer("Server=89.40.1.82,5053;Database=Farm;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;");
         optionsBuilder.UseSqlServer("Server=103.48.193.165,5053;Database=Farm3;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;");
 
     }
@@ -154,13 +155,100 @@ public partial class SmartFarmContext : DbContext
     public virtual DbSet<MedicalSymtomDetail> MedicalSymtomDetails { get; set; }
     public virtual DbSet<Disease> Diseases { get; set; }
     public virtual DbSet<StandardPrescription> StandardPrescriptions { get; set; }
+    public virtual  DbSet<ControlDevice> ControlDevices { get; set; }
+
     public virtual DbSet<StandardPrescriptionMedication> StandardPrescriptionMedications { get; set; }
+    public virtual DbSet<MasterData> MasterData { get; set; }
+
 
 
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<CostingReport>(entity =>
+        {
+            entity.HasKey(e => e.Id); // Đặt Id làm khóa chính
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.ReportMonth)
+                .IsRequired(); // Tháng bắt buộc
+
+            entity.Property(e => e.ReportYear)
+                .IsRequired(); // Năm bắt buộc
+
+            entity.Property(e => e.CostType)
+                .HasMaxLength(50) // Tối đa 50 ký tự
+                .IsRequired(); // Loại chi phí bắt buộc
+
+            entity.Property(e => e.TotalQuantity)
+                .HasColumnType("decimal(10, 2)") // Định dạng decimal cho tổng số lượng
+                .IsRequired(); // Bắt buộc
+
+            entity.Property(e => e.TotalCost)
+                .HasColumnType("decimal(10, 2)") // Định dạng decimal cho tổng chi phí
+                .IsRequired(); // Bắt buộc
+
+            entity.Property(e => e.GeneratedAt)
+                .HasDefaultValueSql("GETDATE()") // Mặc định là thời gian hiện tại
+                .IsRequired(); // Bắt buộc
+
+            // Thiết lập quan hệ với bảng Farm
+            entity.HasOne(e => e.Farm)
+                .WithMany(f => f.CostingReports)
+                .HasForeignKey(e => e.FarmId)
+                .OnDelete(DeleteBehavior.Cascade); // Xóa Farm sẽ xóa các báo cáo liên quan
+        });
+
+        modelBuilder.Entity<MasterData>(entity =>
+        {
+
+            entity.HasKey(e => e.Id); // Đặt Id làm khóa chính
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.CostType)
+                .HasMaxLength(50) // Tối đa 50 ký tự
+                .IsRequired(false); // Không bắt buộc
+
+            entity.Property(e => e.Unit)
+                .HasMaxLength(50) // Tối đa 50 ký tự
+                .IsRequired(false); // Không bắt buộc
+
+            entity.Property(e => e.UnitPrice)
+                .HasColumnType("decimal(10, 2)"); // Giá trị decimal với (10, 2)
+
+            entity.HasOne(e => e.Farm) // Thiết lập quan hệ với Farm
+                .WithMany(f => f.MasterData)
+                .HasForeignKey(e => e.FarmId)
+                .OnDelete(DeleteBehavior.Cascade); // Xóa cascade
+        });
+
+        modelBuilder.Entity<ControlDevice>(entity =>
+        {
+
+            entity.HasKey(e => e.Id); // Đặt Id làm khóa chính
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("(newid())");
+
+            entity.Property(e => e.Name)
+                .IsRequired()
+                .HasMaxLength(100); // Tên thiết bị, bắt buộc, tối đa 100 ký tự
+
+            entity.Property(e => e.Type)
+                .HasMaxLength(50); // Loại thiết bị, tối đa 50 ký tự
+
+            entity.Property(e => e.ControlCode)
+                .IsRequired()
+                .HasMaxLength(50); // Lệnh điều khiển, bắt buộc, tối đa 50 ký tự
+
+            entity.Property(e => e.Command)
+                .HasMaxLength(255); 
+
+
+            entity.HasOne(e => e.Cage) // Thiết lập quan hệ với bảng Cage
+                .WithMany(c => c.ControlDevices) // Một Cage có nhiều ControlDevice
+                .HasForeignKey(e => e.CageId) // Khóa ngoại là CageId
+                .OnDelete(DeleteBehavior.Cascade); // Xóa Cascade nếu Cage bị xóa
+        });
         modelBuilder.Entity<Symptom>(entity =>
         {
 
@@ -742,9 +830,24 @@ public partial class SmartFarmContext : DbContext
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Name).HasMaxLength(100);
-            entity.Property(e => e.Price).HasColumnType("decimal(10, 2)");
-            entity.Property(e => e.PricePerDose).HasColumnType("decimal(10, 2)");
-            entity.Property(e => e.UsageInstructions).HasMaxLength(255);
+            entity.Property(e => e.UsageInstructions)
+                        .HasMaxLength(255) // Hướng dẫn sử dụng, tối đa 255 ký tự
+                        .IsRequired(false);
+
+            entity.Property(e => e.Price)
+                .HasColumnType("decimal(10, 2)"); // Giá của thuốc, định dạng decimal
+
+            entity.Property(e => e.DoseWeight)
+                .HasColumnType("int"); // Khối lượng liều (mg)
+
+            entity.Property(e => e.Weight)
+                .HasColumnType("int"); // Khối lượng thuốc (mg)
+
+            entity.Property(e => e.DoseQuantity)
+                .HasColumnType("int"); // Số lượng liều (mg)
+
+            entity.Property(e => e.PricePerDose)
+                .HasColumnType("decimal(10, 2)"); // Giá mỗi liều
         });
 
         modelBuilder.Entity<MqttConfig>(entity =>
@@ -914,8 +1017,9 @@ public partial class SmartFarmContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__SensorDa__14C88410F7C62D8F");
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.Data).HasColumnType("decimal(18, 1)");
-
+            entity.Property(e => e.Data)
+         .IsRequired(false) // Không bắt buộc
+         .HasColumnType("nvarchar(max)"); 
             entity.HasOne(d => d.Sensor).WithMany(p => p.SensorDataLogs)
                 .HasForeignKey(d => d.SensorId)
                 .OnDelete(DeleteBehavior.ClientSetNull)

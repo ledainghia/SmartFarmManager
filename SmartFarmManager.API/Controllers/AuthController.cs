@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Google.Apis.Auth.OAuth2.Requests;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SmartFarmManager.API.Common;
@@ -220,7 +221,7 @@ namespace SmartFarmManager.API.Controllers
         }
         [HttpPost("refresh")]
         [AllowAnonymous]
-        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+        public async Task<IActionResult> RefreshToken([FromBody] Payloads.Requests.Auth.RefreshTokenRequest request)
         {
             if (!ModelState.IsValid)
             {
@@ -255,6 +256,14 @@ namespace SmartFarmManager.API.Controllers
             }
         }
 
+        [HttpPost("verify-token")]
+        public IActionResult VerifyToken([FromBody] Payloads.Requests.Auth.TokenVerifyRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.Token))
+                return BadRequest(ApiResult<object>.Fail("Token is required."));
 
+            bool isValid = _authenticationService.ValidateToken(request.Token);
+            return Ok(ApiResult<bool>.Succeed(isValid));
+        }
     }
 }

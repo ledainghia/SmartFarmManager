@@ -161,5 +161,43 @@ namespace SmartFarmManager.Service.Services
             return null;
         }
 
+        public bool ValidateToken(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+                return false;
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_jwtSettings.Key);
+
+            try
+            {
+                var tokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateAudience = false,
+                    ValidateIssuer = false,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateLifetime = true, // Kiểm tra token hết hạn
+                    ClockSkew = TimeSpan.Zero // Không cho phép chênh lệch thời gian
+                };
+
+                var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out var securityToken);
+
+                // Kiểm tra token có đúng kiểu JwtSecurityToken và sử dụng cùng thuật toán
+                if (securityToken is JwtSecurityToken jwtSecurityToken &&
+                    jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    return true; // Token hợp lệ
+                }
+
+                return false; // Token không hợp lệ
+            }
+            catch
+            {
+                return false; // Token không hợp lệ hoặc hết hạn
+            }
+        }
+
+
     }
 }

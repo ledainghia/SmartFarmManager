@@ -19,6 +19,7 @@ namespace SmartFarmManager.Service.Configuration
         // Lấy cấu hình hiện tại
         public async Task<SystemConfiguration> GetConfigurationAsync()
         {
+            // Kiểm tra nếu file không tồn tại
             if (!File.Exists(_configFilePath))
             {
                 var defaultConfig = new SystemConfiguration();
@@ -26,9 +27,30 @@ namespace SmartFarmManager.Service.Configuration
                 return defaultConfig;
             }
 
+            // Đọc dữ liệu JSON từ file
             var json = await File.ReadAllTextAsync(_configFilePath);
-            return JsonSerializer.Deserialize<SystemConfiguration>(json) ?? new SystemConfiguration();
+
+            // Kiểm tra xem dữ liệu JSON có trống không
+            if (string.IsNullOrEmpty(json))
+            {
+                // Nếu trống, tạo và ghi lại cấu hình mặc định
+                var defaultConfig = new SystemConfiguration();
+                await File.WriteAllTextAsync(_configFilePath, JsonSerializer.Serialize(defaultConfig));
+                return defaultConfig;
+            }
+
+            // Deserialize dữ liệu JSON
+            try
+            {
+                return JsonSerializer.Deserialize<SystemConfiguration>(json) ?? new SystemConfiguration();
+            }
+            catch (JsonException)
+            {
+                // Nếu không thể deserialize, trả về cấu hình mặc định
+                return new SystemConfiguration();
+            }
         }
+
 
         public async Task<bool> UpdateConfigurationAsync(SystemConfiguration config)
         {
@@ -50,6 +72,8 @@ namespace SmartFarmManager.Service.Configuration
                 return false;
             }
         }
+
+
 
     }
 }

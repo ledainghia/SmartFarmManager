@@ -11,7 +11,7 @@ public partial class Vaccine : EntityBase
     public string Name { get; set; }
 
     public string Method { get; set; }
-
+    public double Price { get; set; }
     public int? AgeStart { get; set; }
 
     public int? AgeEnd { get; set; }

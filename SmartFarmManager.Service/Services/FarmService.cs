@@ -29,7 +29,7 @@ namespace SmartFarmManager.Service.Services
                 Area = model.Area,
                 PhoneNumber = model.PhoneNumber,
                 Email = model.Email,
-                CreatedDate = DateTimeUtils.VietnamNow()
+                CreatedDate = DateTimeUtils.GetServerTimeInVietnamTime()
             };
 
             var id = await _unitOfWork.Farms.CreateAsync(farm);
@@ -78,7 +78,7 @@ namespace SmartFarmManager.Service.Services
             farm.Area = model.Area;
             farm.PhoneNumber = model.PhoneNumber;
             farm.Email = model.Email;
-            farm.ModifiedDate = DateTimeUtils.VietnamNow();
+            farm.ModifiedDate = DateTimeUtils.GetServerTimeInVietnamTime();
 
             await _unitOfWork.Farms.UpdateAsync(farm);
             await _unitOfWork.CommitAsync();
@@ -91,7 +91,7 @@ namespace SmartFarmManager.Service.Services
             if (farm == null) return false;
 
             farm.IsDeleted = true;
-            farm.DeletedDate = DateTimeUtils.VietnamNow();
+            farm.DeletedDate = DateTimeUtils.GetServerTimeInVietnamTime();
 
             await _unitOfWork.Farms.UpdateAsync(farm);
             await _unitOfWork.CommitAsync();

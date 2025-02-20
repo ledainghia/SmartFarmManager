@@ -1,3 +1,5 @@
 {
-  "MaxFarmingBatchPerCage": 3
+  "MaxFarmingBatchPerCage": 3,
+  "FirstReminderTimeHours": 6,
+  "SecondReminderTimeHours": 12
 }

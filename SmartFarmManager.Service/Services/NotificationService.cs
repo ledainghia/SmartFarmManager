@@ -1,6 +1,10 @@
 ﻿using FirebaseAdmin.Messaging;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using SmartFarmManager.DataAccessObject.Models;
+using SmartFarmManager.Repository.Interfaces;
+using SmartFarmManager.Service.BusinessModels.Notification;
+using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Settings;
 using System;
 using System.Collections.Generic;
@@ -10,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace SmartFarmManager.Service.Services
 {
-    public class NotificationService
+    public class NotificationService 
     {
         private readonly IHubContext<NotificationHub> _hubContext;
 
@@ -76,5 +80,26 @@ namespace SmartFarmManager.Service.Services
             string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
             return response; // Trả về ID của message đã gửi
         }
+        public async Task<string> SendNotification(string token, string title, object customData)
+        {
+            // Serialize custom object thành JSON string
+            var jsonData = Newtonsoft.Json.JsonConvert.SerializeObject(customData);
+
+            var message = new Message()
+            {
+                Token = token,
+                Notification = new FirebaseAdmin.Messaging.Notification()
+                {
+                    Title = title,
+                    Body = jsonData // Đưa toàn bộ customData vào Body
+                },
+            };
+
+            // Gửi thông báo qua Firebase
+            string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
+            return response; // Trả về ID của message đã gửi
+        }
+
+
     }
 }
