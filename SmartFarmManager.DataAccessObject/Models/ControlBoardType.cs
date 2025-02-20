@@ -8,7 +8,7 @@ namespace SmartFarmManager.DataAccessObject.Models;
 public partial class ControlBoardType : EntityBase
 {
 
-    public string Name { get; set; }
+    public string Name { get; set; } // Name of the control board type
 
     public string Description { get; set; }
 

@@ -29,14 +29,16 @@ namespace SmartFarmManager.Service.Services
         private readonly NotificationService notificationService;
         private readonly INotificationService _notificationUserService;
         private readonly IQuartzService _quartzService;
+        private readonly EmailService _emailService;
 
-        public MedicalSymptomService(IUnitOfWork unitOfWork, IUserService userService, NotificationService notificationService, IQuartzService quartzService, INotificationService notificationUserService)
+        public MedicalSymptomService(IUnitOfWork unitOfWork, IUserService userService, NotificationService notificationService, IQuartzService quartzService, INotificationService notificationUserService, EmailService emailService)
         {
             _unitOfWork = unitOfWork;
             _userService = userService;
             this.notificationService = notificationService;
             _quartzService = quartzService;
             _notificationUserService = notificationUserService;
+            _emailService = emailService;
         }
 
         public async Task<IEnumerable<MedicalSymptomModel>> GetMedicalSymptomsAsync(string? status, DateTime? startDate, DateTime? endDate, string? searchTerm)
@@ -777,6 +779,8 @@ namespace SmartFarmManager.Service.Services
 
                     await _notificationUserService.CreateNotificationAsync(notification);
                     await notificationService.SendNotification(vetFarm.DeviceId, "Nhắc nhở bác sĩ", notification);
+                    await _emailService.SendReminderEmailAsync(vetFarm.Email, vetFarm.FullName, "Nhắc nhở bác sĩ",
+               "Bạn có một báo cáo triệu chứng chưa được chuẩn đoán. Vui lòng kiểm tra ngay.");
                     medicalSymptom.FirstReminderSentAt = DateTimeUtils.GetServerTimeInVietnamTime();
                 }
                 // Gửi thông báo lần 2 nếu chưa gửi
@@ -795,6 +799,8 @@ namespace SmartFarmManager.Service.Services
                     await _notificationUserService.CreateNotificationAsync(notification);
                     await notificationService.SendNotification(vetFarm.DeviceId, "Nhắc nhở bác sĩ lần 2", notification);
                     medicalSymptom.SecondReminderSentAt = DateTimeUtils.GetServerTimeInVietnamTime();
+                    await _emailService.SendReminderEmailAsync(vetFarm.Email, vetFarm.FullName, "Nhắc nhở bác sĩ lần 2",
+               "Bác sĩ vẫn chưa phản hồi về triệu chứng. Cần hành động ngay.");
 
                     // Gửi thông báo cho admin
                     var admin = await _unitOfWork.Users
@@ -811,7 +817,9 @@ namespace SmartFarmManager.Service.Services
                         IsRead = false
                     };
 
-                    await notificationService.SendNotification(admin.DeviceId, "Triệu chứng chưa được chuẩn đoán", adminNotification);
+                    await notificationService.SendNotification(admin.DeviceId, "Triệu chứng vẫn chưa được chuẩn đoán. Cần admin can thiệp.", adminNotification);
+                    await _emailService.SendReminderEmailAsync(admin.Email, admin.FullName, "Cảnh báo từ hệ thống",
+               "Triệu chứng chưa được chuẩn đoán. Cần sự can thiệp của admin.");
                 }
 
                 // Cập nhật lại MedicalSymptom

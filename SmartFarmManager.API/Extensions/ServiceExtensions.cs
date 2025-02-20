@@ -281,9 +281,7 @@ namespace SmartFarmManager.API.Extensions
         }
         private static void AddMqttClientService(this IServiceCollection services, IConfiguration configuration)
         {
-            services.Configure<MqttClientSetting>(configuration.GetSection(MqttClientSetting.Section));
-
-         
+            services.Configure<MqttClientSetting>(configuration.GetSection(MqttClientSetting.Section));        
             services.AddSingleton<IMqttService, MqttService>();
 
             
@@ -346,5 +344,6 @@ namespace SmartFarmManager.API.Extensions
                 ProjectId = configuration["CLOUDMESSAGE_PROJECT_ID"]
             });
         }
+      
     }
 }

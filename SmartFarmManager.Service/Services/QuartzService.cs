@@ -1,4 +1,5 @@
 ﻿using Quartz;
+using SmartFarmManager.Service.Configuration;
 using SmartFarmManager.Service.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -11,10 +12,12 @@ namespace SmartFarmManager.Service.Services
     public class QuartzService : IQuartzService
     {
         private readonly IScheduler _scheduler;
+        private readonly SystemConfigurationService _systemConfigurationService;
 
-        public QuartzService(IScheduler scheduler)
+        public QuartzService(IScheduler scheduler,SystemConfigurationService systemConfigurationService)
         {
             _scheduler = scheduler;
+            _systemConfigurationService = systemConfigurationService;
         }
 
         public async Task LoadBackgroundJobDefault(CancellationToken cancellationToken)
@@ -36,9 +39,9 @@ namespace SmartFarmManager.Service.Services
         /// </summary>
         public async Task CreateReminderJobs(Guid medicalSymptomId, DateTime reportDate)
         {
-            var firstReminderTime = DateTimeOffset.Now.AddMinutes(1); // Chạy lần 1 sau 1 phút
-            var secondReminderTime = DateTimeOffset.Now.AddMinutes(2); // Chạy lần 2 sau 2 phút
-
+            var config = await _systemConfigurationService.GetConfigurationAsync();
+            var firstReminderTime = DateTimeOffset.Now.AddHours(config.FirstReminderTimeHours); 
+            var secondReminderTime = DateTimeOffset.Now.AddHours(config.SecondReminderTimeHours);
             // ✅ Tạo Job lần 1
             var firstReminderJob = JobBuilder.Create<Jobs.MedicalSymptomReminderJob>()
                 .WithIdentity($"MedicalSymptomReminderJob-{medicalSymptomId}")

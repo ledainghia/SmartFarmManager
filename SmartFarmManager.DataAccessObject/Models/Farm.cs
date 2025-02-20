@@ -28,7 +28,7 @@ public partial class Farm : EntityBase
 
     public DateTime? DeletedDate { get; set; }
 
-    public string Macaddress { get; set; }
+    public string Macaddress { get; set; } // thay long dua 
 
     public virtual ICollection<ElectricityLog> ElectricityLogs { get; set; } = new List<ElectricityLog>();
 
