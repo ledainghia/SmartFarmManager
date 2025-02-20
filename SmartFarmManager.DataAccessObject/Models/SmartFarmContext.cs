@@ -47,8 +47,6 @@ public partial class SmartFarmContext : DbContext
     //}
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-
-
         //optionsBuilder.UseSqlServer("Server=89.40.1.82,5053;Database=Farm;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;");
         optionsBuilder.UseSqlServer("Server=103.48.193.165,5053;Database=Farm3;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;");
 
@@ -159,6 +157,7 @@ public partial class SmartFarmContext : DbContext
 
     public virtual DbSet<StandardPrescriptionMedication> StandardPrescriptionMedications { get; set; }
     public virtual DbSet<MasterData> MasterData { get; set; }
+    public virtual DbSet<WhitelistDomain> WhitelistDomains { get; set; }
 
 
 
@@ -166,6 +165,23 @@ public partial class SmartFarmContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+
+        modelBuilder.Entity<WhitelistDomain>(entity =>
+        {
+            entity.ToTable("WhitelistDomains");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Domain)
+                .IsRequired()
+                .HasMaxLength(255);
+
+            entity.Property(e => e.ApiKey)
+                .IsRequired()
+                .HasMaxLength(255);
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true);
+        });
         modelBuilder.Entity<CostingReport>(entity =>
         {
             entity.HasKey(e => e.Id); // Đặt Id làm khóa chính

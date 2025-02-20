@@ -50,6 +50,7 @@ namespace SmartFarmManager.Repository.Interfaces
         IWaterLogsRepository WaterLogs { get; }
         IAnimalSalesRepository AnimalSales { get; }
         IMasterDataRepository MasterData { get; }
+        IWhiteListDomainRepository WhiteListDomains { get; }
         Task<int> CommitAsync();
         System.Threading.Tasks.Task BeginTransactionAsync();
         System.Threading.Tasks.Task RollbackAsync();

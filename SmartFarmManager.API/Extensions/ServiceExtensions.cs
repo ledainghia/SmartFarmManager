@@ -229,6 +229,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IElectricityLogsRepository, ElectricityLogsRepository>();
             services.AddScoped<IMasterDataRepository, MasterDataRepository>();
             services.AddScoped<IWaterLogsRepository, WaterLogsRepository>();
+            services.AddScoped<IWhiteListDomainRepository, WhiteListDomainRepository>();
             return services;
         }
 
@@ -271,6 +272,8 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<ISaleTypeService, SaleTypeService>();
             services.AddScoped<EmailService>();
             services.AddScoped<ICostingService, CostingService>();
+            services.AddScoped<IWebhookService, WebhookService>();
+            services.AddScoped<IWhitelistDomainService, WhitelistDomainService>();
 
 
             return services;
