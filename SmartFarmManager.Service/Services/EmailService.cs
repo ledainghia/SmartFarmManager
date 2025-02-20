@@ -22,6 +22,10 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<bool> SendEmailAsync(MailData mailData)
         {
+            Console.WriteLine(_mailSettings.SenderName);
+            Console.WriteLine(_mailSettings.SenderEmail);
+            Console.WriteLine(_mailSettings.UserName);
+            Console.WriteLine(_mailSettings.Password);
             try
             {
                 using (var emailMessage = new MimeMessage())
@@ -37,8 +41,9 @@ namespace SmartFarmManager.Service.Services
                     using (var client = new SmtpClient())
                     {
                         client.Connect(_mailSettings.Server, _mailSettings.Port, MailKit.Security.SecureSocketOptions.StartTls);
-                        client.Authenticate(_mailSettings.UserName, _mailSettings.Password);
-                        await client.SendAsync(emailMessage);
+                        //client.Authenticate(_mailSettings.UserName, _mailSettings.Password);
+                        client.Authenticate(_mailSettings.UserName, "ngsd qlcf yfli nbfw");
+                        client.Send(emailMessage);
                         client.Disconnect(true);
                     }
                 };
@@ -47,6 +52,7 @@ namespace SmartFarmManager.Service.Services
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.ToString());
                 // Log the exception or handle it as per your application's requirement
                 return false;
             }

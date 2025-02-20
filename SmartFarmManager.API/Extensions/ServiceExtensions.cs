@@ -224,7 +224,11 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IFoodStackRepository, FoodStackRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
             services.AddScoped<INotificationTypeRepository, NotifitcationTypeRepository>();
-            services.AddScoped<EmailService>();
+            services.AddScoped<IAnimalSalesRepository, AnimalSalesRepository>();
+            services.AddScoped<ICostingReportsRepository, CostingReportsRepository>();
+            services.AddScoped<IElectricityLogsRepository, ElectricityLogsRepository>();
+            services.AddScoped<IMasterDataRepository, MasterDataRepository>();
+            services.AddScoped<IWaterLogsRepository, WaterLogsRepository>();
             return services;
         }
 
@@ -265,7 +269,8 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IDiseaseService, DiseaseService>();
             services.AddScoped<IStandardPrescriptionService, StandardPrescriptionService>();
             services.AddScoped<ISaleTypeService, SaleTypeService>();
-            
+            services.AddScoped<EmailService>();
+            services.AddScoped<ICostingService, CostingService>();
 
 
             return services;

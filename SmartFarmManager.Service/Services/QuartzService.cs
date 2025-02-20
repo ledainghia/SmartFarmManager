@@ -32,6 +32,8 @@ namespace SmartFarmManager.Service.Services
             await ScheduleJob<Jobs.UpdateTaskStatusesJob>("UpdateTaskStatusesJob-Evening", "0 0 18 * * ?", serverTimeZone, cancellationToken);
             await ScheduleJob<Jobs.UpdateEveningTaskStatusesJob>("UpdateEveningTaskStatusesJob", "0 0 23 * * ?", serverTimeZone, cancellationToken);
             //await ScheduleJob<Jobs.HelloWorldJob>("HelloWorldJob", "*/5 * * * * ?", serverTimeZone, cancellationToken);
+            // Job tính toán chi phí hàng ngày, chạy lúc 11h đêm
+            await ScheduleJob<Jobs.CalculateDailyCostJob>("CalculateDailyCostJob", "0 0 23 * * ?", serverTimeZone, cancellationToken);
         }
 
         /// <summary>

@@ -659,8 +659,10 @@ namespace SmartFarmManager.Service.Services
         }
         public async Task<Guid?> CreateMedicalSymptomAsync(MedicalSymptomModel medicalSymptomModel)
         {
-            // Lấy ngày hiện tại theo múi giờ Việt Nam
-            DateOnly currentDate = DateOnly.FromDateTime(DateTimeUtils.GetServerTimeInVietnamTime());
+            try
+            {
+                // Lấy ngày hiện tại theo múi giờ Việt Nam
+                DateOnly currentDate = DateOnly.FromDateTime(DateTimeUtils.GetServerTimeInVietnamTime());
 
             // Tìm giai đoạn phát triển hiện tại
             var growthStage = await _unitOfWork.GrowthStages
@@ -743,6 +745,12 @@ namespace SmartFarmManager.Service.Services
             await _quartzService.CreateReminderJobs(medicalSymptom.Id,DateTimeOffset.Now.LocalDateTime);
 
             return medicalSymptom.Id;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in Create Symptom: {ex.Message}");
+                throw new Exception("Failed to create Symptom. Details: " + ex.Message);
+            }
         }
         public async System.Threading.Tasks.Task ProcessMedicalSymptomReminderAsync(Guid medicalSymptomId)
         {
