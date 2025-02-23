@@ -10,6 +10,8 @@ namespace SmartFarmManager.Service.BusinessModels.FarmingBatch
     {
         public Guid FarmingBatchId { get; set; }
         public string FarmingBatchName { get; set; }
+
+        public string CageName { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public decimal? TotalEggSales { get; set; }      // Tổng tiền bán trứng

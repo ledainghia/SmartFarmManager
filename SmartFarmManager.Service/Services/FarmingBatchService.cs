@@ -494,6 +494,7 @@ namespace SmartFarmManager.Service.Services
             var farmingBatch = await _unitOfWork.FarmingBatches
                 .FindAll()
                 .Where(fb => fb.Id == farmingBatchId && fb.Status == FarmingBatchStatusEnum.Completed)
+                .Include(fb => fb.Cage)
                 .Include(fb => fb.AnimalSales)
                 .Include(fb => fb.GrowthStages)
                     .ThenInclude(gs => gs.DailyFoodUsageLogs)
@@ -538,6 +539,7 @@ namespace SmartFarmManager.Service.Services
             {
                 FarmingBatchId = farmingBatch.Id,
                 FarmingBatchName = farmingBatch.Name,
+                CageName = farmingBatch.Cage.Name,
                 StartDate = farmingBatch.StartDate,
                 EndDate = farmingBatch.CompleteAt,
                 TotalEggSales = (decimal)totalEggSales,
