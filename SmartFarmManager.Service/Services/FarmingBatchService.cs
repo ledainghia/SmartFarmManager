@@ -346,7 +346,7 @@ namespace SmartFarmManager.Service.Services
         }
 
 
-        public async Task<PagedResult<FarmingBatchModel>> GetFarmingBatchesAsync(string? status, string? cageName, string? name, string? species, DateTime? startDateFrom, DateTime? startDateTo, int pageNumber, int pageSize, Guid? cageId)
+        public async Task<PagedResult<FarmingBatchModel>> GetFarmingBatchesAsync(string? cageName, string? name, string? species, DateTime? startDateFrom, DateTime? startDateTo, int pageNumber, int pageSize, Guid? cageId, bool? isCancel)
         {
             var query = _unitOfWork.FarmingBatches.FindAll()
                 .Include(fb => fb.Cage) // Include related Cage
@@ -354,9 +354,9 @@ namespace SmartFarmManager.Service.Services
                 .AsQueryable();
 
             // Apply Filters
-            if (!string.IsNullOrEmpty(status))
+            if (!isCancel.Value)
             {
-                query = query.Where(x => x.Status == status);
+                query = query.Where(x => x.Status != FarmingBatchStatusEnum.Cancelled);
             }
 
             if (!string.IsNullOrEmpty(cageName))
@@ -539,7 +539,7 @@ namespace SmartFarmManager.Service.Services
                 FarmingBatchId = farmingBatch.Id,
                 FarmingBatchName = farmingBatch.Name,
                 StartDate = farmingBatch.StartDate,
-                EndDate = farmingBatch.EndDate,
+                EndDate = farmingBatch.CompleteAt,
                 TotalEggSales = (decimal)totalEggSales,
                 TotalMeatSales = (decimal)totalMeatSales,
                 TotalFoodCost = totalFoodCost,

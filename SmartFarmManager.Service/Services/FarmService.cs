@@ -1,5 +1,7 @@
-﻿using SmartFarmManager.DataAccessObject.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
+using SmartFarmManager.Service.BusinessModels.CostingReport;
 using SmartFarmManager.Service.BusinessModels.Farm;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
@@ -96,6 +98,31 @@ namespace SmartFarmManager.Service.Services
             await _unitOfWork.Farms.UpdateAsync(farm);
             await _unitOfWork.CommitAsync();
             return true;
+        }
+
+        public async Task<IEnumerable<CostingReportModel>> GetCostingReportsByFarmAsync(Guid farmId, int? month, int? year)
+        {
+            var query = _unitOfWork.CostingReports
+                .FindByCondition(c => c.FarmId == farmId);
+
+            if (month.HasValue)
+                query = query.Where(c => c.ReportMonth == month.Value);
+
+            if (year.HasValue)
+                query = query.Where(c => c.ReportYear == year.Value);
+
+            var reports = await query.ToListAsync();
+
+            return reports.Select(c => new CostingReportModel
+            {
+                Id = c.Id,
+                ReportMonth = c.ReportMonth,
+                ReportYear = c.ReportYear,
+                CostType = c.CostType,
+                TotalQuantity = c.TotalQuantity,
+                TotalCost = c.TotalCost,
+                GeneratedAt = c.GeneratedAt
+            });
         }
     }
 
