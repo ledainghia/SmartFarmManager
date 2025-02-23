@@ -230,6 +230,9 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IMasterDataRepository, MasterDataRepository>();
             services.AddScoped<IWaterLogsRepository, WaterLogsRepository>();
             services.AddScoped<IWhiteListDomainRepository, WhiteListDomainRepository>();
+            services.AddScoped<ISensorRepository, SensorRepository>();
+            services.AddScoped<ISensorTypeRepository, SensorTypeRepository>();
+            services.AddScoped<ISensorDataLogRepository,SensorDataLogRepository>();
             return services;
         }
 
@@ -323,6 +326,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddTransient<SmartFarmManager.Service.Jobs.UpdateTaskStatusesJob>();
             services.AddTransient<SmartFarmManager.Service.Jobs.UpdateEveningTaskStatusesJob>();
             services.AddTransient<SmartFarmManager.Service.Jobs.MedicalSymptomReminderJob>();
+            services.AddTransient<SmartFarmManager.Service.Jobs.CalculateDailyCostJob>();
             return services;
         }
 

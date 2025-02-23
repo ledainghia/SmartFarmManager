@@ -10,7 +10,7 @@ namespace SmartFarmManager.Service.Interfaces
     public interface IWebhookService
     {
         
-        Task HandleWebhookDataAsync(WebhookRequestModel webhookRequest);
+        Task HandleWebhookDataAsync( string dataType ,string jsonRequest);
         Task<bool> ValidateApiKeyAsync(string apiKey, string domain);
     }
 }

@@ -9,7 +9,7 @@ namespace SmartFarmManager.Service.BusinessModels.Webhook
     public class WebhookRequestModel
     {
         public string Datatype { get; set; }
-        public object Data { get; set; }
+        public Object Data { get; set; }
 
     }
 }

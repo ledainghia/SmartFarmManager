@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartFarmManager.API.Payloads.Requests.Webhook;
 using SmartFarmManager.Service.Interfaces;
+using System.Text.Json;
 
 namespace SmartFarmManager.API.Controllers
 {
@@ -44,13 +45,17 @@ namespace SmartFarmManager.API.Controllers
             {
                 return Unauthorized("API Key hoặc Domain không hợp lệ.");
             }
+            var dataObject = webhookRequest.Data;
+            string jsonData = JsonSerializer.Serialize(dataObject);
+
+            _logger.LogInformation("📡 JSON Payload: {JsonPayload}", jsonData);
 
             _logger.LogInformation("✅ Nhận dữ liệu webhook từ domain {Domain}", domain);
             _logger.LogInformation("🔹 Datatype: {Datatype}", webhookRequest.Datatype);
-            _logger.LogInformation("🔹 Data: {Data}", System.Text.Json.JsonSerializer.Serialize(webhookRequest.Data));
+            //_logger.LogInformation("🔹 Data: {Data}", System.Text.Json.JsonSerializer.Serialize(webhookRequest.Data));
 
             // Xử lý dữ liệu (nếu cần)
-            await _webhookService.HandleWebhookDataAsync(webhookRequest.MapToModel());
+            await _webhookService.HandleWebhookDataAsync(webhookRequest.Datatype, jsonData);
 
             return Ok("✅ Dữ liệu đã được nhận thành công!");
         }
