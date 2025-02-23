@@ -418,5 +418,47 @@ namespace SmartFarmManager.Service.Services
             });
         }
 
+        public async Task<IEnumerable<BusinessModels.Users.UserModel>> GetUsersAsync(string? roleName, bool? isActive, string? search)
+        {
+            var query = _unitOfWork.Users.FindAll();
+
+            // Lọc theo RoleName
+            if (!string.IsNullOrWhiteSpace(roleName))
+            {
+                query = query.Where(u => u.Role.RoleName == roleName);
+            }
+
+            // Lọc theo trạng thái hoạt động
+            if (isActive.HasValue)
+                query = query.Where(u => u.IsActive == isActive.Value);
+
+            // Tìm kiếm chung trên nhiều cột
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(u =>
+                    u.Username.Contains(search) ||
+                    u.FullName.Contains(search) ||
+                    u.Email.Contains(search) ||
+                    u.PhoneNumber.Contains(search) ||
+                    u.Address.Contains(search) ||
+                    u.Role.RoleName.Contains(search)
+                );
+            }
+
+            var users = await query.ToListAsync();
+
+            return users.Select(user => new BusinessModels.Users.UserModel
+            {
+                Id = user.Id,
+                Username = user.Username,
+                FullName = user.FullName,
+                Email = user.Email,
+                PhoneNumber = user.PhoneNumber,
+                Address = user.Address,
+                IsActive = user.IsActive,
+                CreatedAt = user.CreatedAt,
+                RoleId = user.RoleId
+            });
+        }
     }
 }

@@ -131,14 +131,14 @@ namespace SmartFarmManager.Service.Services
                 .FindByCondition(v => v.Schedule.Stage.FarmingBatch.FarmId == farmId && v.Date.Value == DateOnly.FromDateTime(date))
                 .ToListAsync();
 
-            //var totalVaccineCost = vaccineLogs.Sum(v => v.Schedule.TotalPrice);
+            var totalVaccineCost = vaccineLogs.Sum(v => v.Schedule.ToltalPrice);
 
-            //costReports.Add(new CostingReport
-            //{
-            //    CostType = "Vaccine",
-            //    TotalQuantity = vaccineLogs.Count(),
-            //    TotalCost = totalVaccineCost
-            //});
+            costReports.Add(new CostingReport
+            {
+                CostType = "Vaccine",
+                TotalQuantity = vaccineLogs.Count(),
+                TotalCost = totalVaccineCost.Value
+            });
 
             // 5️⃣ Chi phí thuốc
             var prescriptionLogs = await _unitOfWork.Prescription

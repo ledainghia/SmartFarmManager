@@ -293,7 +293,7 @@ namespace SmartFarmManager.API.Extensions
         private static void AddMqttClientService(this IServiceCollection services, IConfiguration configuration)
         {
             services.Configure<MqttClientSetting>(configuration.GetSection(MqttClientSetting.Section));        
-            services.AddSingleton<IMqttService, MqttService>();
+            //services.AddSingleton<IMqttService, MqttService>();
 
             
         }

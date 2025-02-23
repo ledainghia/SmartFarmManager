@@ -346,6 +346,15 @@ namespace SmartFarmManager.API.Controllers
             return Ok(ApiResult<IEnumerable<UserModel>>.Succeed(users));
         }
 
-    }
+    [HttpGet("/filter")]
+        public async Task<IActionResult> GetUsers(
 
+        [FromQuery] string? roleName,
+        [FromQuery] bool? isActive,
+        [FromQuery] string? search)
+        {
+            var users = await _userService.GetUsersAsync(roleName, isActive, search);
+            return Ok(ApiResult<IEnumerable<UserModel>>.Succeed(users));
+        }
+    }
 }
