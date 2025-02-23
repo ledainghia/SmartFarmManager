@@ -30,5 +30,6 @@ namespace SmartFarmManager.Service.Interfaces
 
         Task<bool?> CheckUserByEmail(string email);
         Task<IEnumerable<BusinessModels.Users.UserModel>> GetUsersAsync(string? username, string? email, string? phoneNumber, Guid? roleId, bool? isActive, string? fullName, string? address);
+        Task<IEnumerable<BusinessModels.Users.UserModel>> GetUsersAsync(string? roleName, bool? isActive, string? search);
     }
 }
