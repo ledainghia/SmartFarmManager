@@ -58,6 +58,9 @@ namespace SmartFarmManager.Repository
 
         public IMasterDataRepository MasterData { get; }
         public IWhiteListDomainRepository WhiteListDomains{ get; }
+        public ISensorRepository Sensors { get; }
+        public ISensorTypeRepository SensorTypes { get; }
+        public ISensorDataLogRepository SensorDataLogs { get; }
         public UnitOfWork(SmartFarmContext context, IUserRepository users,
             ITaskTypeRepository taskTypes,
             ITaskRepository tasks,
@@ -99,7 +102,10 @@ namespace SmartFarmManager.Repository
             IWaterLogsRepository waterLogs,
             IAnimalSalesRepository animalSales,
             IMasterDataRepository masterData,
-            IWhiteListDomainRepository whiteListDomains)
+            IWhiteListDomainRepository whiteListDomains,
+            ISensorRepository sensors,
+            ISensorTypeRepository sensorTypes,
+            ISensorDataLogRepository sensorDataLogs)
         {
             _context = context;
             Users = users;
@@ -145,6 +151,9 @@ namespace SmartFarmManager.Repository
             AnimalSales = animalSales;
             MasterData = masterData;
             WhiteListDomains = whiteListDomains;
+            Sensors = sensors;
+            SensorTypes = sensorTypes;
+            SensorDataLogs = sensorDataLogs;
         }
          
 

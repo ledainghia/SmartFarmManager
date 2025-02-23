@@ -51,6 +51,9 @@ namespace SmartFarmManager.Repository.Interfaces
         IAnimalSalesRepository AnimalSales { get; }
         IMasterDataRepository MasterData { get; }
         IWhiteListDomainRepository WhiteListDomains { get; }
+        ISensorRepository Sensors { get; }
+        ISensorTypeRepository SensorTypes { get; }
+        ISensorDataLogRepository SensorDataLogs { get; }
         Task<int> CommitAsync();
         System.Threading.Tasks.Task BeginTransactionAsync();
         System.Threading.Tasks.Task RollbackAsync();

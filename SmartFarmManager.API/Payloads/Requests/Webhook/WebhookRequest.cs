@@ -8,7 +8,7 @@ namespace SmartFarmManager.API.Payloads.Requests.Webhook
         [Required]
         public string Datatype { get; set; }
         [Required]
-        public object Data { get; set; }
+        public dynamic Data { get; set; }
 
         public WebhookRequestModel MapToModel()
         {
