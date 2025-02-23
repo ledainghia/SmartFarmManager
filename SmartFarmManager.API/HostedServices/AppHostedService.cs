@@ -1,7 +1,7 @@
 ﻿
 using Quartz;
 using SmartFarmManager.Service.Interfaces;
-using SmartFarmManager.Service.MQTT;
+
 
 namespace SmartFarmManager.API.HostedServices
 {
@@ -9,13 +9,13 @@ namespace SmartFarmManager.API.HostedServices
     {
         private readonly IScheduler _scheduler;
         private readonly IQuartzService _quartzService;
-        private readonly IMqttService _mqttService;
+        //private readonly IMqttService _mqttService;
 
-        public AppHostedService(IScheduler scheduler, IQuartzService quartzService, IMqttService mqttService)
+        public AppHostedService(IScheduler scheduler, IQuartzService quartzService)
         {
             _scheduler = scheduler;
             _quartzService = quartzService;
-            _mqttService = mqttService;
+           
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)

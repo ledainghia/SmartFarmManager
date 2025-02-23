@@ -21,7 +21,6 @@ using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Newtonsoft.Json;
 using SmartFarmManager.Service.Configuration;
-using SmartFarmManager.Service.MQTT;
 using SmartFarmManager.Service.Helpers;
 using Quartz.Impl;
 using SmartFarmManager.API.HostedServices;
@@ -179,7 +178,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddConfigurations();
             services.AddQuartzServices();
             services.AddAppHostedService();
-            services.AddMqttClientService(configuration);
+            //services.AddMqttClientService(configuration);
 
             return services;
         }
@@ -290,13 +289,13 @@ namespace SmartFarmManager.API.Extensions
             services.AddSingleton<SystemConfigurationService>();
             return services;
         }
-        private static void AddMqttClientService(this IServiceCollection services, IConfiguration configuration)
-        {
-            services.Configure<MqttClientSetting>(configuration.GetSection(MqttClientSetting.Section));        
-            //services.AddSingleton<IMqttService, MqttService>();
+        //private static void AddMqttClientService(this IServiceCollection services, IConfiguration configuration)
+        //{
+        //    services.Configure<MqttClientSetting>(configuration.GetSection(MqttClientSetting.Section));        
+        //    //services.AddSingleton<IMqttService, MqttService>();
 
             
-        }
+        //}
 
 
         public static IServiceCollection AddQuartzServices(this IServiceCollection services)
