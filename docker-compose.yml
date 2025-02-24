@@ -14,14 +14,18 @@ services:
     deploy:
       resources:
         limits:
-          memory: 3g
+          memory: 1.5g
 
   backend:
     build:
+      context: .
       dockerfile: Dockerfile
     container_name: backend
     ports:
       - '5051:8080' # Map HTTP từ container ra host
+    volumes:
+      - /etc/localtime:/etc/localtime:ro  # Đồng bộ thời gian với máy chủ
+      - /etc/timezone:/etc/timezone:ro
     environment:
       - 'ConnectionStrings:ProductConnection=Server=database,1433;Database=Farm;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;'
       - SECRET_KEY=adjkasdbyuaasgcndsjfngljkdsjflgsdfklgnslkdfnslkdnfkjsahdfkjsahjlkfsa
@@ -37,6 +41,14 @@ services:
       - CLOUDMESSAGE_AUTH_PROVIDER_X509_CERT_URL=https://www.googleapis.com/oauth2/v1/certs
       - CLOUDMESSAGE_CLIENT_X509_CERT_URL=https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-3z8ou%40smartfarm-b1eb0.iam.gserviceaccount.com
       - CLOUDMESSAGE_UNIVERSE_DOMAIN=googleapis.com
+      - MailSettings__Server=smtp.gmail.com
+      - MailSettings__Port=587
+      - MailSettings__SenderName=Farm
+      - MailSettings__SenderEmail=nguyentruongthinh17022003@gmail.com
+      - MailSettings__UserName=nguyentruongthinh17022003@gmail.com
+      - MailSettings__PassWord=ngsd qlcf yfli nbfw
+    depends_on:
+      - database
     restart: unless-stopped
 
 volumes:

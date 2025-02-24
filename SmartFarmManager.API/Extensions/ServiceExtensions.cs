@@ -21,6 +21,10 @@ using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Newtonsoft.Json;
 using SmartFarmManager.Service.Configuration;
+using SmartFarmManager.Service.Helpers;
+using Quartz.Impl;
+using SmartFarmManager.API.HostedServices;
+using SmartFarmManager.API.BackgroundJobs.QuartzConfigurations;
 
 
 namespace SmartFarmManager.API.Extensions
@@ -55,6 +59,16 @@ namespace SmartFarmManager.API.Extensions
             {
                 Key = secretKey
             };
+            //Get config mail form environment
+            services.Configure<MailSettings>(options =>
+            {
+                options.Server = Environment.GetEnvironmentVariable("MailSettings__Server");
+                options.Port = int.Parse(Environment.GetEnvironmentVariable("MailSettings__Port") ?? "0");
+                options.SenderName = Environment.GetEnvironmentVariable("MailSettings__SenderName");
+                options.SenderEmail = Environment.GetEnvironmentVariable("MailSettings__SenderEmail");
+                options.UserName = Environment.GetEnvironmentVariable("MailSettings__UserName");
+                options.Password = Environment.GetEnvironmentVariable("MailSettings__Password");
+            });
             ConfigureFirebaseAdminSDK(configuration);
             services.Configure<JwtSettings>(options => { options.Key = jwtSettings.Key; });
             services.Configure<CookiePolicyOptions>(options =>
@@ -130,7 +144,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddCors(option =>
                option.AddPolicy("CORS", builder =>
                    builder.AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin()));
-            services.AddInfrastructureServices();
+            services.AddInfrastructureServices(configuration);
             services.AddSignalR();
 
 
@@ -155,13 +169,16 @@ namespace SmartFarmManager.API.Extensions
             
             return services;
         }
-        private static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
+        private static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
+
 
             services.AddRepositories();
             services.AddApplicationServices();
             services.AddConfigurations();
             services.AddQuartzServices();
+            services.AddAppHostedService();
+            //services.AddMqttClientService(configuration);
 
             return services;
         }
@@ -205,9 +222,23 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IStandardPrescriptionRepository, StandardPrescriptionRepository>();
             services.AddScoped<IFoodStackRepository, FoodStackRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
+            services.AddScoped<INotificationTypeRepository, NotifitcationTypeRepository>();
+            services.AddScoped<IAnimalSalesRepository, AnimalSalesRepository>();
+            services.AddScoped<ICostingReportsRepository, CostingReportsRepository>();
+            services.AddScoped<IElectricityLogsRepository, ElectricityLogsRepository>();
+            services.AddScoped<IMasterDataRepository, MasterDataRepository>();
+            services.AddScoped<IWaterLogsRepository, WaterLogsRepository>();
+            services.AddScoped<IWhiteListDomainRepository, WhiteListDomainRepository>();
+            services.AddScoped<ISensorRepository, SensorRepository>();
+            services.AddScoped<ISensorTypeRepository, SensorTypeRepository>();
+            services.AddScoped<ISensorDataLogRepository,SensorDataLogRepository>();
             return services;
         }
 
+        private static void AddAppHostedService(this IServiceCollection services)
+        {
+            services.AddHostedService<AppHostedService>();
+        }
         private static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
             // Đăng ký các service logic
@@ -241,7 +272,10 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IDiseaseService, DiseaseService>();
             services.AddScoped<IStandardPrescriptionService, StandardPrescriptionService>();
             services.AddScoped<ISaleTypeService, SaleTypeService>();
-            services.AddSingleton<SystemConfigurationService>();
+            services.AddScoped<EmailService>();
+            services.AddScoped<ICostingService, CostingService>();
+            services.AddScoped<IWebhookService, WebhookService>();
+            services.AddScoped<IWhitelistDomainService, WhitelistDomainService>();
 
 
             return services;
@@ -252,24 +286,46 @@ namespace SmartFarmManager.API.Extensions
             // Đăng ký các configuration (ví dụ: JWT settings, database settings)
             services.AddScoped<JwtSettings>();
             services.AddSingleton<JwtSecurityTokenHandler>();
+            services.AddSingleton<SystemConfigurationService>();
             return services;
         }
+        //private static void AddMqttClientService(this IServiceCollection services, IConfiguration configuration)
+        //{
+        //    services.Configure<MqttClientSetting>(configuration.GetSection(MqttClientSetting.Section));        
+        //    //services.AddSingleton<IMqttService, MqttService>();
+
+            
+        //}
 
 
         public static IServiceCollection AddQuartzServices(this IServiceCollection services)
         {
-            // Cấu hình Quartz
+            // Đăng ký Quartz Scheduler
             services.AddQuartz(config =>
-            { 
-                SmartFarmManager.API.BackgroundJobs.QuartzConfigurations.QuartzScheduler.ConfigureJobs(config);
-            });
-
-            // Thêm Quartz Hosted Service
-            services.AddQuartzHostedService(options =>
             {
-                options.WaitForJobsToComplete = true; // Đợi các job hoàn tất trước khi tắt ứng dụng
+                config.UseMicrosoftDependencyInjectionJobFactory();
             });
 
+            // Đăng ký Job Factory
+            services.AddSingleton<IJobFactory, ScopedJobFactory>();
+
+            // Đăng ký Scheduler Factory
+            services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();
+            
+            // Đăng ký Scheduler vào DI Container
+            services.AddSingleton(provider =>
+            {
+                var scheduler = provider.GetRequiredService<ISchedulerFactory>().GetScheduler().Result;
+                scheduler.JobFactory = provider.GetRequiredService<IJobFactory>();
+                return scheduler;
+            });
+            services.AddSingleton<IQuartzService, QuartzService>();
+            services.AddTransient<SmartFarmManager.Service.Jobs.HelloWorldJob>();
+            services.AddTransient<SmartFarmManager.Service.Jobs.GenerateTasksForTomorrowJob>();
+            services.AddTransient<SmartFarmManager.Service.Jobs.UpdateTaskStatusesJob>();
+            services.AddTransient<SmartFarmManager.Service.Jobs.UpdateEveningTaskStatusesJob>();
+            services.AddTransient<SmartFarmManager.Service.Jobs.MedicalSymptomReminderJob>();
+            services.AddTransient<SmartFarmManager.Service.Jobs.CalculateDailyCostJob>();
             return services;
         }
 
@@ -299,5 +355,6 @@ namespace SmartFarmManager.API.Extensions
                 ProjectId = configuration["CLOUDMESSAGE_PROJECT_ID"]
             });
         }
+      
     }
 }

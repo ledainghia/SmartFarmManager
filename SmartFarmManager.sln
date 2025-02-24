@@ -9,8 +9,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartFarmManager.Repository
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartFarmManager.Service", "SmartFarmManager.Service\SmartFarmManager.Service.csproj", "{71E317D4-F7F7-4DC9-8270-39003981205D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartFarmManager.BackgroundJob", "SmartFarmManager.BackgroundJob\SmartFarmManager.BackgroundJob.csproj", "{09D3074F-F01C-47C2-ABC8-5D4B8CD57B04}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartFarmManager.Test", "SmartFarmManager.Test\SmartFarmManager.Test.csproj", "{1A4BD722-C0BE-42FB-A211-F1A8918BA28A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartFarmManager.API", "SmartFarmManager.API\SmartFarmManager.API.csproj", "{038E7E45-1838-4A84-B77E-EE6B55010BDC}"
@@ -33,10 +31,6 @@ Global
 		{71E317D4-F7F7-4DC9-8270-39003981205D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{71E317D4-F7F7-4DC9-8270-39003981205D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{71E317D4-F7F7-4DC9-8270-39003981205D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{09D3074F-F01C-47C2-ABC8-5D4B8CD57B04}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{09D3074F-F01C-47C2-ABC8-5D4B8CD57B04}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{09D3074F-F01C-47C2-ABC8-5D4B8CD57B04}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{09D3074F-F01C-47C2-ABC8-5D4B8CD57B04}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1A4BD722-C0BE-42FB-A211-F1A8918BA28A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1A4BD722-C0BE-42FB-A211-F1A8918BA28A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1A4BD722-C0BE-42FB-A211-F1A8918BA28A}.Release|Any CPU.ActiveCfg = Release|Any CPU

@@ -11,6 +11,7 @@ namespace SmartFarmManager.Service.Interfaces
     {
         Task<LoginResult> Login(string username, string password);
         Task<TokenResult> RefreshTokenAsync(string refreshToken);
+        bool ValidateToken(string token);
 
     }
 }

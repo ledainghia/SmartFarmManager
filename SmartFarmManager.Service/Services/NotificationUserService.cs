@@ -31,8 +31,12 @@ namespace SmartFarmManager.Service.Services
                 Id = n.Id,
                 UserId = n.UserId,
                 Content = n.Content,
+                Title = n.Title,
                 CreatedAt = n.CreatedAt,
-                IsRead = n.IsRead
+                IsRead = n.IsRead,
+                MedicalSymptomId = n.MedicalSymptomId,
+                CageId = n.CageId,
+                TaskId = n.TaskId,
             });
         }
 
@@ -79,8 +83,12 @@ namespace SmartFarmManager.Service.Services
                 Id = notification.Id,
                 UserId = notification.UserId,
                 Content = notification.Content,
+                Title = notification.Title,
                 CreatedAt = notification.CreatedAt,
-                IsRead = notification.IsRead
+                IsRead = notification.IsRead,
+                MedicalSymptomId = notification.MedicalSymptomId,
+                CageId = notification.CageId,
+                TaskId = notification.TaskId,
             };
         }
 

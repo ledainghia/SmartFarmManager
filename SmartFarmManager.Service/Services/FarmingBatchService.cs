@@ -346,7 +346,7 @@ namespace SmartFarmManager.Service.Services
         }
 
 
-        public async Task<PagedResult<FarmingBatchModel>> GetFarmingBatchesAsync(string? status, string? cageName, string? name, string? species, DateTime? startDateFrom, DateTime? startDateTo, int pageNumber, int pageSize, Guid? cageId)
+        public async Task<PagedResult<FarmingBatchModel>> GetFarmingBatchesAsync(string? cageName, string? name, string? species, DateTime? startDateFrom, DateTime? startDateTo, int pageNumber, int pageSize, Guid? cageId, bool? isCancel)
         {
             var query = _unitOfWork.FarmingBatches.FindAll()
                 .Include(fb => fb.Cage) // Include related Cage
@@ -354,9 +354,9 @@ namespace SmartFarmManager.Service.Services
                 .AsQueryable();
 
             // Apply Filters
-            if (!string.IsNullOrEmpty(status))
+            if (!isCancel.Value)
             {
-                query = query.Where(x => x.Status == status);
+                query = query.Where(x => x.Status != FarmingBatchStatusEnum.Cancelled);
             }
 
             if (!string.IsNullOrEmpty(cageName))
@@ -487,6 +487,68 @@ namespace SmartFarmManager.Service.Services
                 Quantity = fb.Quantity,
                 AffectedQuantity = fb.AffectedQuantity,
             }).ToList();
+        }
+
+        public async Task<FarmingBatchReportResponse> GetFarmingBatchReportAsync(Guid farmingBatchId)
+        {
+            var farmingBatch = await _unitOfWork.FarmingBatches
+                .FindAll()
+                .Where(fb => fb.Id == farmingBatchId && fb.Status == FarmingBatchStatusEnum.Completed)
+                .Include(fb => fb.Cage)
+                .Include(fb => fb.AnimalSales)
+                .Include(fb => fb.GrowthStages)
+                    .ThenInclude(gs => gs.DailyFoodUsageLogs)
+                .Include(fb => fb.GrowthStages)
+                    .ThenInclude(gs => gs.VaccineSchedules)
+                .Include(fb => fb.MedicalSymptoms)
+                    .ThenInclude(ms => ms.Prescriptions)
+                .FirstOrDefaultAsync();
+
+            if (farmingBatch == null)
+                return null;
+
+            // Tổng tiền bán trứng (SaleType = "EggSale")
+            var totalEggSales = farmingBatch.AnimalSales
+                .Where(sale => sale.SaleType.StageTypeName == "EggSale")
+                .Sum(sale => sale.UnitPrice * sale.Quantity) ?? 0;
+
+            // Tổng tiền bán thịt (SaleType = "MeatSale")
+            var totalMeatSales = farmingBatch.AnimalSales
+                .Where(sale => sale.SaleType.StageTypeName == "MeatSale")
+                .Sum(sale => sale.UnitPrice * sale.Quantity) ?? 0;
+
+            // Tổng tiền thức ăn (tất cả các GrowthStage)
+            var totalFoodCost = farmingBatch.GrowthStages
+                .SelectMany(gs => gs.DailyFoodUsageLogs)
+                .Sum(log => (decimal)log.UnitPrice * (log.ActualWeight ?? 0));
+
+            // Tổng tiền vaccine (tất cả các GrowthStage)
+            var totalVaccineCost = farmingBatch.GrowthStages
+                .SelectMany(gs => gs.VaccineSchedules)
+                .Sum(vaccine => vaccine.Quantity * (vaccine.ToltalPrice ?? 0));
+
+            // Tổng tiền thuốc (từ tất cả các MedicalSymptom và Prescription)
+            var totalMedicineCost = farmingBatch.MedicalSymptoms
+                .SelectMany(ms => ms.Prescriptions)
+                .Sum(p => p.Price ?? 0);
+
+            // Lợi nhuận: Tổng doanh thu - Tổng chi phí
+            var netProfit = ((decimal)totalEggSales + (decimal)totalMeatSales) - (totalFoodCost + (decimal)totalVaccineCost + totalMedicineCost);
+
+            return new FarmingBatchReportResponse
+            {
+                FarmingBatchId = farmingBatch.Id,
+                FarmingBatchName = farmingBatch.Name,
+                CageName = farmingBatch.Cage.Name,
+                StartDate = farmingBatch.StartDate,
+                EndDate = farmingBatch.CompleteAt,
+                TotalEggSales = (decimal)totalEggSales,
+                TotalMeatSales = (decimal)totalMeatSales,
+                TotalFoodCost = totalFoodCost,
+                TotalVaccineCost = (decimal)totalVaccineCost,
+                TotalMedicineCost = totalMedicineCost,
+                NetProfit = netProfit
+            };
         }
 
     }

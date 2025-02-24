@@ -44,6 +44,16 @@ namespace SmartFarmManager.Repository.Interfaces
         IStandardPrescriptionRepository StandardPrescriptions { get; }
         IFoodStackRepository FoodStacks { get; }
         INotificationRepository Notifications { get; }
+        INotificationTypeRepository NotificationsTypes { get; }
+        ICostingReportsRepository CostingReports { get; }
+        IElectricityLogsRepository ElectricityLogs { get; }
+        IWaterLogsRepository WaterLogs { get; }
+        IAnimalSalesRepository AnimalSales { get; }
+        IMasterDataRepository MasterData { get; }
+        IWhiteListDomainRepository WhiteListDomains { get; }
+        ISensorRepository Sensors { get; }
+        ISensorTypeRepository SensorTypes { get; }
+        ISensorDataLogRepository SensorDataLogs { get; }
         Task<int> CommitAsync();
         System.Threading.Tasks.Task BeginTransactionAsync();
         System.Threading.Tasks.Task RollbackAsync();

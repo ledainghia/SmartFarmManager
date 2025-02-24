@@ -39,8 +39,8 @@ namespace SmartFarmManager.API.Controllers
                 Content = "This is a sample notification",
                 CreatedAt = DateTime.UtcNow,
                 IsRead = false,
-                FarmId = 1,
-                CageId = 2
+                //FarmId = 1,
+                CageId = Guid.NewGuid()
             };
 
             var response = await _notificationService.SendNotification(Token, Title, sampleNotification);

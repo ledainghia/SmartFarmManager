@@ -48,8 +48,19 @@ namespace SmartFarmManager.Repository
         public IDiseaseRepositoy Diseases { get; }
         public IStandardPrescriptionRepository StandardPrescriptions { get; }
         public IFoodStackRepository FoodStacks { get; }
-
         public INotificationRepository Notifications { get; }
+        public INotificationTypeRepository NotificationsTypes { get; }
+        public ICostingReportsRepository CostingReports { get; }
+        public IElectricityLogsRepository ElectricityLogs { get; }
+        public IWaterLogsRepository WaterLogs { get; }
+
+        public IAnimalSalesRepository AnimalSales { get; }
+
+        public IMasterDataRepository MasterData { get; }
+        public IWhiteListDomainRepository WhiteListDomains{ get; }
+        public ISensorRepository Sensors { get; }
+        public ISensorTypeRepository SensorTypes { get; }
+        public ISensorDataLogRepository SensorDataLogs { get; }
         public UnitOfWork(SmartFarmContext context, IUserRepository users,
             ITaskTypeRepository taskTypes,
             ITaskRepository tasks,
@@ -83,7 +94,18 @@ namespace SmartFarmManager.Repository
             ISymptomRepository symptoms,
             IDiseaseRepositoy diseases,
             IStandardPrescriptionRepository standardPrescriptions,
-            IFoodStackRepository foodStacks)
+            IFoodStackRepository foodStacks,
+            INotificationRepository notifications,
+            INotificationTypeRepository notificationTypes,
+            ICostingReportsRepository costingReports,
+            IElectricityLogsRepository electricityLogs,
+            IWaterLogsRepository waterLogs,
+            IAnimalSalesRepository animalSales,
+            IMasterDataRepository masterData,
+            IWhiteListDomainRepository whiteListDomains,
+            ISensorRepository sensors,
+            ISensorTypeRepository sensorTypes,
+            ISensorDataLogRepository sensorDataLogs)
         {
             _context = context;
             Users = users;
@@ -121,6 +143,17 @@ namespace SmartFarmManager.Repository
             Diseases = diseases;
             StandardPrescriptions = standardPrescriptions;
             FoodStacks = foodStacks;
+            Notifications = notifications;
+            NotificationsTypes = notificationTypes;
+            CostingReports = costingReports;
+            ElectricityLogs = electricityLogs;
+            WaterLogs = waterLogs;
+            AnimalSales = animalSales;
+            MasterData = masterData;
+            WhiteListDomains = whiteListDomains;
+            Sensors = sensors;
+            SensorTypes = sensorTypes;
+            SensorDataLogs = sensorDataLogs;
         }
          
 

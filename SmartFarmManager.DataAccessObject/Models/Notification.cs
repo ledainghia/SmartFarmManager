@@ -11,16 +11,16 @@ public partial class Notification : EntityBase
     public Guid UserId { get; set; }
 
     public Guid NotiTypeId { get; set; }
-
+    public string Title { get; set; }
     public string Content { get; set; }
 
     public DateTime? CreatedAt { get; set; }
 
     public bool? IsRead { get; set; }
+    public Guid? TaskId { get; set; }
+    public Guid? MedicalSymptomId {get;set;}
 
-    public int? FarmId { get; set; }
-
-    public int? CageId { get; set; }
+    public Guid? CageId { get; set; }
 
     public virtual NotificationType NotiType { get; set; }
 

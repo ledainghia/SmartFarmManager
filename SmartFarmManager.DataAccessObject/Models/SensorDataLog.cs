@@ -9,8 +9,8 @@ public partial class SensorDataLog : EntityBase
 {
 
     public Guid SensorId { get; set; }
-
-    public decimal Data { get; set; }
+     
+    public string Data { get; set; } // lưu json body  vào đây 
 
     public DateTime CreatedDate { get; set; }
 
