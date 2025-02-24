@@ -32,5 +32,6 @@ namespace SmartFarmManager.Service.Interfaces
         Task<bool> UpdateEveningTaskStatusesAsync();
         Task<bool> GenerateTreatmentTasksAsync();
         Task<bool> GenerateTreatmentTasksAsyncV2();
+        Task<Dictionary<string, int>> GetTaskCountByStatusAsync(DateTime startDate, DateTime endDate, Guid? assignedToUserId = null, Guid? farmId = null);
     }
 }

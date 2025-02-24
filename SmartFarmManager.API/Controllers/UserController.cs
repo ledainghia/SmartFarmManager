@@ -165,8 +165,23 @@ namespace SmartFarmManager.API.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateUser([FromBody] UserCreateModel request)
         {
-            var user = await _userService.CreateUserAsync(request);
-            return Ok(ApiResult<UserModel>.Succeed(user));
+            try
+            {
+                var user = await _userService.CreateUserAsync(request);
+                return Ok(ApiResult<UserModel>.Succeed(user));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred. Please contact support."));
+            }
         }
 
         [HttpPut("{userId}")]

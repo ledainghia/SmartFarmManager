@@ -329,6 +329,19 @@ namespace SmartFarmManager.API.Controllers
             }
         }
 
+        [HttpGet("tasks/count-by-status")]
+        public async Task<IActionResult> GetTaskCountByStatus([FromQuery] DateTime startDate,[FromQuery] DateTime endDate,[FromQuery] Guid? assignedToUserId = null,[FromQuery] Guid? farmId = null)
+        {
+            try
+            {
+                var taskCounts = await _taskService.GetTaskCountByStatusAsync(startDate, endDate, assignedToUserId, farmId);
+                return Ok(ApiResult<Dictionary<string, int>>.Succeed(taskCounts));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+            }
+        }
 
     }
 }

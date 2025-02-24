@@ -1875,6 +1875,32 @@ namespace SmartFarmManager.Service.Services
             }
         }
 
+        public async Task<Dictionary<string, int>> GetTaskCountByStatusAsync(DateTime startDate, DateTime endDate, Guid? assignedToUserId = null, Guid? farmId = null)
+        {
+            var query = _unitOfWork.Tasks.FindAll()
+                .Include(t => t.Cage) // Lấy thông tin Cage để kiểm tra FarmId
+                .Where(t => t.DueDate >= startDate && t.DueDate <= endDate)
+                .AsQueryable();
+
+            if (farmId.HasValue)
+            {
+                query = query.Where(t => t.Cage.FarmId == farmId.Value);
+            }
+            // Nếu có AssignedToUserId, lọc theo User được giao task
+            if (assignedToUserId.HasValue)
+            {
+                query = query.Where(t => t.AssignedToUserId == assignedToUserId.Value);
+            }
+
+
+            // Nhóm theo Status và đếm số lượng task
+            var taskCounts = await query
+                .GroupBy(t => t.Status)
+                .Select(g => new { Status = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(g => g.Status, g => g.Count);
+
+            return taskCounts;
+        }
 
 
 
