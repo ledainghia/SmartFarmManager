@@ -15,7 +15,7 @@ using SmartFarmManager.Service.Shared;
 
 namespace SmartFarmManager.Service.Services
 {
-    public class GrowthStageService:IGrowthStageService
+    public class GrowthStageService : IGrowthStageService
     {
         private readonly IUnitOfWork _unitOfWork;
 
@@ -291,6 +291,32 @@ namespace SmartFarmManager.Service.Services
                 WeightBasedOnBodyMass = growthStage.WeightBasedOnBodyMass
             };
         }
+        public async Task<bool> UpdateWeightAnimalAsync(UpdateGrowthStageRequest request)
+        {
+            // 1️⃣ Tìm GrowthStage theo ID
+            var growthStage = await _unitOfWork.GrowthStages
+                .FindByCondition(gs => gs.Id == request.GrowthStageId)
+                .FirstOrDefaultAsync();
+
+            if (growthStage == null)
+                return false; // Không tìm thấy GrowthStage
+
+            // 2️⃣ Cập nhật WeightAnimal với giá trị mới từ request
+            growthStage.WeightAnimal = request.WeightAnimal;
+
+            // 3️⃣ Tính lại RecommendedWeightPerSession
+            if (growthStage.WeightBasedOnBodyMass.HasValue)
+            {
+                growthStage.RecommendedWeightPerSession = request.WeightAnimal * growthStage.WeightBasedOnBodyMass.Value;
+            }
+
+            // 4️⃣ Cập nhật lại GrowthStage trong database
+            await _unitOfWork.GrowthStages.UpdateAsync(growthStage);
+            await _unitOfWork.CommitAsync();
+
+            return true; // Cập nhật thành công
+        }
+
 
     }
 }
