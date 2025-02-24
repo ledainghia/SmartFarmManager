@@ -346,7 +346,7 @@ namespace SmartFarmManager.Service.Services
         }
 
 
-        public async Task<PagedResult<FarmingBatchModel>> GetFarmingBatchesAsync(string? status, string? cageName, string? name, string? species, DateTime? startDateFrom, DateTime? startDateTo, int pageNumber, int pageSize, Guid? cageId)
+        public async Task<PagedResult<FarmingBatchModel>> GetFarmingBatchesAsync(string? cageName, string? name, string? species, DateTime? startDateFrom, DateTime? startDateTo, int pageNumber, int pageSize, Guid? cageId, bool? isCancel)
         {
             var query = _unitOfWork.FarmingBatches.FindAll()
                 .Include(fb => fb.Cage) // Include related Cage
@@ -354,9 +354,9 @@ namespace SmartFarmManager.Service.Services
                 .AsQueryable();
 
             // Apply Filters
-            if (!string.IsNullOrEmpty(status))
+            if (!isCancel.Value)
             {
-                query = query.Where(x => x.Status == status);
+                query = query.Where(x => x.Status != FarmingBatchStatusEnum.Cancelled);
             }
 
             if (!string.IsNullOrEmpty(cageName))
@@ -494,6 +494,7 @@ namespace SmartFarmManager.Service.Services
             var farmingBatch = await _unitOfWork.FarmingBatches
                 .FindAll()
                 .Where(fb => fb.Id == farmingBatchId && fb.Status == FarmingBatchStatusEnum.Completed)
+                .Include(fb => fb.Cage)
                 .Include(fb => fb.AnimalSales)
                 .Include(fb => fb.GrowthStages)
                     .ThenInclude(gs => gs.DailyFoodUsageLogs)
@@ -538,8 +539,9 @@ namespace SmartFarmManager.Service.Services
             {
                 FarmingBatchId = farmingBatch.Id,
                 FarmingBatchName = farmingBatch.Name,
+                CageName = farmingBatch.Cage.Name,
                 StartDate = farmingBatch.StartDate,
-                EndDate = farmingBatch.EndDate,
+                EndDate = farmingBatch.CompleteAt,
                 TotalEggSales = (decimal)totalEggSales,
                 TotalMeatSales = (decimal)totalMeatSales,
                 TotalFoodCost = totalFoodCost,

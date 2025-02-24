@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.Auth;
 using SmartFarmManager.API.Payloads.Responses.Auth;
+using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Service.BusinessModels.Auth;
 using SmartFarmManager.Service.Interfaces;
 using System.IdentityModel.Tokens.Jwt;

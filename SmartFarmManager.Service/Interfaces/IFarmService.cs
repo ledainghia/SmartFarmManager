@@ -1,4 +1,5 @@
-﻿using SmartFarmManager.Service.BusinessModels.Farm;
+﻿using SmartFarmManager.Service.BusinessModels.CostingReport;
+using SmartFarmManager.Service.BusinessModels.Farm;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +16,6 @@ namespace SmartFarmManager.Service.Interfaces
             Task<IEnumerable<FarmModel>> GetAllFarmsAsync(string? search);
             Task<bool> UpdateFarmAsync(Guid id, FarmModel model);
             Task<bool> DeleteFarmAsync(Guid id);
-
+            Task<IEnumerable<CostingReportModel>> GetCostingReportsByFarmAsync(Guid farmId, int? month, int? year);
     }
 }
