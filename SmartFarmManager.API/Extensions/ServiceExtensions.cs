@@ -232,6 +232,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<ISensorRepository, SensorRepository>();
             services.AddScoped<ISensorTypeRepository, SensorTypeRepository>();
             services.AddScoped<ISensorDataLogRepository,SensorDataLogRepository>();
+            services.AddScoped<IStockLogRepository, StockLogRepository>();
             return services;
         }
 

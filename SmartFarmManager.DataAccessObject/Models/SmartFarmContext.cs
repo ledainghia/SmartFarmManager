@@ -1085,7 +1085,7 @@ public partial class SmartFarmContext : DbContext
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.CostPerKg).HasColumnType("decimal(10, 2)");
-            entity.Property(e => e.NameFood).HasMaxLength(100);
+            entity.Property(e => e.FoodType).HasMaxLength(100);
             entity.Property(e => e.Quantity).HasColumnType("decimal(10, 2)");
 
             entity.HasOne(d => d.Stack).WithMany(p => p.StockLogs)

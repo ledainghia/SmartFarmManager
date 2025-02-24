@@ -61,6 +61,7 @@ namespace SmartFarmManager.Repository
         public ISensorRepository Sensors { get; }
         public ISensorTypeRepository SensorTypes { get; }
         public ISensorDataLogRepository SensorDataLogs { get; }
+        public IStockLogRepository StockLogs { get; }
         public UnitOfWork(SmartFarmContext context, IUserRepository users,
             ITaskTypeRepository taskTypes,
             ITaskRepository tasks,
@@ -105,7 +106,8 @@ namespace SmartFarmManager.Repository
             IWhiteListDomainRepository whiteListDomains,
             ISensorRepository sensors,
             ISensorTypeRepository sensorTypes,
-            ISensorDataLogRepository sensorDataLogs)
+            ISensorDataLogRepository sensorDataLogs,
+            IStockLogRepository stockLogs)
         {
             _context = context;
             Users = users;
@@ -154,6 +156,7 @@ namespace SmartFarmManager.Repository
             Sensors = sensors;
             SensorTypes = sensorTypes;
             SensorDataLogs = sensorDataLogs;
+            StockLogs = stockLogs;
         }
          
 

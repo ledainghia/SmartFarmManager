@@ -10,7 +10,7 @@ public partial class StockLog : EntityBase
 
     public Guid StackId { get; set; }
 
-    public string NameFood { get; set; }
+    public string FoodType { get; set; }
 
     public decimal? Quantity { get; set; }
 
@@ -19,4 +19,5 @@ public partial class StockLog : EntityBase
     public DateOnly? DateAdded { get; set; }
 
     public virtual FoodStack Stack { get; set; }
+
 }

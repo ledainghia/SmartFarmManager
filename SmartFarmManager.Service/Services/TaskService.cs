@@ -1299,7 +1299,7 @@ namespace SmartFarmManager.Service.Services
                                     CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
                                 });
 
-                                vaccineSchedule.Status = VaccineScheduleStatusEnum.Completed;
+                                vaccineSchedule.Status = VaccineScheduleStatusEnum.Completed; 
                                 await _unitOfWork.VaccineSchedules.UpdateAsync(vaccineSchedule);
                             }
                         }

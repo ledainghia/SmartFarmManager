@@ -81,7 +81,7 @@ namespace SmartFarmManager.Service.Services
                 .FindByCondition(e => e.FarmId == farmId && e.CreatedDate.Date == date)
                 .ToListAsync();
 
-            var electricityUsage = electricityLogs.Sum(e => e.Data);
+            var electricityUsage = electricityLogs.Sum(e => e.TotalConsumption);
             var electricityPrice = await _unitOfWork.MasterData
                 .FindByCondition(m => m.FarmId == farmId && m.CostType == "Điện")
                 .Select(m => m.UnitPrice)
@@ -99,7 +99,7 @@ namespace SmartFarmManager.Service.Services
                 .FindByCondition(w => w.FarmId == farmId && w.CreatedDate.Date == date)
                 .ToListAsync();
 
-            var waterUsage = waterLogs.Sum(w => w.Data);
+            var waterUsage = waterLogs.Sum(w => w.TotalConsumption);
             var waterPrice = await _unitOfWork.MasterData
                 .FindByCondition(m => m.FarmId == farmId && m.CostType == "Nước")
                 .Select(m => m.UnitPrice)
