@@ -1,9 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using FirebaseAdmin.Messaging;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
+using SmartFarmManager.Service.BusinessModels.Farm;
 using SmartFarmManager.Service.BusinessModels.Webhook;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
@@ -19,12 +21,16 @@ namespace SmartFarmManager.Service.Services
     public class WebhookService : IWebhookService
     {
         private IUnitOfWork _unitOfWork;
+        private readonly NotificationService _notificationService;
+        private readonly INotificationService _notificationUserService;
         private readonly ILogger<WebhookService> _logger;
 
-        public WebhookService(ILogger<WebhookService> logger, IUnitOfWork unitOfWork)
+        public WebhookService(ILogger<WebhookService> logger, IUnitOfWork unitOfWork,NotificationService notificationService, INotificationService notificationUserService)
         {
             _logger = logger;
             _unitOfWork = unitOfWork;
+            _notificationService = notificationService;
+            _notificationUserService = notificationUserService;
         }
 
         public async Task<bool> ValidateApiKeyAsync(string apiKey, string domain)
@@ -82,6 +88,17 @@ namespace SmartFarmManager.Service.Services
                         await SaveElectricDataAsync(electricData);
                     }
                     break;
+                case "AlertSensorOfFarm":
+                    var alertData = JsonConvert.DeserializeObject<AlertSensorOfFarmModel>(jsonRequest);
+                    if (alertData != null)
+                    {
+                        await HandleAlertSensorDataAsync(alertData);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("❌ Dữ liệu cảm biến không hợp lệ: {Data}", jsonRequest);
+                    }
+                        break;
 
                 default:
                     _logger.LogWarning("❌ Datatype không hợp lệ: {Datatype}", dataType);
@@ -248,6 +265,116 @@ namespace SmartFarmManager.Service.Services
             }
 
         }
+        private async System.Threading.Tasks.Task HandleAlertSensorDataAsync(AlertSensorOfFarmModel alertData)
+        {
 
+            var farm = await _unitOfWork.Farms.FindByCondition(f => f.FarmCode == alertData.FarmCode).FirstOrDefaultAsync();
+            if (farm == null)
+            {
+                _logger.LogWarning("❌ Không tìm thấy farm với mã FarmCode: {FarmCode}", alertData.FarmCode);
+                return;
+            }
+            var cage = await _unitOfWork.Cages.FindByCondition(c => c.PenCode == alertData.PenCode && c.FarmId == farm.Id).FirstOrDefaultAsync();
+            if (cage == null)
+            {
+                _logger.LogWarning("❌ Không tìm thấy chuồng với mã PenCode: {PenCode} trong FarmCode: {FarmCode}", alertData.PenCode, alertData.FarmCode);
+                return;
+            }
+            var sensor = await _unitOfWork.Sensors.FindByCondition(s => s.CageId == cage.Id && s.PinCode == alertData.PinCode && s.NodeId==alertData.NodeId).FirstOrDefaultAsync();
+            if (sensor == null)
+            {
+                _logger.LogWarning("❌ Không tìm thấy sensor với mã PinCode: {PinCode} trong chuồng: {PenCode}", alertData.PinCode, alertData.PenCode);
+                return;
+            }
+
+            
+            var admin = await _unitOfWork.Users.FindByCondition(u => u.Role.RoleName == "Admin").FirstOrDefaultAsync();
+            if (admin == null)
+            {
+                _logger.LogWarning("❌ Không tìm thấy admin cho FarmCode: {FarmCode}", alertData.FarmCode);
+                return; 
+            }
+            string alertMessage = $"Cảnh báo: Sensor {alertData.PinCode} trong chuồng {alertData.PenCode} đã {GetAlertMessage(alertData.AlertType)} với giá trị {alertData.Value}. Ngưỡng {alertData.Threshold}.";
+
+            _logger.LogInformation("📡 {AlertMessage}", alertMessage);
+            var farmAdmins = await _unitOfWork.FarmsAdmins.FindByCondition(fa => fa.FarmId == farm.Id).Select(fm => fm.Admin).FirstOrDefaultAsync();
+            var cageStaff = await _unitOfWork.CageStaffs.FindByCondition(cs => cs.Cage.Id == cage.Id).Select(ct=>ct.StaffFarm).FirstOrDefaultAsync();
+
+
+            var notiType = await _unitOfWork.NotificationsTypes.FindByCondition(x => x.NotiTypeName == "Alert").FirstOrDefaultAsync();
+            if (notiType == null)
+            {
+                _logger.LogWarning("❌ Không tìm thấy notification type : {NotitypeId}", notiType.Id);
+                return;
+            }
+            var notificationAdmin = new DataAccessObject.Models.Notification
+            {
+                UserId = farmAdmins.Id,
+                NotiTypeId = notiType.Id,
+                Title = GenerateAlertTitle(alertData.AlertType, sensor.Name),
+                Content = alertMessage,
+                CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                IsRead = false
+            };
+            var notificationStaff= new DataAccessObject.Models.Notification
+            {
+                UserId = cageStaff.Id,
+                NotiTypeId = notiType.Id,
+                Title = GenerateAlertTitle(alertData.AlertType, sensor.Name),
+                Content = alertMessage,
+                CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                IsRead = false
+            };
+            await _notificationUserService.CreateNotificationAsync(notificationAdmin);
+            await _notificationUserService.CreateNotificationAsync(notificationStaff);
+
+
+          
+                await _notificationService.SendNotification("ctOa_SJFSwuSRg2SuEY0Nf:APA91bG0HyOrYmPXDY8UTFNrE3--flWIOkO3pHhpKcWDfeV-hVAhrvQlUxKtMuon0HRAd2HkmN79ZBtCLkg14aqzkfb-8a1ngK9hFJqYcPtORbDlLLW5evU", GenerateAlertTitle(alertData.AlertType, sensor.Name), notificationAdmin);
+                await _notificationService.SendNotification("ctOa_SJFSwuSRg2SuEY0Nf:APA91bG0HyOrYmPXDY8UTFNrE3--flWIOkO3pHhpKcWDfeV-hVAhrvQlUxKtMuon0HRAd2HkmN79ZBtCLkg14aqzkfb-8a1ngK9hFJqYcPtORbDlLLW5evU", GenerateAlertTitle(alertData.AlertType, sensor.Name), notificationStaff);
+            
+
+
+
+
+        }
+
+        //public async System.Threading.Tasks.Task SendPushNotificationToAdminAndStaff(string message, string farmCode, string penCode,Guid cageId)
+        //{
+        //    // Lấy thông tin admin và staff của farm và chuồng
+
+        //    await _unitOfWork.Notifications.CreateAsync(notification);
+
+
+
+
+
+        //}
+        public string GenerateAlertTitle(string alertType, string sensorName)
+        {
+            switch (alertType)
+            {
+                case "AboveThreshold":
+                    return $"Cảnh báo: {sensorName} đã vượt ngưỡng";
+                case "BelowThreshold":
+                    return $"Cảnh báo: {sensorName} dưới ngưỡng";
+                default:
+                    return $"Cảnh báo sensor {sensorName}";
+            }
+        }
+
+
+        public string GetAlertMessage(string alertType)
+        {
+            switch (alertType)
+            {
+                case "AboveThreshold":
+                    return "Đã vượt ngưỡng";
+                case "BelowThreshold":
+                    return "Dưới ngưỡng";
+                default:
+                    return "Cảnh báo không xác định";
+            }
+        }
     }
 }

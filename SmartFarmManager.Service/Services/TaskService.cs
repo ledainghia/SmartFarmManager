@@ -1775,7 +1775,6 @@ namespace SmartFarmManager.Service.Services
                     var session = sessionTask.Key;
                     var medications = sessionTask.Value;
 
-                    // Mô tả chi tiết các loại thuốc và liều lượng
                     var medicationDetails = string.Join(", ", medications.Select(m => $"{m.MedicationName} ({m.Quantity} liều)"));
 
                     tasksToCreate.Add(new Task
