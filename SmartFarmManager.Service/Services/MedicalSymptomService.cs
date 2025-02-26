@@ -629,25 +629,26 @@ namespace SmartFarmManager.Service.Services
     .OrderBy(t => t.CreatedAt)  // Ưu tiên sắp xếp theo CreatedAt trước
     .ThenBy(t => t.Session)      // Sau đó sắp xếp theo Session
     .FirstOrDefaultAsync();
-                var staffFarm = await _unitOfWork.Users
+                if(firstTask != null)
+                {
+                    var staffFarm = await _unitOfWork.Users
                         .FindByCondition(u => u.CageStaffs.Any(cs => cs.CageId == cage.Id))
                         .FirstOrDefaultAsync();
-                var notiType = await _unitOfWork.NotificationsTypes.FindByCondition(nt => nt.NotiTypeName == "Task").FirstOrDefaultAsync();
-                var notificationStaff = new DataAccessObject.Models.Notification
-                {
-                    UserId = staffFarm.Id,
-                    NotiTypeId = notiType.Id,
-                    Content = $"Một ngày mới bắt đầu! Bạn có công việc mới được giao. Hãy kiểm tra danh sách nhiệm vụ và hoàn thành đúng thời gian nhé!",
-                    Title = "Bạn nhận được công việc mới!",
-                    CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
-                    IsRead = false,
-                    TaskId = firstTask.Id,
-                    CageId = cage.Id
-                };
-                await notificationService.SendNotification(staffFarm.DeviceId, "Bạn nhận được công việc mới!", notificationStaff);
-                await _unitOfWork.Notifications.CreateAsync(notificationStaff);
-
-
+                    var notiType = await _unitOfWork.NotificationsTypes.FindByCondition(nt => nt.NotiTypeName == "Task").FirstOrDefaultAsync();
+                    var notificationStaff = new DataAccessObject.Models.Notification
+                    {
+                        UserId = staffFarm.Id,
+                        NotiTypeId = notiType.Id,
+                        Content = $"Một ngày mới bắt đầu! Bạn có công việc mới được giao. Hãy kiểm tra danh sách nhiệm vụ và hoàn thành đúng thời gian nhé!",
+                        Title = "Bạn nhận được công việc mới!",
+                        CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                        IsRead = false,
+                        TaskId = firstTask.Id,
+                        CageId = cage.Id
+                    };
+                    await notificationService.SendNotification(staffFarm.DeviceId, "Bạn nhận được công việc mới!", notificationStaff);
+                    await _unitOfWork.Notifications.CreateAsync(notificationStaff);
+                }
                 return true;
             }
             catch (Exception ex)
