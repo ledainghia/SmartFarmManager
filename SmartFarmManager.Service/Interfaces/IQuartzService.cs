@@ -21,5 +21,6 @@ namespace SmartFarmManager.Service.Interfaces
 
         Task<bool> RescheduleJobAsync(TriggerKey oldTriggerName, Quartz.ITrigger newTrigger, CancellationToken cancellationToken);
         Task CreateReminderJobs(Guid medicalSymptomId, DateTime reportDate);
+        Task<bool> CheckSchedulerRunningAsync();
     }
 }

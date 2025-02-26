@@ -176,6 +176,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddRepositories();
             services.AddApplicationServices();
             services.AddConfigurations();
+            
             services.AddQuartzServices();
             services.AddAppHostedService();
             //services.AddMqttClientService(configuration);

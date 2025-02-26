@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SmartFarmManager.API.Extensions;
+using SmartFarmManager.API.HostedServices;
 using SmartFarmManager.DataAccessObject.Models;
 using System;
 
@@ -11,6 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 DotNetEnv.Env.Load();
 builder.Host.AddAppConfigurations();
 builder.Services.AddInfrastructure(builder.Configuration);
+//builder.Services.AddHostedService<AppHostedService>();
+
 var app = builder.Build();
 var timeZoneId = builder.Configuration["TimeZone"] ?? "UTC";
 TimeZoneInfo localTimeZone = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);

@@ -24,6 +24,11 @@ namespace SmartFarmManager.Service.Services
         {
             var serverTimeZone = TimeZoneInfo.Local;
 
+            if (!_scheduler.IsStarted)
+            {
+                await _scheduler.Start();
+                Console.WriteLine("Scheduler started manually.");
+            }
             // Danh sách các jobs mặc định
             await ScheduleJob<Jobs.GenerateTasksForTomorrowJob>("GenerateTasksForTomorrowJob", "0 0 1 * * ?", serverTimeZone, cancellationToken);
             await ScheduleJob<Jobs.UpdateTaskStatusesJob>("UpdateTaskStatusesJob-Morning", "0 0 6 * * ?", serverTimeZone, cancellationToken);
@@ -138,10 +143,23 @@ namespace SmartFarmManager.Service.Services
 
             var trigger = TriggerBuilder.Create()
                 .WithIdentity($"{jobName}@Trigger")
-                .WithCronSchedule(cronExpression, x => x.InTimeZone(timeZone))
+                
+                .WithCronSchedule(cronExpression, x => { x.InTimeZone(timeZone);
+                    //x.WithMisfireHandlingInstructionIgnoreMisfires();
+                })
+                
+                
                 .Build();
+            Console.WriteLine($"Job {jobName} scheduled successfully.");
 
             await _scheduler.ScheduleJob(job, trigger, cancellationToken);
+        }
+        public async Task<bool> CheckSchedulerRunningAsync()
+        {
+            bool isRunning = _scheduler.IsStarted;
+            Console.WriteLine($"Scheduler running status: {isRunning} at {DateTime.Now}");
+            await Task.CompletedTask; // Để tương thích với async
+            return isRunning;
         }
     }
 }

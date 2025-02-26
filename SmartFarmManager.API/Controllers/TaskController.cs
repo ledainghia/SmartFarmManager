@@ -320,7 +320,7 @@ namespace SmartFarmManager.API.Controllers
         {
             try
             {
-                await _taskService.UpdateEveningTaskStatusesAsync();
+                await _taskService.UpdateAllTaskStatusesAsync();
                 return Ok(ApiResult<string>.Succeed("Task statuses updated successfully."));
             }
             catch (Exception ex)
