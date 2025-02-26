@@ -497,6 +497,7 @@ namespace SmartFarmManager.Service.Services
                 .Where(fb => fb.Id == farmingBatchId && fb.Status == FarmingBatchStatusEnum.Completed)
                 .Include(fb => fb.Cage)
                 .Include(fb => fb.AnimalSales)
+                    .ThenInclude(a => a.SaleType)
                 .Include(fb => fb.GrowthStages)
                     .ThenInclude(gs => gs.DailyFoodUsageLogs)
                 .Include(fb => fb.GrowthStages)
