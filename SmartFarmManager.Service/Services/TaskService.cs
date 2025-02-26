@@ -621,7 +621,8 @@ namespace SmartFarmManager.Service.Services
                 query = query.Where(t =>
                     t.TaskName.Contains(filter.KeySearch) ||
                     (t.AssignedToUser != null && t.AssignedToUser.FullName.Contains(filter.KeySearch)) ||
-                    t.Status.Contains(filter.KeySearch));
+                    t.Status.Contains(filter.KeySearch)
+                    ||t.Cage.Name.Contains(filter.KeySearch);
             }
 
             // Áp dụng các bộ lọc khác
