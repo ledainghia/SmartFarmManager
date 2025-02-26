@@ -733,6 +733,10 @@ namespace SmartFarmManager.Service.Services
             };
             await notificationService.SendNotification(vetFarm.DeviceId, "Có báo cáo triệu chứng mới", notificationVet);
             await _unitOfWork.Notifications.CreateAsync(notificationVet);
+            if(vetFarm.DeviceId == adminFarm.DeviceId)
+                {
+                    await System.Threading.Tasks.Task.Delay(500);
+                }
             await notificationService.SendNotification(adminFarm.DeviceId, "Có báo cáo triệu chứng mới", notificationAdmin);
             await _unitOfWork.Notifications.CreateAsync(notificationAdmin);
 
