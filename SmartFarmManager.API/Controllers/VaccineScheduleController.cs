@@ -68,5 +68,25 @@ namespace SmartFarmManager.API.Controllers
                 return BadRequest(ApiResult<string>.Fail(ex.Message));
             }
         }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetVaccineScheduleById(Guid id)
+        {
+            try
+            {
+                var vaccineSchedule = await _vaccineScheduleService.GetVaccineScheduleByIdAsync(id);
+                if (vaccineSchedule == null)
+                {
+                    return NotFound(ApiResult<string>.Fail("Vaccine Schedule not found"));
+                }
+
+                return Ok(ApiResult<VaccineScheduleResponse>.Succeed(vaccineSchedule));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+        }
+
     }
 }
