@@ -2,8 +2,11 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.FoodStack;
+using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.FoodStack;
+using SmartFarmManager.Service.BusinessModels.StockLog;
 using SmartFarmManager.Service.Interfaces;
+using SmartFarmManager.Service.Services;
 
 namespace SmartFarmManager.API.Controllers
 {
@@ -54,5 +57,68 @@ namespace SmartFarmManager.API.Controllers
                 return StatusCode(500, ApiResult<string>.Fail("An error occurred while creating Food stack: " + ex.Message));
             }
         }
+
+        [HttpGet()]
+        public async Task<IActionResult> GetFoodStacks([FromQuery] FoodStackFilterPagingRequest filterRequest)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                                              .Select(e => e.ErrorMessage)
+                                              .ToList();
+
+                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
+            {
+                { "Errors", errors.ToArray() }
+            }));
+            }
+
+            try
+            {
+                var filterModel = new FoodStackFilterModel
+                {
+                    FarmId = filterRequest.FarmId,
+                    FoodType = filterRequest.FoodType,
+                    PageNumber = filterRequest.PageNumber,
+                    PageSize = filterRequest.PageSize
+                };
+
+                var result = await _foodStackService.GetFoodStacksAsync(filterModel);
+                return Ok(ApiResult<PagedResult<FoodStackItemModel>>.Succeed(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+            }
+        }
+        [HttpGet("{id}/history")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetStockLogHistory(Guid id, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize=20)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                                              .Select(e => e.ErrorMessage)
+                                              .ToList();
+                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
+            {
+                { "Errors", errors.ToArray() }
+                }));
+            }
+
+            try
+            {
+                var result = await _foodStackService.GetStockLogHistoryAsync(id, pageNumber,pageSize);
+                return Ok(ApiResult<PagedResult<StockLogItemModel>>.Succeed(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+            }
+        }
+
+
     }
 }

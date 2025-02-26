@@ -1837,7 +1837,7 @@ namespace SmartFarmManager.Service.Services
             {
                 var today = DateTimeUtils.GetServerTimeInVietnamTime().Date; // Lấy ngày hôm nay
                 var tasks = await _unitOfWork.Tasks
-                    .FindByCondition(t => t.DueDate == today && t.Session == (int)SessionTypeEnum.Evening)
+                    .FindByCondition(t => t.DueDate.Value.Date == today.Date && t.Session == (int)SessionTypeEnum.Evening)
                     .ToListAsync();
 
                 foreach (var task in tasks)

@@ -16,7 +16,7 @@ public partial class StockLog : EntityBase
 
     public decimal? CostPerKg { get; set; }
 
-    public DateOnly? DateAdded { get; set; }
+    public DateOnly DateAdded { get; set; }
 
     public virtual FoodStack Stack { get; set; }
 
