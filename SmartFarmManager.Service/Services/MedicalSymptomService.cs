@@ -653,8 +653,8 @@ namespace SmartFarmManager.Service.Services
             catch (Exception ex)
             {
                 await _unitOfWork.RollbackAsync();
-                Console.WriteLine($"Error in CreateFarmingBatchAsync: {ex.Message}");
-                throw new Exception("Failed to create Farming Batch. Details: " + ex.Message);
+                Console.WriteLine($"Error : {ex.Message}");
+                throw new Exception("Failed. Details: " + ex.Message);
             }
         }
         public async Task<Guid?> CreateMedicalSymptomAsync(MedicalSymptomModel medicalSymptomModel)
