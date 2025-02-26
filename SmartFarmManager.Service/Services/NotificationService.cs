@@ -1,6 +1,9 @@
-﻿using FirebaseAdmin.Messaging;
+﻿using FirebaseAdmin;
+using FirebaseAdmin.Messaging;
+using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels.Notification;
@@ -102,24 +105,30 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<string> SendNotification(string token, string title, object customData)
         {
-            // Serialize custom object thành JSON string
-            var jsonData = Newtonsoft.Json.JsonConvert.SerializeObject(customData);
-
-            var message = new Message()
+            try
             {
-                Token = token,
-                Data = new Dictionary<string, string>()
-        {
-            { "title", title },
-            { "customData", jsonData } // Gửi JSON vào data payload
-        }
-            };
 
-            // Gửi thông báo qua Firebase
-            string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
-            return response; // Trả về ID của message đã gửi
-        }
+                var jsonData = Newtonsoft.Json.JsonConvert.SerializeObject(customData);
 
+                var message = new Message()
+                {
+                    Token = token,
+                    Data = new Dictionary<string, string>()
+            {
+                { "title", title },
+                { "customData", jsonData }
+            }
+                };
+
+                string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
+                return response;
+            }
+            catch (FirebaseException ex)
+            {
+                Console.WriteLine($"⛔ Lỗi gửi Notification: {ex.Message}");
+                throw;
+            }
+        }
 
     }
 }
