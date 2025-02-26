@@ -278,6 +278,8 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IWebhookService, WebhookService>();
             services.AddScoped<IWhitelistDomainService, WhitelistDomainService>();
             services.AddScoped<IVaccineScheduleService, VaccineScheduleService>();
+            services.AddScoped<IAnimalSaleService, AnimalSaleService>();
+            services.AddScoped<OTPPhoneService>();
             services.AddScoped<IFoodStackService, FoodStackService>();
             services.AddScoped<IStockLogService, StockLogService>();
 

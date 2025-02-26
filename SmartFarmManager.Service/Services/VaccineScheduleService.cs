@@ -62,6 +62,28 @@ namespace SmartFarmManager.Service.Services
 
             return result;
         }
+        public async Task<VaccineScheduleResponse> GetVaccineScheduleByIdAsync(Guid id)
+        {
+            var vaccineSchedule = await _unitOfWork.VaccineSchedules
+                .FindByCondition(vs => vs.Id == id)
+                .Include(vs => vs.Vaccine) // Lấy thông tin Vaccine
+                .FirstOrDefaultAsync();
 
+            if (vaccineSchedule == null) return null;
+
+            return new VaccineScheduleResponse
+            {
+                VaccineScheduleId = vaccineSchedule.Id,
+                VaccineId = vaccineSchedule.VaccineId,
+                VaccineName = vaccineSchedule.Vaccine?.Name, // Tránh lỗi null
+                StageId = vaccineSchedule.StageId,
+                Date = vaccineSchedule.Date,
+                Quantity = vaccineSchedule.Quantity,
+                ApplicationAge = vaccineSchedule.ApplicationAge,
+                TotalPrice = vaccineSchedule.ToltalPrice,
+                Session = vaccineSchedule.Session,
+                Status = vaccineSchedule.Status
+            };
+        }
     }
 }

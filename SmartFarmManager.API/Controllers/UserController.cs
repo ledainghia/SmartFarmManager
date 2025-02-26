@@ -26,14 +26,16 @@ namespace SmartFarmManager.API.Controllers
         private readonly IUserService _userService;
         private readonly IMemoryCache _cache;
         private readonly EmailService _emailService;
+        private readonly OTPPhoneService _otpPhoneService;
 
-        public UserController(ITaskService taskService, ICageService cageService, IUserService userService, IMemoryCache cache, EmailService emailService)
+        public UserController(ITaskService taskService, ICageService cageService, IUserService userService, IMemoryCache cache, EmailService emailService, OTPPhoneService otpPhoneService)
         {
             _taskService = taskService;
             _cageService = cageService;
             _userService = userService;
             _cache = cache;
             _emailService = emailService;
+            _otpPhoneService = otpPhoneService;
         }
 
         [HttpGet("{userId}/tasks")]
@@ -370,6 +372,56 @@ namespace SmartFarmManager.API.Controllers
         {
             var users = await _userService.GetUsersAsync(roleName, isActive, search);
             return Ok(ApiResult<IEnumerable<UserModel>>.Succeed(users));
+        }
+
+        /// <summary>
+        /// Kiểm tra mật khẩu có đúng không
+        /// </summary>
+        [HttpPost("verify-password")]
+        public async Task<IActionResult> VerifyPassword([FromBody] UserPasswordRequest request)
+        {
+            try
+            {
+                bool isValid = await _userService.VerifyPasswordAsync(request);
+                if (!isValid)
+                    return BadRequest(ApiResult<string>.Fail("Incorrect password."));
+
+                return Ok(ApiResult<string>.Succeed("Password is correct."));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+        }
+
+        /// <summary>
+        /// Đặt lại mật khẩu mới
+        /// </summary>
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] UserPasswordRequest request)
+        {
+            try
+            {
+                bool isReset = await _userService.ResetPasswordAsync(request);
+                if (!isReset)
+                    return BadRequest(ApiResult<string>.Fail("Failed to reset password."));
+
+                return Ok(ApiResult<string>.Succeed("Password reset successfully."));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+        }
+        [HttpPost("checkPhoneCall")]
+        public async Task<IActionResult> RequestOtp([FromQuery] string phoneNumber)
+        {
+            //var otp = _otpService.GenerateOtp();
+            var otp = new Random().Next(100000, 999999).ToString();
+            Console.WriteLine(otp);
+            //await _otpService.SaveOtpAsync(model.PhoneNumber, otp, model.UserName);
+            await _otpPhoneService.SendOtpViaSmsAsync(phoneNumber, otp);
+            return Ok(new { message = "OTP sent successfully." });
         }
     }
 }
