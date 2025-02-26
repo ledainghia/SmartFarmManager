@@ -80,6 +80,26 @@ namespace SmartFarmManager.Service.Services
             string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
             return response; // Trả về ID của message đã gửi
         }
+        //public async Task<string> SendNotification(string token, string title, object customData)
+        //{
+        //    // Serialize custom object thành JSON string
+        //    var jsonData = Newtonsoft.Json.JsonConvert.SerializeObject(customData);
+
+        //    var message = new Message()
+        //    {
+        //        Token = token,
+        //        Notification = new FirebaseAdmin.Messaging.Notification()
+        //        {
+        //            Title = title,
+        //            Body = jsonData // Đưa toàn bộ customData vào Body
+        //        },
+        //    };
+
+        //    // Gửi thông báo qua Firebase
+        //    string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
+        //    return response; // Trả về ID của message đã gửi
+        //}
+
         public async Task<string> SendNotification(string token, string title, object customData)
         {
             // Serialize custom object thành JSON string
@@ -88,11 +108,11 @@ namespace SmartFarmManager.Service.Services
             var message = new Message()
             {
                 Token = token,
-                Notification = new FirebaseAdmin.Messaging.Notification()
-                {
-                    Title = title,
-                    Body = jsonData // Đưa toàn bộ customData vào Body
-                },
+                Data = new Dictionary<string, string>()
+        {
+            { "title", title },
+            { "customData", jsonData } // Gửi JSON vào data payload
+        }
             };
 
             // Gửi thông báo qua Firebase

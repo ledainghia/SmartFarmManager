@@ -26,14 +26,16 @@ namespace SmartFarmManager.API.Controllers
         private readonly IUserService _userService;
         private readonly IMemoryCache _cache;
         private readonly EmailService _emailService;
+        private readonly OTPPhoneService _otpPhoneService;
 
-        public UserController(ITaskService taskService, ICageService cageService, IUserService userService, IMemoryCache cache, EmailService emailService)
+        public UserController(ITaskService taskService, ICageService cageService, IUserService userService, IMemoryCache cache, EmailService emailService, OTPPhoneService otpPhoneService)
         {
             _taskService = taskService;
             _cageService = cageService;
             _userService = userService;
             _cache = cache;
             _emailService = emailService;
+            _otpPhoneService = otpPhoneService;
         }
 
         [HttpGet("{userId}/tasks")]
@@ -410,6 +412,16 @@ namespace SmartFarmManager.API.Controllers
             {
                 return BadRequest(ApiResult<string>.Fail(ex.Message));
             }
+        }
+        [HttpPost("checkPhoneCall")]
+        public async Task<IActionResult> RequestOtp([FromQuery] string phoneNumber)
+        {
+            //var otp = _otpService.GenerateOtp();
+            var otp = new Random().Next(100000, 999999).ToString();
+            Console.WriteLine(otp);
+            //await _otpService.SaveOtpAsync(model.PhoneNumber, otp, model.UserName);
+            await _otpPhoneService.SendOtpViaSmsAsync(phoneNumber, otp);
+            return Ok(new { message = "OTP sent successfully." });
         }
     }
 }
