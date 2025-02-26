@@ -395,6 +395,7 @@ namespace SmartFarmManager.Service.Services
                     StartDate = fb.StartDate,
                     CompleteAt = fb.CompleteAt,
                     Status = fb.Status,
+                    EndDate=fb.EndDate,
                     CleaningFrequency = fb.CleaningFrequency,
                     Quantity = fb.Quantity,
                     Cage = fb.Cage == null ? null : new CageModel
