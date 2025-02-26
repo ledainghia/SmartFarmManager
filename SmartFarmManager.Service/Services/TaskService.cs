@@ -1478,8 +1478,8 @@ namespace SmartFarmManager.Service.Services
         {
             try
             {
-                var today = DateTimeUtils.GetServerTimeInVietnamTime().Date; // Lấy ngày hôm nay
-                var currentTime = DateTimeUtils.GetServerTimeInVietnamTime().TimeOfDay; // Lấy giờ hiện tại
+                var today = DateTimeUtils.GetServerTimeInVietnamTime().Date;
+                var currentTime = DateTimeUtils.GetServerTimeInVietnamTime().TimeOfDay;
 
                 var currentSession = SessionTime.GetCurrentSession(currentTime);
 
@@ -1488,31 +1488,29 @@ namespace SmartFarmManager.Service.Services
                     throw new Exception("Thời gian hiện tại không nằm trong bất kỳ phiên nào được định nghĩa.");
                 }
 
-                // Lấy tất cả các task trong ngày hôm nay
                 var tasks = await _unitOfWork.Tasks
                     .FindByCondition(t => t.DueDate.Value.Date == today.Date)
                     .ToListAsync();
 
                 foreach (var task in tasks)
                 {
-                    string previousStatus = task.Status; // Lưu trạng thái trước khi thay đổi
+                    string previousStatus = task.Status;
 
-                    if (task.Session < currentSession) // Session đã qua
+                    if (task.Session < currentSession)
                     {
                         if (task.Status == TaskStatusEnum.Pending || task.Status == TaskStatusEnum.InProgress)
                         {
-                            task.Status = TaskStatusEnum.Overdue; // Chuyển sang Overdue
+                            task.Status = TaskStatusEnum.Overdue;
                         }
                     }
-                    else if (task.Session == currentSession) // Session hiện tại
+                    else if (task.Session == currentSession)
                     {
                         if (task.Status == TaskStatusEnum.Pending)
                         {
-                            task.Status = TaskStatusEnum.InProgress; // Chuyển sang InProgress
+                            task.Status = TaskStatusEnum.InProgress;
                         }
                     }
 
-                    // Nếu trạng thái thay đổi, lưu log
                     if (task.Status != previousStatus)
                     {
                         var statusLog = new StatusLog
@@ -1522,8 +1520,6 @@ namespace SmartFarmManager.Service.Services
                             Status = task.Status
                         };
                         await _unitOfWork.StatusLogs.CreateAsync(statusLog);
-
-                        // Cập nhật task
                         await _unitOfWork.Tasks.UpdateAsync(task);
                     }
                 }
