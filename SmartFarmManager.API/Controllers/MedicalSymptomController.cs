@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.MedicalSymptom;
@@ -11,6 +12,7 @@ using SmartFarmManager.Service.BusinessModels.MedicalSymptomDetail;
 using SmartFarmManager.Service.BusinessModels.Picture;
 using SmartFarmManager.Service.BusinessModels.Prescription;
 using SmartFarmManager.Service.BusinessModels.PrescriptionMedication;
+using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 
 namespace SmartFarmManager.API.Controllers
@@ -42,7 +44,7 @@ namespace SmartFarmManager.API.Controllers
                 Status = request.Status,
                 AffectedQuantity = request.AffectedQuantity,
                 Notes = request.Notes,
-                CreateAt = DateTime.UtcNow,
+                CreateAt = DateTimeUtils.GetServerTimeInVietnamTime(),
                 Pictures = request.Pictures.Select(p => new PictureModel
                 {
                     Image = p.Image,
@@ -245,7 +247,7 @@ namespace SmartFarmManager.API.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred. Please contact support."));
+                return StatusCode(500, ApiResult<string>.Fail($"An unexpected error occurred. Please contact support. {ex.Message}"));
             }
         }
         // GET: api/medical-symptoms/by-staff-and-batch
