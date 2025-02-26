@@ -14,6 +14,7 @@ using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Shared;
 using Task = SmartFarmManager.DataAccessObject.Models.Task;
+using SmartFarmManager.Service.BusinessModels.VaccineSchedule;
 
 namespace SmartFarmManager.Service.Services
 {
@@ -1901,7 +1902,129 @@ namespace SmartFarmManager.Service.Services
             return taskCounts;
         }
 
+        public async Task<bool> RedoVaccineScheduleAsync(RedoVaccineScheduleRequest request)
+        {
+            // 1️⃣ Lấy VaccineSchedule cũ
+            var vaccineSchedule = await _unitOfWork.VaccineSchedules
+                .FindByCondition(vs => vs.Id == request.VaccineScheduleId)
+                .Include(vs => vs.Vaccine)
+                .FirstOrDefaultAsync();
 
+            if (vaccineSchedule == null || vaccineSchedule.Status != "Missed")
+                return false; // ✅ Nếu không tìm thấy hoặc không phải "Missed", return false
 
+            DateTime serverTime = DateTimeUtils.GetServerTimeInVietnamTime();
+            DateTime requestDate = request.Date.Date;
+
+            // 2️⃣ Kiểm tra thời gian (ngày request phải >= hôm nay)
+            if (requestDate < serverTime.Date)
+                return false; // ❌ Không thể redo cho ngày trong quá khứ
+
+            // 3️⃣ Tạo VaccineSchedule mới
+            var newVaccineSchedule = new VaccineSchedule
+            {
+                Id = Guid.NewGuid(),
+                VaccineId = vaccineSchedule.VaccineId,
+                StageId = vaccineSchedule.StageId,
+                Date = requestDate,
+                Quantity = vaccineSchedule.Quantity,
+                ApplicationAge = vaccineSchedule.ApplicationAge,
+                Session = vaccineSchedule.Session,
+                Status = "Upcoming",
+                ToltalPrice = vaccineSchedule.Quantity * (decimal)(vaccineSchedule.Vaccine?.Price)
+            };
+
+            await _unitOfWork.VaccineSchedules.CreateAsync(newVaccineSchedule);
+
+            // 4️⃣ Nếu `Date > serverTime + 1 ngày` → Chỉ tạo VaccineSchedule, không tạo Task
+            if (requestDate > serverTime.Date.AddDays(1))
+            {
+                vaccineSchedule.Status = "Redo";
+                await _unitOfWork.VaccineSchedules.UpdateAsync(vaccineSchedule);
+                await _unitOfWork.CommitAsync();
+                return true;
+            }
+
+            // 5️⃣ Nếu `Date = ngày mai` → Tạo Task
+            if (requestDate == serverTime.Date.AddDays(1))
+            {
+                var result = await CreateVaccineTask(newVaccineSchedule);
+                if (!result)
+                {
+                    return false;
+                }
+            }
+
+            // 6️⃣ Nếu `Date = hôm nay`, kiểm tra Session
+            if (requestDate == serverTime.Date)
+            {
+                int currentSession = SessionTime.GetCurrentSession(serverTime.TimeOfDay);
+                if (currentSession < newVaccineSchedule.Session)
+                {
+                    var result = await CreateVaccineTask(newVaccineSchedule);
+                    if (!result)
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    return false; // ❌ Không thể tạo task vì session đã qua
+                }
+            }
+
+            // 7️⃣ Cập nhật VaccineSchedule cũ thành "Redo"
+            vaccineSchedule.Status = "Redo";
+            await _unitOfWork.VaccineSchedules.UpdateAsync(vaccineSchedule);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
+
+        // ✅ Đổi `CreateVaccineTask` thành Task (không cần trả về bool)
+        private async Task<bool> CreateVaccineTask(VaccineSchedule vaccineSchedule)
+        {
+            var taskType = await _unitOfWork.TaskTypes
+                .FindByCondition(tt => tt.TaskTypeName == "Tiêm vắc xin")
+                .FirstOrDefaultAsync();
+
+            if (taskType == null)
+                return false;
+
+            // Lấy CageId từ GrowthStage
+            var cageId = await _unitOfWork.GrowthStages
+                .FindByCondition(gs => gs.Id == vaccineSchedule.StageId)
+                .Include(gs => gs.FarmingBatch)
+                .ThenInclude(fb => fb.Cage)
+                .Select(gs => (Guid?)gs.FarmingBatch.CageId) // ✅ Ép kiểu nullable Guid
+                .FirstOrDefaultAsync();
+
+            if (!cageId.HasValue) // ✅ Kiểm tra null
+            {
+                return false;
+            }
+
+            var assignedUserId = await GetAssignedStaffForCage(cageId.Value, vaccineSchedule.Date.Value);
+
+            var newTask = new DataAccessObject.Models.Task
+            {
+                Id = Guid.NewGuid(),
+                TaskTypeId = taskType.Id,
+                CageId = cageId.Value, // ✅ Không còn lỗi null
+                AssignedToUserId = assignedUserId ?? Guid.Empty,
+                CreatedByUserId = null,
+                TaskName = $"Tiêm vắc xin: {vaccineSchedule.Vaccine.Name}",
+                Description = $"Tiêm vắc xin {vaccineSchedule.Vaccine.Name} cho giai đoạn này.",
+                PriorityNum = 2,
+                DueDate = vaccineSchedule.Date,
+                Status = "Pending",
+                Session = vaccineSchedule.Session,
+                CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
+            };
+
+            await _unitOfWork.Tasks.CreateAsync(newTask);
+            await _unitOfWork.CommitAsync();
+            return true;
+        }
     }
 }

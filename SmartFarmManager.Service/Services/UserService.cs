@@ -514,5 +514,36 @@ namespace SmartFarmManager.Service.Services
                 RoleId = user.RoleId
             });
         }
+
+        /// <summary>
+        /// Kiểm tra mật khẩu có đúng không
+        /// </summary>
+        public async Task<bool> VerifyPasswordAsync(UserPasswordRequest request)
+        {
+            var user = await _unitOfWork.Users.FindByCondition(u => u.Id == request.UserId).FirstOrDefaultAsync();
+
+            if (user == null)
+                throw new ArgumentException("User not found.");
+
+            string hashedPassword = SecurityUtil.Hash(request.Password);
+            return user.PasswordHash == hashedPassword;
+        }
+
+        /// <summary>
+        /// Đặt lại mật khẩu mới
+        /// </summary>
+        public async Task<bool> ResetPasswordAsync(UserPasswordRequest request)
+        {
+            var user = await _unitOfWork.Users.FindByCondition(u => u.Id == request.UserId).FirstOrDefaultAsync();
+
+            if (user == null)
+                throw new ArgumentException("User not found.");
+
+            user.PasswordHash = SecurityUtil.Hash(request.Password);
+            await _unitOfWork.Users.UpdateAsync(user);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
     }
 }

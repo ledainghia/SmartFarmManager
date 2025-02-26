@@ -11,10 +11,12 @@ namespace SmartFarmManager.API.Controllers
     public class VaccineScheduleController : ControllerBase
     {
         private readonly IVaccineScheduleService _vaccineScheduleService;
+        private readonly ITaskService _taskService;
 
-        public VaccineScheduleController(IVaccineScheduleService vaccineScheduleService)
+        public VaccineScheduleController(IVaccineScheduleService vaccineScheduleService, ITaskService taskService)
         {
             _vaccineScheduleService = vaccineScheduleService;
+            _taskService = taskService;
         }
 
         [HttpGet("vaccine-schedules")]
@@ -39,5 +41,32 @@ namespace SmartFarmManager.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Redo Vaccine Schedule (Chỉnh sửa lịch tiêm vắc xin bị Missed)
+        /// </summary>
+        /// <param name="request">Thông tin lịch tiêm cần redo</param>
+        /// <returns>ApiResult<string> thông báo kết quả</returns>
+        [HttpPost("redo")]
+        public async Task<IActionResult> RedoVaccineSchedule([FromBody] RedoVaccineScheduleRequest request)
+        {
+            try
+            {
+                if (request == null || request.VaccineScheduleId == Guid.Empty || request.Date == default)
+                {
+                    return BadRequest(ApiResult<string>.Fail("Invalid request data."));
+                }
+
+                bool success = await _taskService.RedoVaccineScheduleAsync(request);
+
+                if (!success)
+                    return BadRequest(ApiResult<string>.Fail("Failed to redo vaccine schedule. Check request details."));
+
+                return Ok(ApiResult<string>.Succeed("Vaccine schedule successfully redone."));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+        }
     }
 }

@@ -63,7 +63,7 @@ namespace SmartFarmManager.Service.Services
                 }
                 else
                 {
-                    query = query.Where(c => !c.FarmingBatches.Any());
+                    query = query.Where(c => !c.FarmingBatches.Any(fb => fb.Status == FarmingBatchStatusEnum.Active));
                 }
             }
             // Đếm tổng số bản ghi (chạy trên SQL)
