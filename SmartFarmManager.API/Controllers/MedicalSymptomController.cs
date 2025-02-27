@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.MedicalSymptom;
@@ -29,6 +30,7 @@ namespace SmartFarmManager.API.Controllers
 
         // POST: api/medical-symptoms
         [HttpPost]
+        [Authorize(Roles = "Staff Farm")]
         public async Task<IActionResult> CreateMedicalSymptom([FromBody] CreateMedicalSymptomRequest request)
         {
             if (!ModelState.IsValid)

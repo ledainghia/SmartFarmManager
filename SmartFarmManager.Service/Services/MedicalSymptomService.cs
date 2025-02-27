@@ -1,5 +1,6 @@
 ﻿using FirebaseAdmin.Messaging;
 using MailKit.Search;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using Org.BouncyCastle.Utilities.Date;
@@ -658,6 +659,7 @@ namespace SmartFarmManager.Service.Services
                 throw new Exception("Failed. Details: " + ex.Message);
             }
         }
+        [Authorize(Roles = "Staff Farm")]
         public async Task<Guid?> CreateMedicalSymptomAsync(MedicalSymptomModel medicalSymptomModel)
         {
             try
@@ -707,11 +709,9 @@ namespace SmartFarmManager.Service.Services
             }).ToList();
 
             //Notification realtime
-            var vetRole =  await _unitOfWork.Roles.FindByCondition(r => r.RoleName == "Vet").FirstOrDefaultAsync();
-            var adminRole = await _unitOfWork.Roles.FindByCondition(r => r.RoleName == "Admin").FirstOrDefaultAsync();
-            var vetFarm = await _unitOfWork.Users.FindByCondition(u => u.RoleId == vetRole.Id).FirstOrDefaultAsync();
+            var vetFarm = await _unitOfWork.Users.FindByCondition(u => u.Role.RoleName == "Vet").FirstOrDefaultAsync();
             var notiType = await _unitOfWork.NotificationsTypes.FindByCondition(nt => nt.NotiTypeName == "MedicalSymptom").FirstOrDefaultAsync();
-            var adminFarm = await _unitOfWork.Users.FindByCondition(u => u.RoleId == adminRole.Id).FirstOrDefaultAsync();
+            var adminFarm = await _unitOfWork.Users.FindByCondition(u => u.Role.RoleName == "Admin").FirstOrDefaultAsync();
             var notificationVet = new DataAccessObject.Models.Notification
             {
                 UserId = vetFarm.Id,
