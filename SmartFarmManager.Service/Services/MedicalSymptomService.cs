@@ -707,9 +707,11 @@ namespace SmartFarmManager.Service.Services
             }).ToList();
 
             //Notification realtime
-            var vetFarm = await _unitOfWork.Users.FindByCondition(u => u.Role.RoleName == "Vet").FirstOrDefaultAsync();
+            var vetRole =  await _unitOfWork.Roles.FindByCondition(r => r.RoleName == "Vet").FirstOrDefaultAsync();
+            var adminRole = await _unitOfWork.Roles.FindByCondition(r => r.RoleName == "Admin").FirstOrDefaultAsync();
+            var vetFarm = await _unitOfWork.Users.FindByCondition(u => u.RoleId == vetRole.Id).FirstOrDefaultAsync();
             var notiType = await _unitOfWork.NotificationsTypes.FindByCondition(nt => nt.NotiTypeName == "MedicalSymptom").FirstOrDefaultAsync();
-            var adminFarm = await _unitOfWork.Users.FindByCondition(u => u.Role.RoleName == "Admin").FirstOrDefaultAsync();
+            var adminFarm = await _unitOfWork.Users.FindByCondition(u => u.RoleId == adminRole.Id).FirstOrDefaultAsync();
             var notificationVet = new DataAccessObject.Models.Notification
             {
                 UserId = vetFarm.Id,
