@@ -861,7 +861,7 @@ namespace SmartFarmManager.Service.Services
                     MedicalSymptomId = medicalSymptom.Id,
                     CageId = farmingBatches.CageId
                 };
-
+                Console.WriteLine($"✅ Tạo noti cho Vet");
                 var notificationAdmin = new DataAccessObject.Models.Notification
                 {
                     UserId = adminFarm.Id,
@@ -873,7 +873,7 @@ namespace SmartFarmManager.Service.Services
                     MedicalSymptomId = medicalSymptom.Id,
                     CageId = farmingBatches.CageId
                 };
-
+                Console.WriteLine($"✅ Tạo noti cho Admin");
                 await notificationService.SendNotification(vetFarm.DeviceId, "Có báo cáo triệu chứng mới", notificationVet);
                 Console.WriteLine("✅ Đã gửi thông báo cho Vet.");
 
