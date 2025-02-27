@@ -107,8 +107,6 @@ namespace SmartFarmManager.Service.Services
         {
             try
             {
-                // 🔄 Cưỡng ép tạo lại Firebase Token
-                ResetFirebaseInstance();
 
                 var jsonData = Newtonsoft.Json.JsonConvert.SerializeObject(customData);
 
@@ -131,50 +129,6 @@ namespace SmartFarmManager.Service.Services
                 throw;
             }
         }
-
-        // 📌 Reset lại Firebase App để lấy token mới
-        private void ResetFirebaseInstance()
-        {
-            try
-            {
-                FirebaseApp app = FirebaseApp.DefaultInstance;
-                if (app != null)
-                {
-                    app.Delete(); // 🔄 Xóa Firebase Instance để làm mới token
-                }
-            }
-            catch (Exception)
-            {
-                Console.WriteLine("⚠️ Không tìm thấy Firebase Instance, tạo mới...");
-            }
-
-            var firebaseAdminSDKJson = JsonConvert.SerializeObject(new Dictionary<string, string>
-    {
-        { "type", Environment.GetEnvironmentVariable("CLOUDMESSAGE_TYPE") },
-        { "project_id", Environment.GetEnvironmentVariable("CLOUDMESSAGE_PROJECT_ID") },
-        { "private_key_id", Environment.GetEnvironmentVariable("CLOUDMESSAGE_PRIVATE_KEY_ID") },
-        { "private_key", Environment.GetEnvironmentVariable("CLOUDMESSAGE_PRIVATE_KEY")?.Replace("\\n", "\n") },
-        { "client_email", Environment.GetEnvironmentVariable("CLOUDMESSAGE_CLIENT_EMAIL") },
-        { "client_id", Environment.GetEnvironmentVariable("CLOUDMESSAGE_CLIENT_ID") },
-        { "auth_uri", Environment.GetEnvironmentVariable("CLOUDMESSAGE_AUTH_URI") },
-        { "token_uri", Environment.GetEnvironmentVariable("CLOUDMESSAGE_TOKEN_URI") },
-        { "auth_provider_x509_cert_url", Environment.GetEnvironmentVariable("CLOUDMESSAGE_AUTH_PROVIDER_X509_CERT_URL") },
-        { "client_x509_cert_url", Environment.GetEnvironmentVariable("CLOUDMESSAGE_CLIENT_X509_CERT_URL") },
-        { "universe_domain", Environment.GetEnvironmentVariable("CLOUDMESSAGE_UNIVERSE_DOMAIN") }
-    });
-
-            var googleCredential = GoogleCredential.FromJson(firebaseAdminSDKJson);
-
-            FirebaseApp.Create(new AppOptions
-            {
-                Credential = googleCredential,
-                ProjectId = Environment.GetEnvironmentVariable("CLOUDMESSAGE_PROJECT_ID")
-            });
-
-            Console.WriteLine("✅ Firebase App đã được khởi tạo lại với token mới.");
-        }
-
-
 
     }
 }
