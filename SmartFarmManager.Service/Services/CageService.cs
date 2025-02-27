@@ -86,7 +86,7 @@ namespace SmartFarmManager.Service.Services
                     BoardStatus = c.BoardStatus,
                     CreatedDate = c.CreatedDate,
                     CameraUrl = c.CameraUrl,
-                    StaffId = c.CageStaffs.FirstOrDefault().StaffFarmId, // Lấy StaffId từ CageStaff
+                    StaffId = c.CageStaffs.FirstOrDefault().StaffFarmId,
                     StaffName = c.CageStaffs.FirstOrDefault().StaffFarm.FullName,
                     // Lấy thông tin FarmingBatch phù hợp
                     FarmingBatch = c.FarmingBatches
