@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels.VaccineSchedule;
+using SmartFarmManager.Service.BusinessModels.VaccineScheduleLog;
 using SmartFarmManager.Service.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -85,5 +86,48 @@ namespace SmartFarmManager.Service.Services
                 Status = vaccineSchedule.Status
             };
         }
+
+        public async Task<VaccineScheduleWithLogsResponse> GetVaccineScheduleByTaskIdAsync(Guid taskId)
+        {
+            // Tìm VaccineScheduleLog dựa trên TaskId
+            var vaccineScheduleLog = await _unitOfWork.VaccineScheduleLogs
+                .FindByCondition(vsl => vsl.TaskId == taskId)
+                .Include(vsl => vsl.Schedule)
+                .ThenInclude(vs => vs.Vaccine)
+                .FirstOrDefaultAsync();
+
+            if (vaccineScheduleLog == null || vaccineScheduleLog.Schedule == null) return null;
+
+            var vaccineSchedule = vaccineScheduleLog.Schedule;
+
+            // Lấy tất cả log liên quan đến VaccineSchedule
+            var logs = await _unitOfWork.VaccineScheduleLogs
+                .FindByCondition(vsl => vsl.ScheduleId == vaccineSchedule.Id)
+                .ToListAsync();
+
+            return new VaccineScheduleWithLogsResponse
+            {
+                Id = vaccineSchedule.Id,
+                VaccineId = vaccineSchedule.VaccineId,
+                VaccineName = vaccineSchedule.Vaccine?.Name,
+                StageId = vaccineSchedule.StageId,
+                Date = vaccineSchedule.Date,
+                Quantity = vaccineSchedule.Quantity,
+                ApplicationAge = vaccineSchedule.ApplicationAge,
+                TotalPrice = vaccineSchedule.ToltalPrice,
+                Session = vaccineSchedule.Session,
+                Status = vaccineSchedule.Status,
+                Logs = logs.Select(log => new VaccineScheduleLogResponse
+                {
+                    Id = log.Id,
+                    ScheduleId = log.ScheduleId,
+                    Date = log.Date,
+                    Notes = log.Notes,
+                    Photo = log.Photo,
+                    TaskId = log.TaskId
+                }).ToList()
+            };
+        }
+
     }
 }
