@@ -659,114 +659,251 @@ namespace SmartFarmManager.Service.Services
                 throw new Exception("Failed. Details: " + ex.Message);
             }
         }
-        
+
+        //public async Task<Guid?> CreateMedicalSymptomAsync(MedicalSymptomModel medicalSymptomModel)
+        //{
+        //    try
+        //    {
+        //        // Lấy ngày hiện tại theo múi giờ Việt Nam
+        //        DateOnly currentDate = DateOnly.FromDateTime(DateTimeUtils.GetServerTimeInVietnamTime());
+
+        //    // Tìm giai đoạn phát triển hiện tại
+        //    var growthStage = await _unitOfWork.GrowthStages
+        //        .FindByCondition(gs => gs.FarmingBatchId == medicalSymptomModel.FarmingBatchId &&
+        //                               gs.AgeStartDate.HasValue &&
+        //                               gs.AgeEndDate.HasValue &&
+        //                               currentDate >= DateOnly.FromDateTime(gs.AgeStartDate.Value) &&
+        //                               currentDate <= DateOnly.FromDateTime(gs.AgeEndDate.Value))
+        //        .FirstOrDefaultAsync();
+        //    var farmingBatches = await _unitOfWork.FarmingBatches.FindByCondition(fb => fb.Id == medicalSymptomModel.FarmingBatchId).Include(fb => fb.Cage).FirstOrDefaultAsync();
+        //    if (medicalSymptomModel.AffectedQuantity > growthStage.Quantity - farmingBatches.AffectedQuantity)
+        //    {
+        //        return null;
+        //    }
+        //    // Bước 1: Tạo đối tượng MedicalSymptom mà chưa có MedicalSymptomDetails và Pictures
+        //    var medicalSymptom = new DataAccessObject.Models.MedicalSymptom
+        //    {
+        //        FarmingBatchId = medicalSymptomModel.FarmingBatchId,
+        //        PrescriptionId = medicalSymptomModel.PrescriptionId,
+        //        Status = MedicalSymptomStatuseEnum.Pending,
+        //        AffectedQuantity = medicalSymptomModel.AffectedQuantity,
+        //        Notes = medicalSymptomModel.Notes,
+        //        CreateAt = DateTimeUtils.GetServerTimeInVietnamTime()
+        //    };
+        //    // Bước 2: Lưu đối tượng MedicalSymptom vào cơ sở dữ liệu
+        //    await _unitOfWork.MedicalSymptom.CreateAsync(medicalSymptom);
+        //    await _unitOfWork.CommitAsync();
+
+        //    // Bước 3: Tạo MedicalSymptomDetails và Pictures với MedicalSymptomId
+        //    var medicalSymptomDetails = medicalSymptomModel.MedicalSymptomDetails.Select(d => new DataAccessObject.Models.MedicalSymtomDetail
+        //    {
+        //        SymptomId = d.SymptomId,
+        //        MedicalSymptomId = medicalSymptom.Id, // Gán ID sau khi lưu
+        //    }).ToList();
+
+        //    var pictures = medicalSymptomModel.Pictures.Select(p => new DataAccessObject.Models.Picture
+        //    {
+        //        RecordId = medicalSymptom.Id, // Gán ID sau khi lưu
+        //        Image = p.Image,
+        //        DateCaptured = p.DateCaptured
+        //    }).ToList();
+
+        //        //Notification realtime
+        //        var vetFarm = await _unitOfWork.Users
+        //.FindByCondition(u => u.Role.RoleName == "Vet")
+        //.Include(u => u.Role) // Đảm bảo lấy Role ngay từ đầu để tránh Lazy Loading
+        //.FirstOrDefaultAsync();
+
+        //        var notiType = await _unitOfWork.NotificationsTypes.FindByCondition(nt => nt.NotiTypeName == "MedicalSymptom").FirstOrDefaultAsync();
+        //        var adminFarm = await _unitOfWork.Users
+        //.FindByCondition(u => u.Role.RoleName == "Admin")
+        //.Include(u => u.Role) // Đảm bảo lấy Role ngay từ đầu để tránh Lazy Loading
+        //.FirstOrDefaultAsync();
+
+        //        var notificationVet = new DataAccessObject.Models.Notification
+        //    {
+        //        UserId = vetFarm.Id,
+        //        NotiTypeId = notiType.Id,
+        //        Content = $"Một báo cáo triệu chứng mới từ {farmingBatches.Cage.Name} đã được gửi vào lúc {DateTimeUtils.GetServerTimeInVietnamTime()}.\r\nVui lòng kiểm tra và xử lý kịp thời để đảm bảo sức khỏe cho vật nuôi.",
+        //        Title = "Bạn có báo cáo bệnh mới",
+        //        CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+        //        IsRead = false,
+        //        MedicalSymptomId = medicalSymptom.Id,
+        //        CageId = farmingBatches.CageId
+        //    };
+        //    var notificationAdmin = new DataAccessObject.Models.Notification
+        //    {
+        //        UserId = adminFarm.Id,
+        //        NotiTypeId = notiType.Id,
+        //        Content = $"Một báo cáo triệu chứng mới từ {farmingBatches.Cage.Name} đã được gửi vào lúc {DateTimeUtils.GetServerTimeInVietnamTime()}.\r\nVui lòng kiểm tra và xử lý kịp thời để đảm bảo sức khỏe cho vật nuôi.",
+        //        Title = "Bạn có báo cáo bệnh mới",
+        //        CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+        //        IsRead = false,
+        //        MedicalSymptomId = medicalSymptom.Id,
+        //        CageId = farmingBatches.CageId
+        //    };
+        //    await notificationService.SendNotification(vetFarm.DeviceId, "Có báo cáo triệu chứng mới", notificationVet);
+        //    await _unitOfWork.Notifications.CreateAsync(notificationVet);
+        //    if(vetFarm.DeviceId == adminFarm.DeviceId)
+        //        {
+        //            await System.Threading.Tasks.Task.Delay(500);
+        //        }
+        //    await notificationService.SendNotification(adminFarm.DeviceId, "Có báo cáo triệu chứng mới", notificationAdmin);
+        //    await _unitOfWork.Notifications.CreateAsync(notificationAdmin);
+
+        //    // Bước 6: Cập nhật lại MedicalSymptom
+        //    await _unitOfWork.Pictures.CreateListAsync(pictures);
+        //    await _unitOfWork.MedicalSymptomDetails.CreateListAsync(medicalSymptomDetails);
+        //    await _unitOfWork.CommitAsync();
+
+
+        //    await _quartzService.CreateReminderJobs(medicalSymptom.Id,DateTimeOffset.Now.LocalDateTime);
+
+        //    return medicalSymptom.Id;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine($"Error in Create Symptom: {ex.Message}");
+        //        throw new Exception("Failed to create Symptom. Details: " + ex.Message);
+        //    }
+        //}
         public async Task<Guid?> CreateMedicalSymptomAsync(MedicalSymptomModel medicalSymptomModel)
         {
             try
             {
+                Console.WriteLine("📌 Bắt đầu CreateMedicalSymptomAsync...");
+
                 // Lấy ngày hiện tại theo múi giờ Việt Nam
                 DateOnly currentDate = DateOnly.FromDateTime(DateTimeUtils.GetServerTimeInVietnamTime());
+                Console.WriteLine($"✅ Lấy ngày hiện tại: {currentDate}");
 
-            // Tìm giai đoạn phát triển hiện tại
-            var growthStage = await _unitOfWork.GrowthStages
-                .FindByCondition(gs => gs.FarmingBatchId == medicalSymptomModel.FarmingBatchId &&
-                                       gs.AgeStartDate.HasValue &&
-                                       gs.AgeEndDate.HasValue &&
-                                       currentDate >= DateOnly.FromDateTime(gs.AgeStartDate.Value) &&
-                                       currentDate <= DateOnly.FromDateTime(gs.AgeEndDate.Value))
-                .FirstOrDefaultAsync();
-            var farmingBatches = await _unitOfWork.FarmingBatches.FindByCondition(fb => fb.Id == medicalSymptomModel.FarmingBatchId).Include(fb => fb.Cage).FirstOrDefaultAsync();
-            if (medicalSymptomModel.AffectedQuantity > growthStage.Quantity - farmingBatches.AffectedQuantity)
-            {
-                return null;
-            }
-            // Bước 1: Tạo đối tượng MedicalSymptom mà chưa có MedicalSymptomDetails và Pictures
-            var medicalSymptom = new DataAccessObject.Models.MedicalSymptom
-            {
-                FarmingBatchId = medicalSymptomModel.FarmingBatchId,
-                PrescriptionId = medicalSymptomModel.PrescriptionId,
-                Status = MedicalSymptomStatuseEnum.Pending,
-                AffectedQuantity = medicalSymptomModel.AffectedQuantity,
-                Notes = medicalSymptomModel.Notes,
-                CreateAt = DateTimeUtils.GetServerTimeInVietnamTime()
-            };
-            // Bước 2: Lưu đối tượng MedicalSymptom vào cơ sở dữ liệu
-            await _unitOfWork.MedicalSymptom.CreateAsync(medicalSymptom);
-            await _unitOfWork.CommitAsync();
+                // Tìm giai đoạn phát triển hiện tại
+                var growthStage = await _unitOfWork.GrowthStages
+                    .FindByCondition(gs => gs.FarmingBatchId == medicalSymptomModel.FarmingBatchId &&
+                                           gs.AgeStartDate.HasValue &&
+                                           gs.AgeEndDate.HasValue &&
+                                           currentDate >= DateOnly.FromDateTime(gs.AgeStartDate.Value) &&
+                                           currentDate <= DateOnly.FromDateTime(gs.AgeEndDate.Value))
+                    .FirstOrDefaultAsync();
+                Console.WriteLine($"✅ Tìm giai đoạn phát triển: {growthStage?.Id}");
 
-            // Bước 3: Tạo MedicalSymptomDetails và Pictures với MedicalSymptomId
-            var medicalSymptomDetails = medicalSymptomModel.MedicalSymptomDetails.Select(d => new DataAccessObject.Models.MedicalSymtomDetail
-            {
-                SymptomId = d.SymptomId,
-                MedicalSymptomId = medicalSymptom.Id, // Gán ID sau khi lưu
-            }).ToList();
+                var farmingBatches = await _unitOfWork.FarmingBatches
+                    .FindByCondition(fb => fb.Id == medicalSymptomModel.FarmingBatchId)
+                    .Include(fb => fb.Cage)
+                    .FirstOrDefaultAsync();
+                Console.WriteLine($"✅ Tìm farming batch: {farmingBatches?.Id}");
 
-            var pictures = medicalSymptomModel.Pictures.Select(p => new DataAccessObject.Models.Picture
-            {
-                RecordId = medicalSymptom.Id, // Gán ID sau khi lưu
-                Image = p.Image,
-                DateCaptured = p.DateCaptured
-            }).ToList();
+                if (medicalSymptomModel.AffectedQuantity > growthStage.Quantity - farmingBatches.AffectedQuantity)
+                {
+                    Console.WriteLine("⛔ Affected quantity vượt quá số lượng cho phép.");
+                    return null;
+                }
 
-                //Notification realtime
+                // Bước 1: Tạo đối tượng MedicalSymptom
+                var medicalSymptom = new DataAccessObject.Models.MedicalSymptom
+                {
+                    FarmingBatchId = medicalSymptomModel.FarmingBatchId,
+                    PrescriptionId = medicalSymptomModel.PrescriptionId,
+                    Status = MedicalSymptomStatuseEnum.Pending,
+                    AffectedQuantity = medicalSymptomModel.AffectedQuantity,
+                    Notes = medicalSymptomModel.Notes,
+                    CreateAt = DateTimeUtils.GetServerTimeInVietnamTime()
+                };
+                Console.WriteLine("✅ Đã tạo đối tượng MedicalSymptom.");
+
+                // Bước 2: Lưu vào cơ sở dữ liệu
+                await _unitOfWork.MedicalSymptom.CreateAsync(medicalSymptom);
+                await _unitOfWork.CommitAsync();
+                Console.WriteLine($"✅ Đã lưu MedicalSymptom với ID: {medicalSymptom.Id}");
+
+                // Bước 3: Tạo MedicalSymptomDetails và Pictures
+                var medicalSymptomDetails = medicalSymptomModel.MedicalSymptomDetails.Select(d => new DataAccessObject.Models.MedicalSymtomDetail
+                {
+                    SymptomId = d.SymptomId,
+                    MedicalSymptomId = medicalSymptom.Id,
+                }).ToList();
+
+                var pictures = medicalSymptomModel.Pictures.Select(p => new DataAccessObject.Models.Picture
+                {
+                    RecordId = medicalSymptom.Id,
+                    Image = p.Image,
+                    DateCaptured = p.DateCaptured
+                }).ToList();
+
+                Console.WriteLine($"✅ Tạo {medicalSymptomDetails.Count} MedicalSymptomDetails & {pictures.Count} Pictures.");
+
+                // Notification realtime
                 var vetFarm = await _unitOfWork.Users
-        .FindByCondition(u => u.Role.RoleName == "Vet")
-        .Include(u => u.Role) // Đảm bảo lấy Role ngay từ đầu để tránh Lazy Loading
-        .FirstOrDefaultAsync();
+                    .FindByCondition(u => u.Role.RoleName == "Vet")
+                    .Include(u => u.Role)
+                    .FirstOrDefaultAsync();
+                Console.WriteLine($"✅ Tìm user có role Vet: {vetFarm?.Id}");
 
-                var notiType = await _unitOfWork.NotificationsTypes.FindByCondition(nt => nt.NotiTypeName == "MedicalSymptom").FirstOrDefaultAsync();
+                var notiType = await _unitOfWork.NotificationsTypes
+                    .FindByCondition(nt => nt.NotiTypeName == "MedicalSymptom")
+                    .FirstOrDefaultAsync();
+                Console.WriteLine($"✅ Tìm notification type: {notiType?.Id}");
+
                 var adminFarm = await _unitOfWork.Users
-        .FindByCondition(u => u.Role.RoleName == "Admin")
-        .Include(u => u.Role) // Đảm bảo lấy Role ngay từ đầu để tránh Lazy Loading
-        .FirstOrDefaultAsync();
+                    .FindByCondition(u => u.Role.RoleName == "Admin")
+                    .Include(u => u.Role)
+                    .FirstOrDefaultAsync();
+                Console.WriteLine($"✅ Tìm user có role Admin: {adminFarm?.Id}");
 
                 var notificationVet = new DataAccessObject.Models.Notification
-            {
-                UserId = vetFarm.Id,
-                NotiTypeId = notiType.Id,
-                Content = $"Một báo cáo triệu chứng mới từ {farmingBatches.Cage.Name} đã được gửi vào lúc {DateTimeUtils.GetServerTimeInVietnamTime()}.\r\nVui lòng kiểm tra và xử lý kịp thời để đảm bảo sức khỏe cho vật nuôi.",
-                Title = "Bạn có báo cáo bệnh mới",
-                CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
-                IsRead = false,
-                MedicalSymptomId = medicalSymptom.Id,
-                CageId = farmingBatches.CageId
-            };
-            var notificationAdmin = new DataAccessObject.Models.Notification
-            {
-                UserId = adminFarm.Id,
-                NotiTypeId = notiType.Id,
-                Content = $"Một báo cáo triệu chứng mới từ {farmingBatches.Cage.Name} đã được gửi vào lúc {DateTimeUtils.GetServerTimeInVietnamTime()}.\r\nVui lòng kiểm tra và xử lý kịp thời để đảm bảo sức khỏe cho vật nuôi.",
-                Title = "Bạn có báo cáo bệnh mới",
-                CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
-                IsRead = false,
-                MedicalSymptomId = medicalSymptom.Id,
-                CageId = farmingBatches.CageId
-            };
-            await notificationService.SendNotification(vetFarm.DeviceId, "Có báo cáo triệu chứng mới", notificationVet);
-            await _unitOfWork.Notifications.CreateAsync(notificationVet);
-            if(vetFarm.DeviceId == adminFarm.DeviceId)
                 {
-                    await System.Threading.Tasks.Task.Delay(500);
-                }
-            await notificationService.SendNotification(adminFarm.DeviceId, "Có báo cáo triệu chứng mới", notificationAdmin);
-            await _unitOfWork.Notifications.CreateAsync(notificationAdmin);
+                    UserId = vetFarm.Id,
+                    NotiTypeId = notiType.Id,
+                    Content = $"Một báo cáo triệu chứng mới từ {farmingBatches.Cage.Name} đã được gửi vào lúc {DateTimeUtils.GetServerTimeInVietnamTime()}.\r\nVui lòng kiểm tra và xử lý kịp thời để đảm bảo sức khỏe cho vật nuôi.",
+                    Title = "Bạn có báo cáo bệnh mới",
+                    CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                    IsRead = false,
+                    MedicalSymptomId = medicalSymptom.Id,
+                    CageId = farmingBatches.CageId
+                };
 
-            // Bước 6: Cập nhật lại MedicalSymptom
-            await _unitOfWork.Pictures.CreateListAsync(pictures);
-            await _unitOfWork.MedicalSymptomDetails.CreateListAsync(medicalSymptomDetails);
-            await _unitOfWork.CommitAsync();
+                var notificationAdmin = new DataAccessObject.Models.Notification
+                {
+                    UserId = adminFarm.Id,
+                    NotiTypeId = notiType.Id,
+                    Content = $"Một báo cáo triệu chứng mới từ {farmingBatches.Cage.Name} đã được gửi vào lúc {DateTimeUtils.GetServerTimeInVietnamTime()}.\r\nVui lòng kiểm tra và xử lý kịp thời để đảm bảo sức khỏe cho vật nuôi.",
+                    Title = "Bạn có báo cáo bệnh mới",
+                    CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                    IsRead = false,
+                    MedicalSymptomId = medicalSymptom.Id,
+                    CageId = farmingBatches.CageId
+                };
+
+                await notificationService.SendNotification(vetFarm.DeviceId, "Có báo cáo triệu chứng mới", notificationVet);
+                Console.WriteLine("✅ Đã gửi thông báo cho Vet.");
+
+                await _unitOfWork.Notifications.CreateAsync(notificationVet);
 
 
-            await _quartzService.CreateReminderJobs(medicalSymptom.Id,DateTimeOffset.Now.LocalDateTime);
+                await notificationService.SendNotification(adminFarm.DeviceId, "Có báo cáo triệu chứng mới", notificationAdmin);
+                Console.WriteLine("✅ Đã gửi thông báo cho Admin.");
 
-            return medicalSymptom.Id;
+                await _unitOfWork.Notifications.CreateAsync(notificationAdmin);
+
+                // Bước 6: Lưu MedicalSymptomDetails & Pictures
+                await _unitOfWork.Pictures.CreateListAsync(pictures);
+                await _unitOfWork.MedicalSymptomDetails.CreateListAsync(medicalSymptomDetails);
+                await _unitOfWork.CommitAsync();
+                Console.WriteLine("✅ Đã lưu MedicalSymptomDetails & Pictures.");
+
+                await _quartzService.CreateReminderJobs(medicalSymptom.Id, DateTimeOffset.Now.LocalDateTime);
+                Console.WriteLine("✅ Đã tạo ReminderJobs.");
+
+                Console.WriteLine($"🎉 Hoàn thành CreateMedicalSymptomAsync! ID: {medicalSymptom.Id}");
+                return medicalSymptom.Id;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in Create Symptom: {ex.Message}");
+                Console.WriteLine($"⛔ Lỗi trong CreateMedicalSymptomAsync: {ex.Message}");
                 throw new Exception("Failed to create Symptom. Details: " + ex.Message);
             }
         }
+
         public async System.Threading.Tasks.Task ProcessMedicalSymptomReminderAsync(Guid medicalSymptomId)
         {
 
