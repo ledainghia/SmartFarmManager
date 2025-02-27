@@ -647,7 +647,7 @@ namespace SmartFarmManager.Service.Services
                         TaskId = firstTask.Id,
                         CageId = cage.Id
                     };
-                    await notificationService.SendNotification(staffFarm.DeviceId, "Bạn nhận được công việc mới!", notificationStaff);
+                    //await notificationService.SendNotification(staffFarm.DeviceId, "Bạn nhận được công việc mới!", notificationStaff);
                     await _unitOfWork.Notifications.CreateAsync(notificationStaff);
                 }
                 return true;
