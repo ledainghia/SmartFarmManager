@@ -54,7 +54,7 @@ namespace SmartFarmManager.Service.Services
 
         public SecurityToken CreateJwtToken(User user)
         {
-            var utcNow = DateTime.UtcNow;
+            var utcNow = DateTimeUtils.GetServerTimeInVietnamTime();
             var authClaims = new List<Claim>
     {
         new(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
@@ -70,6 +70,7 @@ namespace SmartFarmManager.Service.Services
             {
                 Subject = new ClaimsIdentity(authClaims),
                 Expires = utcNow.Add(TimeSpan.FromMinutes(1)),
+
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256)
             };
 
@@ -81,7 +82,7 @@ namespace SmartFarmManager.Service.Services
 
         private SecurityToken CreateJwtRefreshToken(User user)
         {
-            var utcNow = DateTime.UtcNow;
+            var utcNow = DateTimeUtils.GetServerTimeInVietnamTime();
             var authClaims = new List<Claim>
     {
         new(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
