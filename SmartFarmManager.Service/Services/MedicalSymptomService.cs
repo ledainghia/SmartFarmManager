@@ -659,7 +659,7 @@ namespace SmartFarmManager.Service.Services
                 throw new Exception("Failed. Details: " + ex.Message);
             }
         }
-        [Authorize(Roles = "Staff Farm")]
+        
         public async Task<Guid?> CreateMedicalSymptomAsync(MedicalSymptomModel medicalSymptomModel)
         {
             try
@@ -708,11 +708,19 @@ namespace SmartFarmManager.Service.Services
                 DateCaptured = p.DateCaptured
             }).ToList();
 
-            //Notification realtime
-            var vetFarm = await _unitOfWork.Users.FindByCondition(u => u.Role.RoleName == "Vet").FirstOrDefaultAsync();
-            var notiType = await _unitOfWork.NotificationsTypes.FindByCondition(nt => nt.NotiTypeName == "MedicalSymptom").FirstOrDefaultAsync();
-            var adminFarm = await _unitOfWork.Users.FindByCondition(u => u.Role.RoleName == "Admin").FirstOrDefaultAsync();
-            var notificationVet = new DataAccessObject.Models.Notification
+                //Notification realtime
+                var vetFarm = await _unitOfWork.Users
+        .FindByCondition(u => u.Role.RoleName == "Vet")
+        .Include(u => u.Role) // Đảm bảo lấy Role ngay từ đầu để tránh Lazy Loading
+        .FirstOrDefaultAsync();
+
+                var notiType = await _unitOfWork.NotificationsTypes.FindByCondition(nt => nt.NotiTypeName == "MedicalSymptom").FirstOrDefaultAsync();
+                var adminFarm = await _unitOfWork.Users
+        .FindByCondition(u => u.Role.RoleName == "Admin")
+        .Include(u => u.Role) // Đảm bảo lấy Role ngay từ đầu để tránh Lazy Loading
+        .FirstOrDefaultAsync();
+
+                var notificationVet = new DataAccessObject.Models.Notification
             {
                 UserId = vetFarm.Id,
                 NotiTypeId = notiType.Id,
