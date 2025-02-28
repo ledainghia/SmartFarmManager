@@ -153,7 +153,14 @@ namespace SmartFarmManager.Service.Services
                 {
                     Id = c.CageId,
                     Name = c.CageName
-                }).ToList()
+                }).ToList(),
+                TasksCountByStatus = new TaskStatusCountModel
+                {
+                    Pending = _unitOfWork.Tasks.FindByCondition(x=>x.AssignedToUserId==g.StaffFarm.Id && x.Status == "Pending").Count(),
+                    InProgress = _unitOfWork.Tasks.FindByCondition(x => x.AssignedToUserId == g.StaffFarm.Id && x.Status == "InProgress").Count(),
+                    Done = _unitOfWork.Tasks.FindByCondition(x => x.AssignedToUserId == g.StaffFarm.Id && x.Status == "Done").Count(),
+                    Overdue = _unitOfWork.Tasks.FindByCondition(x => x.AssignedToUserId == g.StaffFarm.Id && x.Status == "Overdue").Count(),
+                }
             }).ToList();
             var result= new PaginatedList<UserModel>(userModels, totalCount, pageIndex, pageSize);
             return new PagedResult<UserModel>()
