@@ -1931,7 +1931,10 @@ namespace SmartFarmManager.Service.Services
             };
 
             await _unitOfWork.VaccineSchedules.CreateAsync(newVaccineSchedule);
+            var vaccine = await _unitOfWork.Vaccines.FindByCondition(v => v.Id == vaccineSchedule.VaccineId).FirstOrDefaultAsync();
+            if(vaccine == null) return false;
 
+            newVaccineSchedule.Vaccine = vaccine;
             // 4️⃣ Nếu `Date > serverTime + 1 ngày` → Chỉ tạo VaccineSchedule, không tạo Task
             if (requestDate > serverTime.Date.AddDays(1))
             {
@@ -1944,6 +1947,7 @@ namespace SmartFarmManager.Service.Services
             // 5️⃣ Nếu `Date = ngày mai` → Tạo Task
             if (requestDate == serverTime.Date.AddDays(1))
             {
+                
                 var result = await CreateVaccineTask(newVaccineSchedule);
                 if (!result)
                 {
