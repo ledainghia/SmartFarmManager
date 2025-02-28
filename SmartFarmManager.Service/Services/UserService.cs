@@ -431,6 +431,16 @@ namespace SmartFarmManager.Service.Services
             }
             return true;
         }
+
+        public async Task<bool?> CheckUserByPhone(string phone)
+        {
+            var checkUser = await _unitOfWork.Users.FindByCondition(u => u.PhoneNumber == phone).FirstOrDefaultAsync();
+            if (checkUser == null)
+            {
+                return false;
+            }
+            return true;
+        }
         public async Task<IEnumerable<BusinessModels.Users.UserModel>> GetUsersAsync(string? username, string? email, string? phoneNumber, Guid? roleId, bool? isActive, string? fullName, string? address)
         {
             var query = _unitOfWork.Users.FindAll();
