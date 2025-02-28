@@ -273,6 +273,31 @@ namespace SmartFarmManager.API.Controllers
             }
             return NotFound(ApiResult<Dictionary<string, string[]>>.Fail(new Exception("User is not found")));
         }
+        [HttpPost("otp/sms/send")]
+        public async Task<IActionResult> SendOtpSms([FromBody] SendOptPhoneRequest request)
+        {
+            if (string.IsNullOrEmpty(request.PhoneNumber))
+            {
+                return BadRequest(ApiResult<SendOtpResponse>.Fail(new Exception("Phone number is required.")));
+            }
+
+            var otp = new Random().Next(100000, 999999).ToString();
+            _cache.Set(request.PhoneNumber, otp, TimeSpan.FromMinutes(10));
+
+            bool isSent = await _otpPhoneService.SendOtpViaSmsAsync(request.PhoneNumber, otp);
+
+            if (isSent)
+            {
+                var response = ApiResult<SendOtpResponse>.Succeed(new SendOtpResponse { Message = "OTP sent successfully via SMS." });
+                return Ok(response);
+            }
+            else
+            {
+                return BadRequest(ApiResult<SendOtpResponse>.Fail(new Exception("Failed to send OTP via SMS.")));
+            }
+        }
+
+
         //[HttpPost("otp/send")]
         //public async Task<IActionResult> SendOtp([FromBody] SendOtpRequest request)
         //{
@@ -348,6 +373,24 @@ namespace SmartFarmManager.API.Controllers
             }
             return Unauthorized(ApiResult<SendOtpResponse>.Succeed(new SendOtpResponse { Message = "Invalid OTP" }));
         }
+        [HttpPost("otp/sms/verify")]
+        public IActionResult VerifyOtpSms([FromBody] VerifyOtpPhoneRequest request)
+        {
+            if (string.IsNullOrEmpty(request.PhoneNumber))
+            {
+                return BadRequest(ApiResult<SendOtpResponse>.Fail(new Exception("Phone number is required.")));
+            }
+
+            if (_cache.TryGetValue(request.PhoneNumber, out string otp) && otp == request.Otp)
+            {
+                _cache.Remove(request.PhoneNumber); // Xóa OTP sau khi xác thực thành công
+                var response = ApiResult<SendOtpResponse>.Succeed(new SendOtpResponse { Message = "OTP verified successfully via SMS." });
+                return Ok(response);
+            }
+
+            return Unauthorized(ApiResult<SendOtpResponse>.Fail(new Exception("Invalid OTP.")));
+        }
+
 
         [HttpGet]
         public async Task<IActionResult> GetUsers(

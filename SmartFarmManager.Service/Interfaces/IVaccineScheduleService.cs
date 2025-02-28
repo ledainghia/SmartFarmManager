@@ -11,5 +11,6 @@ namespace SmartFarmManager.Service.Interfaces
     {
         Task<List<VaccineScheduleResponse>> GetVaccineSchedulesAsync(Guid? stageId, DateTime? date, string status);
         Task<VaccineScheduleResponse> GetVaccineScheduleByIdAsync(Guid id);
-    }
+        Task<VaccineScheduleWithLogsResponse> GetVaccineScheduleByTaskIdAsync(Guid taskId);
+        }
 }

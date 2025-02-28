@@ -47,7 +47,7 @@ namespace SmartFarmManager.API.Controllers
             if (log == null)
                 return NotFound(ApiResult<string>.Fail("Không tìm thấy log tiêm vắc-xin"));
 
-            var response = new VaccineScheduleLogResponse
+            var response = new Payloads.Responses.VaccineScheduleLog.VaccineScheduleLogResponse
             {
                 Id = log.Id,
                 ScheduleId = log.ScheduleId.Value,
@@ -57,7 +57,7 @@ namespace SmartFarmManager.API.Controllers
                 TaskId = log.TaskId
             };
 
-            return Ok(ApiResult<VaccineScheduleLogResponse>.Succeed(response));
+            return Ok(ApiResult<Payloads.Responses.VaccineScheduleLog.VaccineScheduleLogResponse>.Succeed(response));
         }
 
         [HttpGet("task/{taskId:guid}")]
@@ -68,7 +68,7 @@ namespace SmartFarmManager.API.Controllers
             if (log == null)
                 return NotFound(ApiResult<string>.Fail("Không tìm thấy log tiêm vắc-xin cho TaskId này"));
 
-            var response = new VaccineScheduleLogResponse
+            var response = new Payloads.Responses.VaccineScheduleLog.VaccineScheduleLogResponse
             {
                 Id = log.Id,
                 ScheduleId = log.ScheduleId.Value,
@@ -78,7 +78,7 @@ namespace SmartFarmManager.API.Controllers
                 TaskId = log.TaskId
             };
 
-            return Ok(ApiResult<VaccineScheduleLogResponse>.Succeed(response));
+            return Ok(ApiResult<Payloads.Responses.VaccineScheduleLog.VaccineScheduleLogResponse>.Succeed(response));
         }
         [HttpPost("vaccine-log/create")]
         public async Task<IActionResult> CreateVaccineLog([FromBody] CreateVaccineLogRequest request)
