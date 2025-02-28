@@ -55,6 +55,7 @@ namespace SmartFarmManager.Repository.Interfaces
         ISensorTypeRepository SensorTypes { get; }
         ISensorDataLogRepository SensorDataLogs { get; }
         IStockLogRepository StockLogs { get; }
+        IEggHarvestRepository EggHarvests { get; }
         Task<int> CommitAsync();
         System.Threading.Tasks.Task BeginTransactionAsync();
         System.Threading.Tasks.Task RollbackAsync();
