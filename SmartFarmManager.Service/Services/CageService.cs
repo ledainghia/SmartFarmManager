@@ -35,23 +35,32 @@ namespace SmartFarmManager.Service.Services
                 .Include(c => c.CageStaffs)
                 .ThenInclude(cs => cs.StaffFarm)
                 .Include(c => c.FarmingBatches).ThenInclude(c => c.GrowthStages)
+                .Include(c=>c.CageStaffs)
+                .ThenInclude(cs=>cs.StaffFarm) 
                 .AsQueryable();
 
             // Áp dụng các bộ lọc
-            if (request.FarmId.HasValue)
+            if (!string.IsNullOrEmpty(request.PenCode))
             {
-                query = query.Where(c => c.FarmId == request.FarmId.Value);
+                query = query.Where(c => c.PenCode.Contains(request.PenCode));
             }
 
+            // Áp dụng bộ lọc Name
             if (!string.IsNullOrEmpty(request.Name))
             {
                 query = query.Where(c => c.Name.Contains(request.Name));
             }
 
-            if (request.BoardStatus.HasValue)
+            // Tìm kiếm tổng hợp với SearchKey
+            if (!string.IsNullOrEmpty(request.SearchKey))
             {
-                query = query.Where(c => c.BoardStatus == request.BoardStatus.Value);
+                query = query.Where(c =>
+                    c.PenCode.Contains(request.SearchKey) ||
+                    c.Name.Contains(request.SearchKey) ||
+                    c.Location.Contains(request.SearchKey)||
+                    c.CageStaffs.FirstOrDefault().StaffFarm.FullName.Contains(request.SearchKey));
             }
+
             if (request.HasFarmingBatch.HasValue)
             {
                 if (request.HasFarmingBatch.Value)
