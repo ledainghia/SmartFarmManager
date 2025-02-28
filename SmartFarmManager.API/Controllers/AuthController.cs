@@ -128,7 +128,8 @@ namespace SmartFarmManager.API.Controllers
                     PhoneNumber = userProfile.PhoneNumber,
                     Address = userProfile.Address,
                     Role = userProfile.Role,
-                    CreatedAt = userProfile.CreatedAt
+                    CreatedAt = userProfile.CreatedAt,
+                    ImageUrl = userProfile.ImageUrl
                 };
 
                 return Ok(ApiResult<UserProfileResponse>.Succeed(response));
