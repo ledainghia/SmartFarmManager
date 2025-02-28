@@ -82,7 +82,8 @@ namespace SmartFarmManager.Service.Services
                 Address = user.Address,
                 Role = user.Role.RoleName,
                 IsActive = user.IsActive ?? false,
-                CreatedAt = user.CreatedAt ?? DateTime.MinValue
+                CreatedAt = user.CreatedAt ?? DateTime.MinValue,
+                ImageUrl = user.ImageURL
             };
         }
 
@@ -360,6 +361,7 @@ namespace SmartFarmManager.Service.Services
             user.Email = request.Email;
             user.PhoneNumber = request.PhoneNumber;
             user.Address = request.Address;
+            user.ImageURL = request.ImageUrl;
 
             await _unitOfWork.Users.UpdateAsync(user);
             return await _unitOfWork.CommitAsync() > 0;
