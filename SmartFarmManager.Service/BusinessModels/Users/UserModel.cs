@@ -17,5 +17,6 @@ namespace SmartFarmManager.Service.BusinessModels.Users
         public bool? IsActive { get; set; }
         public DateTime? CreatedAt { get; set; }
         public Guid RoleId { get; set; }
+        
     }
 }
