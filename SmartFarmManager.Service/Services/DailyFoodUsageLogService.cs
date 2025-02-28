@@ -57,7 +57,9 @@ namespace SmartFarmManager.Service.Services
                 LogTime = DateTimeUtils.GetServerTimeInVietnamTime(),
                 TaskId = model.TaskId,
             };
-
+            var food = await _unitOfWork.FoodStacks.FindByCondition(f => f.FoodType == growthStage.FoodType).FirstOrDefaultAsync();
+            food.CurrentStock = food.CurrentStock - model.ActualWeight;
+            await _unitOfWork.FoodStacks.UpdateAsync(food);
             await _unitOfWork.DailyFoodUsageLogs.CreateAsync(newLog);
             await _unitOfWork.CommitAsync();
 
