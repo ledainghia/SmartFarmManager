@@ -15,7 +15,7 @@ CREATE TABLE [AnimalTemplates] (
     [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
     [Name] nvarchar(100) NOT NULL,
     [Species] nvarchar(50) NOT NULL,
-    [DefaultCapacity] int NULL,
+    [Status] nvarchar(max) NULL,
     [Notes] nvarchar(255) NULL,
     CONSTRAINT [PK__AnimalTe__F87ADD27AE731EF5] PRIMARY KEY ([Id])
 );
@@ -26,6 +26,14 @@ CREATE TABLE [ControlBoardTypes] (
     [Name] nvarchar(255) NOT NULL,
     [Description] nvarchar(2000) NULL,
     CONSTRAINT [PK__ControlB__8CDFB1CCB09566BA] PRIMARY KEY ([Id])
+);
+GO
+
+CREATE TABLE [Diseases] (
+    [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
+    [Name] nvarchar(200) NOT NULL,
+    [Description] nvarchar(500) NOT NULL,
+    CONSTRAINT [PK_Diseases] PRIMARY KEY ([Id])
 );
 GO
 
@@ -59,6 +67,8 @@ CREATE TABLE [Medications] (
     [Name] nvarchar(100) NULL,
     [UsageInstructions] nvarchar(255) NULL,
     [Price] decimal(10,2) NULL,
+    [DoseWeight] int NULL,
+    [Weight] int NULL,
     [DoseQuantity] int NULL,
     [PricePerDose] decimal(10,2) NULL,
     CONSTRAINT [PK__Medicati__62EC1AFA81A8C124] PRIMARY KEY ([Id])
@@ -105,6 +115,14 @@ CREATE TABLE [Roles] (
 );
 GO
 
+CREATE TABLE [SaleTypes] (
+    [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
+    [StageTypeName] nvarchar(100) NOT NULL,
+    [Discription] nvarchar(255) NULL,
+    CONSTRAINT [PK_SaleTypes] PRIMARY KEY ([Id])
+);
+GO
+
 CREATE TABLE [Schedules] (
     [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
     [ScheduleCode] nvarchar(50) NOT NULL,
@@ -126,13 +144,6 @@ CREATE TABLE [SensorTypes] (
 );
 GO
 
-CREATE TABLE [Statuses] (
-    [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
-    [StatusName] nvarchar(50) NOT NULL,
-    CONSTRAINT [PK__Statuses__C8EE2063A8C85F92] PRIMARY KEY ([Id])
-);
-GO
-
 CREATE TABLE [SubscriptionPlans] (
     [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
     [PlanName] nvarchar(100) NOT NULL,
@@ -140,6 +151,13 @@ CREATE TABLE [SubscriptionPlans] (
     [CostPerVet] decimal(10,2) NOT NULL,
     [MonthlyBaseCost] decimal(10,2) NOT NULL,
     CONSTRAINT [PK__Subscrip__755C22B7124150BB] PRIMARY KEY ([Id])
+);
+GO
+
+CREATE TABLE [Symptoms] (
+    [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
+    [SymptomName] nvarchar(200) NOT NULL,
+    CONSTRAINT [PK_Symptoms] PRIMARY KEY ([Id])
 );
 GO
 
@@ -155,9 +173,20 @@ CREATE TABLE [Vaccines] (
     [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
     [Name] nvarchar(100) NULL,
     [Method] nvarchar(50) NULL,
-    [AgeStartDate] datetime NULL DEFAULT ((getdate())),
-    [AgeEndDate] datetime NULL DEFAULT ((getdate())),
+    [Price] float NOT NULL,
+    [AgeStart] int NULL,
+    [AgeEnd] int NULL,
     CONSTRAINT [PK__Vaccines__45DC6889A12FCD5C] PRIMARY KEY ([Id])
+);
+GO
+
+CREATE TABLE [WhitelistDomains] (
+    [Id] uniqueidentifier NOT NULL,
+    [Domain] nvarchar(255) NOT NULL,
+    [ApiKey] nvarchar(255) NOT NULL,
+    [CreatedAt] datetime2 NOT NULL,
+    [IsActive] bit NOT NULL DEFAULT CAST(1 AS bit),
+    CONSTRAINT [PK_WhitelistDomains] PRIMARY KEY ([Id])
 );
 GO
 
@@ -169,6 +198,7 @@ CREATE TABLE [GrowthStageTemplates] (
     [AgeStart] int NULL,
     [AgeEnd] int NULL,
     [Notes] nvarchar(255) NULL,
+    [SaleTypeId] uniqueidentifier NULL,
     CONSTRAINT [PK__GrowthSt__12B67065BFCFA63B] PRIMARY KEY ([Id]),
     CONSTRAINT [FK__GrowthSta__Templ__59063A47] FOREIGN KEY ([TemplateId]) REFERENCES [AnimalTemplates] ([Id])
 );
@@ -186,6 +216,15 @@ CREATE TABLE [VaccineTemplates] (
 );
 GO
 
+CREATE TABLE [StandardPrescriptions] (
+    [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
+    [DiseaseId] uniqueidentifier NOT NULL,
+    [Notes] nvarchar(255) NOT NULL,
+    CONSTRAINT [PK_StandardPrescriptions] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_StandardPrescriptions_Diseases_DiseaseId] FOREIGN KEY ([DiseaseId]) REFERENCES [Diseases] ([Id]) ON DELETE CASCADE
+);
+GO
+
 CREATE TABLE [Cages] (
     [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
     [PenCode] nvarchar(50) NOT NULL DEFAULT N'',
@@ -194,7 +233,6 @@ CREATE TABLE [Cages] (
     [Area] float NOT NULL,
     [Location] nvarchar(255) NULL,
     [Capacity] int NOT NULL,
-    [AnimalType] nvarchar(255) NULL,
     [BoardCode] nvarchar(50) NOT NULL,
     [BoardStatus] bit NOT NULL,
     [CreatedDate] datetime2 NOT NULL,
@@ -203,15 +241,31 @@ CREATE TABLE [Cages] (
     [DeletedDate] datetime2 NULL,
     [CameraUrl] nvarchar(255) NOT NULL DEFAULT N'',
     [ChannelId] int NOT NULL,
+    [IsSolationCage] bit NOT NULL,
     CONSTRAINT [PK__Cages__792D9F9AACADDF50] PRIMARY KEY ([Id]),
     CONSTRAINT [FK__Farm__CageI__2321213213] FOREIGN KEY ([FarmId]) REFERENCES [Farms] ([Id])
+);
+GO
+
+CREATE TABLE [CostingReport] (
+    [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
+    [FarmId] uniqueidentifier NOT NULL,
+    [ReportMonth] int NOT NULL,
+    [ReportYear] int NOT NULL,
+    [CostType] nvarchar(50) NOT NULL,
+    [TotalQuantity] decimal(10,2) NOT NULL,
+    [TotalCost] decimal(10,2) NOT NULL,
+    [GeneratedAt] datetime2 NOT NULL DEFAULT (GETDATE()),
+    CONSTRAINT [PK_CostingReport] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_CostingReport_Farms_FarmId] FOREIGN KEY ([FarmId]) REFERENCES [Farms] ([Id]) ON DELETE CASCADE
 );
 GO
 
 CREATE TABLE [ElectricityLogs] (
     [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
     [FarmId] uniqueidentifier NOT NULL,
-    [Data] float NOT NULL,
+    [Data] nvarchar(max) NULL,
+    [TotalConsumption] decimal(18,2) NOT NULL,
     [CreatedDate] datetime2 NOT NULL,
     [ModifiedDate] datetime2 NULL,
     CONSTRAINT [PK__Electric__0B83AE01DB836F69] PRIMARY KEY ([Id]),
@@ -238,7 +292,7 @@ GO
 CREATE TABLE [FoodStack] (
     [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
     [FarmId] uniqueidentifier NOT NULL,
-    [NameFood] nvarchar(100) NULL,
+    [FoodType] nvarchar(100) NULL,
     [Quantity] decimal(10,2) NULL,
     [CostPerKg] decimal(10,2) NULL,
     [CurrentStock] decimal(10,2) NULL,
@@ -247,14 +301,26 @@ CREATE TABLE [FoodStack] (
 );
 GO
 
+CREATE TABLE [MasterData] (
+    [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
+    [CostType] nvarchar(50) NULL,
+    [Unit] nvarchar(50) NULL,
+    [UnitPrice] decimal(10,2) NOT NULL,
+    [FarmId] uniqueidentifier NOT NULL,
+    CONSTRAINT [PK_MasterData] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_MasterData_Farms_FarmId] FOREIGN KEY ([FarmId]) REFERENCES [Farms] ([Id]) ON DELETE CASCADE
+);
+GO
+
 CREATE TABLE [WaterLogs] (
     [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
     [FarmId] uniqueidentifier NOT NULL,
-    [Data] float NOT NULL,
+    [Data] nvarchar(max) NULL,
     [CreatedDate] datetime2 NOT NULL,
     [ModifiedDate] datetime2 NULL,
     [FirstIndexData] float NULL,
     [LastIndexData] float NULL,
+    [TotalConsumption] decimal(18,2) NOT NULL,
     CONSTRAINT [PK__WaterLog__C32B73CF24992978] PRIMARY KEY ([Id]),
     CONSTRAINT [FK__WaterLogs__FarmI__5CA1C101] FOREIGN KEY ([FarmId]) REFERENCES [Farms] ([Id])
 );
@@ -271,6 +337,7 @@ CREATE TABLE [Users] (
     [IsActive] bit NULL DEFAULT CAST(1 AS bit),
     [CreatedAt] datetime NULL DEFAULT ((getdate())),
     [RoleId] uniqueidentifier NOT NULL,
+    [DeviceId] nvarchar(max) NULL,
     CONSTRAINT [PK__Users__1788CC4C9404FA6D] PRIMARY KEY ([Id]),
     CONSTRAINT [FK__Users__RoleId__403A8C7D] FOREIGN KEY ([RoleId]) REFERENCES [Roles] ([Id])
 );
@@ -279,9 +346,7 @@ GO
 CREATE TABLE [FoodTemplates] (
     [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
     [StageTemplateId] uniqueidentifier NOT NULL,
-    [FoodName] nvarchar(100) NOT NULL,
-    [RecommendedWeightPerDay] decimal(10,2) NULL,
-    [Session] int NOT NULL,
+    [FoodType] nvarchar(100) NOT NULL,
     [WeightBasedOnBodyMass] decimal(5,2) NULL,
     CONSTRAINT [PK__FoodTemp__58E25FB67BABBFBB] PRIMARY KEY ([Id]),
     CONSTRAINT [FK__FoodTempl__Stage__60A75C0F] FOREIGN KEY ([StageTemplateId]) REFERENCES [GrowthStageTemplates] ([Id])
@@ -297,6 +362,20 @@ CREATE TABLE [TaskDailyTemplate] (
     [Session] int NOT NULL,
     CONSTRAINT [PK_TaskDailyTemplate] PRIMARY KEY ([Id]),
     CONSTRAINT [FK_TaskDailyTemplate_GrowthStageTemplates_GrowthStageTemplateId] FOREIGN KEY ([GrowthStageTemplateId]) REFERENCES [GrowthStageTemplates] ([Id]) ON DELETE CASCADE
+);
+GO
+
+CREATE TABLE [StandardPrescriptionMedications] (
+    [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
+    [PrescriptionId] uniqueidentifier NOT NULL,
+    [MedicationId] uniqueidentifier NOT NULL,
+    [Morning] int NOT NULL,
+    [Noon] int NOT NULL,
+    [Afternoon] int NOT NULL,
+    [Evening] int NOT NULL,
+    CONSTRAINT [PK_StandardPrescriptionMedications] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_StandardPrescriptionMedications_Medications_MedicationId] FOREIGN KEY ([MedicationId]) REFERENCES [Medications] ([Id]) ON DELETE CASCADE,
+    CONSTRAINT [FK_StandardPrescriptionMedications_StandardPrescriptions_PrescriptionId] FOREIGN KEY ([PrescriptionId]) REFERENCES [StandardPrescriptions] ([Id]) ON DELETE CASCADE
 );
 GO
 
@@ -321,18 +400,32 @@ CREATE TABLE [ControlBoards] (
 );
 GO
 
+CREATE TABLE [ControlDevices] (
+    [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
+    [Name] nvarchar(100) NOT NULL,
+    [Type] nvarchar(50) NOT NULL,
+    [ControlCode] nvarchar(50) NOT NULL,
+    [Command] nvarchar(255) NOT NULL,
+    [CreatedAt] datetime2 NOT NULL,
+    [CageId] uniqueidentifier NOT NULL,
+    CONSTRAINT [PK_ControlDevices] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_ControlDevices_Cages_CageId] FOREIGN KEY ([CageId]) REFERENCES [Cages] ([Id]) ON DELETE CASCADE
+);
+GO
+
 CREATE TABLE [FarmingBatchs] (
     [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
     [TemplateId] uniqueidentifier NOT NULL,
     [CageId] uniqueidentifier NOT NULL,
     [Name] nvarchar(100) NULL,
-    [Species] nvarchar(50) NULL,
-    [StartDate] datetime NULL DEFAULT ((getdate())),
+    [StartDate] datetime NULL,
     [CompleteAt] datetime2 NULL,
+    [EndDate] datetime2 NULL,
     [Status] nvarchar(max) NULL,
     [CleaningFrequency] int NOT NULL,
+    [AffectedQuantity] int NOT NULL,
     [Quantity] int NULL,
-    [FarmId] int NOT NULL,
+    [FarmId] uniqueidentifier NOT NULL,
     CONSTRAINT [PK__FarmingB__CF22FB97B35EFCF4] PRIMARY KEY ([Id]),
     CONSTRAINT [FK__FarmingBa__CageI__114A936A] FOREIGN KEY ([CageId]) REFERENCES [Cages] ([Id]),
     CONSTRAINT [FK__FarmingBa__Templ__10566F31] FOREIGN KEY ([TemplateId]) REFERENCES [AnimalTemplates] ([Id])
@@ -361,7 +454,7 @@ GO
 CREATE TABLE [StockLogs] (
     [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
     [StackId] uniqueidentifier NOT NULL,
-    [NameFood] nvarchar(100) NULL,
+    [FoodType] nvarchar(100) NULL,
     [Quantity] decimal(10,2) NULL,
     [CostPerKg] decimal(10,2) NULL,
     [DateAdded] date NULL,
@@ -413,15 +506,33 @@ CREATE TABLE [FarmSubscriptions] (
 );
 GO
 
+CREATE TABLE [LeaveRequest] (
+    [Id] uniqueidentifier NOT NULL,
+    [StaffFarmId] uniqueidentifier NOT NULL,
+    [UserTempId] uniqueidentifier NOT NULL,
+    [StartDate] datetime2 NOT NULL,
+    [EndDate] datetime2 NOT NULL,
+    [Reason] nvarchar(255) NOT NULL,
+    [Status] nvarchar(50) NOT NULL DEFAULT N'Pending',
+    [ReviewedAt] datetime2 NULL,
+    [Notes] nvarchar(255) NOT NULL,
+    [CreatedAt] datetime2 NOT NULL DEFAULT (GETDATE()),
+    CONSTRAINT [PK_LeaveRequest] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_LeaveRequest_Users_StaffFarmId] FOREIGN KEY ([StaffFarmId]) REFERENCES [Users] ([Id]) ON DELETE CASCADE
+);
+GO
+
 CREATE TABLE [Notifications] (
     [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
     [UserId] uniqueidentifier NOT NULL,
     [NotiTypeId] uniqueidentifier NOT NULL,
+    [Title] nvarchar(max) NULL,
     [Content] nvarchar(255) NOT NULL,
     [CreatedAt] datetime NULL DEFAULT ((getdate())),
     [IsRead] bit NULL DEFAULT CAST(0 AS bit),
-    [FarmId] int NULL,
-    [CageId] int NULL,
+    [TaskId] uniqueidentifier NULL,
+    [MedicalSymptomId] uniqueidentifier NULL,
+    [CageId] uniqueidentifier NULL,
     CONSTRAINT [PK__Notifica__20CF2E12C83A84F0] PRIMARY KEY ([Id]),
     CONSTRAINT [FK__Notificat__NotiT__531856C7] FOREIGN KEY ([NotiTypeId]) REFERENCES [NotificationTypes] ([Id]),
     CONSTRAINT [FK__Notificat__UserI__5224328E] FOREIGN KEY ([UserId]) REFERENCES [Users] ([Id])
@@ -433,7 +544,7 @@ CREATE TABLE [Tasks] (
     [TaskTypeId] uniqueidentifier NULL,
     [CageId] uniqueidentifier NOT NULL,
     [AssignedToUserId] uniqueidentifier NOT NULL,
-    [CreatedByUserId] uniqueidentifier NOT NULL,
+    [CreatedByUserId] uniqueidentifier NULL,
     [TaskName] nvarchar(50) NOT NULL,
     [PriorityNum] int NOT NULL,
     [Description] nvarchar(255) NULL,
@@ -442,6 +553,8 @@ CREATE TABLE [Tasks] (
     [Session] int NOT NULL,
     [CompletedAt] datetime NULL,
     [CreatedAt] datetime NULL DEFAULT ((getdate())),
+    [IsTreatmentTask] bit NOT NULL,
+    [PrescriptionId] uniqueidentifier NULL,
     CONSTRAINT [PK__Tasks__7C6949B12CFAA294] PRIMARY KEY ([Id]),
     CONSTRAINT [FK__Tasks__AssignedT__7B5B524B] FOREIGN KEY ([AssignedToUserId]) REFERENCES [Users] ([Id]),
     CONSTRAINT [FK__Tasks__CageId__7A672E12] FOREIGN KEY ([CageId]) REFERENCES [Cages] ([Id]),
@@ -453,9 +566,13 @@ CREATE TABLE [AnimalSales] (
     [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
     [FarmingBatchId] uniqueidentifier NOT NULL,
     [SaleDate] datetime NULL DEFAULT ((getdate())),
-    [Revenue] float NOT NULL,
-    [BuyerInfo] nvarchar(255) NULL,
+    [Total] float NOT NULL,
+    [UnitPrice] float NULL,
+    [Quantity] int NOT NULL,
+    [StaffId] uniqueidentifier NOT NULL,
+    [SaleTypeId] uniqueidentifier NOT NULL,
     CONSTRAINT [PK__AnimalSa__1EE3C3FF9307295C] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_AnimalSales_SaleTypes_SaleTypeId] FOREIGN KEY ([SaleTypeId]) REFERENCES [SaleTypes] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK__AnimalSal__Farmi__160F4887] FOREIGN KEY ([FarmingBatchId]) REFERENCES [FarmingBatchs] ([Id])
 );
 GO
@@ -466,9 +583,14 @@ CREATE TABLE [GrowthStages] (
     [Name] nvarchar(50) NULL,
     [WeightAnimal] decimal(10,2) NULL,
     [Quantity] int NULL,
+    [AgeStart] int NULL,
+    [FoodType] nvarchar(max) NULL,
+    [AgeEnd] int NULL,
+    [SaleTypeId] uniqueidentifier NULL,
     [AgeStartDate] datetime NULL DEFAULT ((getdate())),
     [AgeEndDate] datetime NULL DEFAULT ((getdate())),
-    [RecommendedWeightPerDay] decimal(10,2) NULL,
+    [Status] nvarchar(max) NULL,
+    [RecommendedWeightPerSession] decimal(10,2) NULL,
     [WeightBasedOnBodyMass] decimal(5,2) NULL,
     CONSTRAINT [PK__GrowthSt__03EB7AD8E9B0E8F9] PRIMARY KEY ([Id]),
     CONSTRAINT [FK__GrowthSta__Farmi__1AD3FDA4] FOREIGN KEY ([FarmingBatchId]) REFERENCES [FarmingBatchs] ([Id])
@@ -478,13 +600,17 @@ GO
 CREATE TABLE [MedicalSymptoms] (
     [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
     [FarmingBatchId] uniqueidentifier NOT NULL,
-    [Symptoms] nvarchar(200) NULL,
+    [PrescriptionId] uniqueidentifier NULL,
     [Diagnosis] nvarchar(100) NULL,
-    [Treatment] nvarchar(100) NULL,
-    [Status] nvarchar(50) NULL DEFAULT N'Ðang di?u tr?',
+    [Status] nvarchar(50) NULL DEFAULT N'Pending',
     [AffectedQuantity] int NULL,
     [Notes] nvarchar(255) NULL,
+    [CreateAt] datetime2 NULL,
+    [FirstReminderSentAt] datetime2 NULL,
+    [SecondReminderSentAt] datetime2 NULL,
+    [DiseaseId] uniqueidentifier NULL,
     CONSTRAINT [PK__MedicalS__E39D8C018EEF7572] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_MedicalSymptoms_Diseases_DiseaseId] FOREIGN KEY ([DiseaseId]) REFERENCES [Diseases] ([Id]),
     CONSTRAINT [FK__MedicalSy__Farmi__3493CFA7] FOREIGN KEY ([FarmingBatchId]) REFERENCES [FarmingBatchs] ([Id])
 );
 GO
@@ -517,7 +643,7 @@ GO
 CREATE TABLE [SensorDataLogs] (
     [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
     [SensorId] uniqueidentifier NOT NULL,
-    [Data] decimal(18,1) NOT NULL,
+    [Data] nvarchar(max) NULL,
     [CreatedDate] datetime2 NOT NULL,
     [ModifiedDate] datetime2 NULL,
     [IsWarning] bit NOT NULL,
@@ -542,10 +668,9 @@ GO
 CREATE TABLE [StatusLogs] (
     [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
     [TaskId] uniqueidentifier NOT NULL,
-    [StatusId] uniqueidentifier NOT NULL,
     [UpdatedAt] datetime NULL DEFAULT ((getdate())),
+    [Status] nvarchar(max) NULL,
     CONSTRAINT [PK__StatusLo__A1B4D09D3A1C2CC0] PRIMARY KEY ([Id]),
-    CONSTRAINT [FK__StatusLog__Statu__03F0984C] FOREIGN KEY ([StatusId]) REFERENCES [Statuses] ([Id]),
     CONSTRAINT [FK__StatusLog__TaskI__02FC7413] FOREIGN KEY ([TaskId]) REFERENCES [Tasks] ([Id])
 );
 GO
@@ -557,10 +682,22 @@ CREATE TABLE [DailyFoodUsageLogs] (
     [ActualWeight] decimal(10,2) NULL,
     [Notes] nvarchar(255) NULL,
     [LogTime] datetime NULL DEFAULT ((getdate())),
+    [UnitPrice] float NOT NULL,
     [Photo] nvarchar(255) NULL,
-    [TaskId] int NULL,
+    [TaskId] uniqueidentifier NULL,
     CONSTRAINT [PK__DailyFoo__29B197206BAA687E] PRIMARY KEY ([Id]),
     CONSTRAINT [FK__DailyFood__Stage__2180FB33] FOREIGN KEY ([StageId]) REFERENCES [GrowthStages] ([Id])
+);
+GO
+
+CREATE TABLE [EggHarvests] (
+    [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
+    [GrowthStageId] uniqueidentifier NOT NULL,
+    [DateCollected] datetime2 NOT NULL,
+    [EggCount] int NOT NULL,
+    [Notes] nvarchar(255) NULL,
+    CONSTRAINT [PK_EggHarvests] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_EggHarvests_GrowthStages_GrowthStageId] FOREIGN KEY ([GrowthStageId]) REFERENCES [GrowthStages] ([Id]) ON DELETE CASCADE
 );
 GO
 
@@ -582,12 +719,25 @@ CREATE TABLE [VaccineSchedules] (
     [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
     [VaccineId] uniqueidentifier NOT NULL,
     [StageId] uniqueidentifier NOT NULL,
-    [Date] date NULL,
+    [Date] datetime2 NULL,
     [Quantity] int NULL,
+    [ApplicationAge] int NULL,
+    [ToltalPrice] decimal(18,2) NULL,
+    [Session] int NOT NULL,
     [Status] nvarchar(50) NULL DEFAULT N'Chua tiêm',
     CONSTRAINT [PK__VaccineS__9C8A5B49BF96F02B] PRIMARY KEY ([Id]),
     CONSTRAINT [FK__VaccineSc__Stage__2BFE89A6] FOREIGN KEY ([StageId]) REFERENCES [GrowthStages] ([Id]),
     CONSTRAINT [FK__VaccineSc__Vacci__2B0A656D] FOREIGN KEY ([VaccineId]) REFERENCES [Vaccines] ([Id])
+);
+GO
+
+CREATE TABLE [MedicalSymtomDetails] (
+    [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
+    [MedicalSymptomId] uniqueidentifier NOT NULL,
+    [SymptomId] uniqueidentifier NOT NULL,
+    CONSTRAINT [PK_MedicalSymtomDetails] PRIMARY KEY ([Id]),
+    CONSTRAINT [FK_MedicalSymtomDetails_MedicalSymptoms_MedicalSymptomId] FOREIGN KEY ([MedicalSymptomId]) REFERENCES [MedicalSymptoms] ([Id]) ON DELETE CASCADE,
+    CONSTRAINT [FK_MedicalSymtomDetails_Symptoms_SymptomId] FOREIGN KEY ([SymptomId]) REFERENCES [Symptoms] ([Id]) ON DELETE NO ACTION
 );
 GO
 
@@ -603,15 +753,17 @@ GO
 
 CREATE TABLE [Prescriptions] (
     [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
-    [RecordId] uniqueidentifier NOT NULL,
-    [PrescribedDate] date NULL DEFAULT ((getdate())),
-    [CaseType] nvarchar(50) NULL,
+    [MedicalSymtomId] uniqueidentifier NOT NULL,
+    [CageId] uniqueidentifier NOT NULL,
+    [PrescribedDate] datetime2 NULL DEFAULT ((getdate())),
+    [EndDate] datetime2 NULL,
     [Notes] nvarchar(255) NULL,
     [QuantityAnimal] int NOT NULL,
     [Status] nvarchar(max) NULL,
+    [DaysToTake] int NULL,
     [Price] decimal(10,2) NULL,
     CONSTRAINT [PK__Prescrip__401308323ACA723E] PRIMARY KEY ([Id]),
-    CONSTRAINT [FK__Prescript__Recor__40F9A68C] FOREIGN KEY ([RecordId]) REFERENCES [MedicalSymptoms] ([Id])
+    CONSTRAINT [FK__Prescript__Recor__40F9A68C] FOREIGN KEY ([MedicalSymtomId]) REFERENCES [MedicalSymptoms] ([Id])
 );
 GO
 
@@ -633,7 +785,7 @@ CREATE TABLE [VaccineScheduleLogs] (
     [Date] date NULL,
     [Notes] nvarchar(255) NULL,
     [Photo] nvarchar(255) NULL,
-    [TaskId] int NULL,
+    [TaskId] uniqueidentifier NULL,
     CONSTRAINT [PK__VaccineS__E2771C19EB9C932E] PRIMARY KEY ([Id]),
     CONSTRAINT [FK__VaccineSc__Sched__30C33EC3] FOREIGN KEY ([ScheduleId]) REFERENCES [VaccineSchedules] ([Id])
 );
@@ -642,10 +794,10 @@ GO
 CREATE TABLE [HealthLogs] (
     [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
     [PrescriptionId] uniqueidentifier NOT NULL,
-    [Date] date NULL,
+    [Date] datetime2 NULL,
     [Notes] nvarchar(255) NULL,
     [Photo] nvarchar(255) NULL,
-    [TaskId] int NULL,
+    [TaskId] uniqueidentifier NULL,
     CONSTRAINT [PK__HealthLo__C872D3274175629B] PRIMARY KEY ([Id]),
     CONSTRAINT [FK__HealthLog__Presc__4A8310C6] FOREIGN KEY ([PrescriptionId]) REFERENCES [Prescriptions] ([Id])
 );
@@ -655,9 +807,11 @@ CREATE TABLE [PrescriptionMedications] (
     [Id] uniqueidentifier NOT NULL DEFAULT ((newid())),
     [PrescriptionId] uniqueidentifier NOT NULL,
     [MedicationId] uniqueidentifier NOT NULL,
-    [Dosage] int NULL,
-    [Frequency] int NULL,
-    [Duration] int NULL,
+    [Notes] nvarchar(255) NULL,
+    [Morning] int NOT NULL,
+    [Afternoon] int NOT NULL,
+    [Evening] int NOT NULL,
+    [Noon] int NOT NULL,
     CONSTRAINT [PK__Prescrip__CDB4BF945ED62D85] PRIMARY KEY ([Id]),
     CONSTRAINT [FK__Prescript__Medic__46B27FE2] FOREIGN KEY ([MedicationId]) REFERENCES [Medications] ([Id]),
     CONSTRAINT [FK__Prescript__Presc__45BE5BA9] FOREIGN KEY ([PrescriptionId]) REFERENCES [Prescriptions] ([Id])
@@ -665,6 +819,9 @@ CREATE TABLE [PrescriptionMedications] (
 GO
 
 CREATE INDEX [IX_AnimalSales_FarmingBatchId] ON [AnimalSales] ([FarmingBatchId]);
+GO
+
+CREATE INDEX [IX_AnimalSales_SaleTypeId] ON [AnimalSales] ([SaleTypeId]);
 GO
 
 CREATE INDEX [IX_Cages_FarmId] ON [Cages] ([FarmId]);
@@ -682,7 +839,16 @@ GO
 CREATE INDEX [IX_ControlBoards_ControlBoardTypeId] ON [ControlBoards] ([ControlBoardTypeId]);
 GO
 
+CREATE INDEX [IX_ControlDevices_CageId] ON [ControlDevices] ([CageId]);
+GO
+
+CREATE INDEX [IX_CostingReport_FarmId] ON [CostingReport] ([FarmId]);
+GO
+
 CREATE INDEX [IX_DailyFoodUsageLogs_StageId] ON [DailyFoodUsageLogs] ([StageId]);
+GO
+
+CREATE INDEX [IX_EggHarvests_GrowthStageId] ON [EggHarvests] ([GrowthStageId]);
 GO
 
 CREATE INDEX [IX_ElectricityLogs_FarmId] ON [ElectricityLogs] ([FarmId]);
@@ -742,7 +908,22 @@ GO
 CREATE INDEX [IX_Jobs_SensorId] ON [Jobs] ([SensorId]);
 GO
 
+CREATE INDEX [IX_LeaveRequest_StaffFarmId] ON [LeaveRequest] ([StaffFarmId]);
+GO
+
+CREATE INDEX [IX_MasterData_FarmId] ON [MasterData] ([FarmId]);
+GO
+
+CREATE INDEX [IX_MedicalSymptoms_DiseaseId] ON [MedicalSymptoms] ([DiseaseId]);
+GO
+
 CREATE INDEX [IX_MedicalSymptoms_FarmingBatchId] ON [MedicalSymptoms] ([FarmingBatchId]);
+GO
+
+CREATE INDEX [IX_MedicalSymtomDetails_MedicalSymptomId] ON [MedicalSymtomDetails] ([MedicalSymptomId]);
+GO
+
+CREATE INDEX [IX_MedicalSymtomDetails_SymptomId] ON [MedicalSymtomDetails] ([SymptomId]);
 GO
 
 CREATE INDEX [IX_Notifications_NotiTypeId] ON [Notifications] ([NotiTypeId]);
@@ -763,7 +944,7 @@ GO
 CREATE INDEX [IX_PrescriptionMedications_PrescriptionId] ON [PrescriptionMedications] ([PrescriptionId]);
 GO
 
-CREATE INDEX [IX_Prescriptions_RecordId] ON [Prescriptions] ([RecordId]);
+CREATE INDEX [IX_Prescriptions_MedicalSymtomId] ON [Prescriptions] ([MedicalSymtomId]);
 GO
 
 CREATE UNIQUE INDEX [UQ__Roles__8A2B61609571AADF] ON [Roles] ([RoleName]);
@@ -778,7 +959,13 @@ GO
 CREATE INDEX [IX_Sensors_SensorTypeId] ON [Sensors] ([SensorTypeId]);
 GO
 
-CREATE INDEX [IX_StatusLogs_StatusId] ON [StatusLogs] ([StatusId]);
+CREATE INDEX [IX_StandardPrescriptionMedications_MedicationId] ON [StandardPrescriptionMedications] ([MedicationId]);
+GO
+
+CREATE INDEX [IX_StandardPrescriptionMedications_PrescriptionId] ON [StandardPrescriptionMedications] ([PrescriptionId]);
+GO
+
+CREATE INDEX [IX_StandardPrescriptions_DiseaseId] ON [StandardPrescriptions] ([DiseaseId]);
 GO
 
 CREATE INDEX [IX_StatusLogs_TaskId] ON [StatusLogs] ([TaskId]);
@@ -833,457 +1020,7 @@ CREATE INDEX [IX_WaterLogs_FarmId] ON [WaterLogs] ([FarmId]);
 GO
 
 INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20241213134106_InitialMigration', N'8.0.10');
-GO
-
-COMMIT;
-GO
-
-BEGIN TRANSACTION;
-GO
-
-ALTER TABLE [AnimalTemplates] ADD [Status] nvarchar(max) NULL;
-GO
-
-INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20241216053808_addStatusAnimalTemplate', N'8.0.10');
-GO
-
-COMMIT;
-GO
-
-BEGIN TRANSACTION;
-GO
-
-DECLARE @var0 sysname;
-SELECT @var0 = [d].[name]
-FROM [sys].[default_constraints] [d]
-INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
-WHERE ([d].[parent_object_id] = OBJECT_ID(N'[PrescriptionMedications]') AND [c].[name] = N'Frequency');
-IF @var0 IS NOT NULL EXEC(N'ALTER TABLE [PrescriptionMedications] DROP CONSTRAINT [' + @var0 + '];');
-ALTER TABLE [PrescriptionMedications] DROP COLUMN [Frequency];
-GO
-
-ALTER TABLE [PrescriptionMedications] ADD [Afternoon] bit NOT NULL DEFAULT CAST(0 AS bit);
-GO
-
-ALTER TABLE [PrescriptionMedications] ADD [Evening] bit NOT NULL DEFAULT CAST(0 AS bit);
-GO
-
-ALTER TABLE [PrescriptionMedications] ADD [Morning] bit NOT NULL DEFAULT CAST(0 AS bit);
-GO
-
-ALTER TABLE [PrescriptionMedications] ADD [Night] bit NOT NULL DEFAULT CAST(0 AS bit);
-GO
-
-INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20241221075731_addFieldToPrescriptionMedication', N'8.0.10');
-GO
-
-COMMIT;
-GO
-
-BEGIN TRANSACTION;
-GO
-
-DECLARE @var1 sysname;
-SELECT @var1 = [d].[name]
-FROM [sys].[default_constraints] [d]
-INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
-WHERE ([d].[parent_object_id] = OBJECT_ID(N'[Vaccines]') AND [c].[name] = N'AgeEndDate');
-IF @var1 IS NOT NULL EXEC(N'ALTER TABLE [Vaccines] DROP CONSTRAINT [' + @var1 + '];');
-ALTER TABLE [Vaccines] DROP COLUMN [AgeEndDate];
-GO
-
-DECLARE @var2 sysname;
-SELECT @var2 = [d].[name]
-FROM [sys].[default_constraints] [d]
-INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
-WHERE ([d].[parent_object_id] = OBJECT_ID(N'[Vaccines]') AND [c].[name] = N'AgeStartDate');
-IF @var2 IS NOT NULL EXEC(N'ALTER TABLE [Vaccines] DROP CONSTRAINT [' + @var2 + '];');
-ALTER TABLE [Vaccines] DROP COLUMN [AgeStartDate];
-GO
-
-ALTER TABLE [Vaccines] ADD [AgeEnd] int NULL;
-GO
-
-ALTER TABLE [Vaccines] ADD [AgeStart] int NULL;
-GO
-
-INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20241221081040_fixFieldInVaccine', N'8.0.10');
-GO
-
-COMMIT;
-GO
-
-BEGIN TRANSACTION;
-GO
-
-DECLARE @var3 sysname;
-SELECT @var3 = [d].[name]
-FROM [sys].[default_constraints] [d]
-INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
-WHERE ([d].[parent_object_id] = OBJECT_ID(N'[PrescriptionMedications]') AND [c].[name] = N'Duration');
-IF @var3 IS NOT NULL EXEC(N'ALTER TABLE [PrescriptionMedications] DROP CONSTRAINT [' + @var3 + '];');
-ALTER TABLE [PrescriptionMedications] DROP COLUMN [Duration];
-GO
-
-EXEC sp_rename N'[GrowthStages].[RecommendedWeightPerDay]', N'RecommendedWeightPerSesson', N'COLUMN';
-GO
-
-EXEC sp_rename N'[FoodTemplates].[RecommendedWeightPerDay]', N'RecommendedWeightPerSesson', N'COLUMN';
-GO
-
-ALTER TABLE [GrowthStages] ADD [Status] nvarchar(max) NULL;
-GO
-
-INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20241222054613_updateFieldDb', N'8.0.10');
-GO
-
-COMMIT;
-GO
-
-BEGIN TRANSACTION;
-GO
-
-DECLARE @var4 sysname;
-SELECT @var4 = [d].[name]
-FROM [sys].[default_constraints] [d]
-INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
-WHERE ([d].[parent_object_id] = OBJECT_ID(N'[Prescriptions]') AND [c].[name] = N'PrescribedDate');
-IF @var4 IS NOT NULL EXEC(N'ALTER TABLE [Prescriptions] DROP CONSTRAINT [' + @var4 + '];');
-ALTER TABLE [Prescriptions] ALTER COLUMN [PrescribedDate] datetime2 NULL;
-ALTER TABLE [Prescriptions] ADD DEFAULT ((getdate())) FOR [PrescribedDate];
-GO
-
-ALTER TABLE [Prescriptions] ADD [CageId] uniqueidentifier NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
-GO
-
-INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20241222060920_updateFieldDbPres', N'8.0.10');
-GO
-
-COMMIT;
-GO
-
-BEGIN TRANSACTION;
-GO
-
-EXEC sp_rename N'[GrowthStages].[RecommendedWeightPerSesson]', N'RecommendedWeightPerSession', N'COLUMN';
-GO
-
-EXEC sp_rename N'[FoodTemplates].[RecommendedWeightPerSesson]', N'RecommendedWeightPerSession', N'COLUMN';
-GO
-
-INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20241222093107_updateName', N'8.0.10');
-GO
-
-COMMIT;
-GO
-
-BEGIN TRANSACTION;
-GO
-
-CREATE TABLE [LeaveRequest] (
-    [Id] uniqueidentifier NOT NULL,
-    [StaffFarmId] uniqueidentifier NOT NULL,
-    [StartDate] datetime2 NOT NULL,
-    [EndDate] datetime2 NOT NULL,
-    [Reason] nvarchar(255) NOT NULL,
-    [Status] nvarchar(50) NOT NULL DEFAULT N'Pending',
-    [AdminId] uniqueidentifier NULL,
-    [ReviewedAt] datetime2 NULL,
-    [Notes] nvarchar(255) NOT NULL,
-    [CreatedAt] datetime2 NOT NULL DEFAULT (GETDATE()),
-    CONSTRAINT [PK_LeaveRequest] PRIMARY KEY ([Id]),
-    CONSTRAINT [FK_LeaveRequest_Users_AdminId] FOREIGN KEY ([AdminId]) REFERENCES [Users] ([Id]) ON DELETE NO ACTION,
-    CONSTRAINT [FK_LeaveRequest_Users_StaffFarmId] FOREIGN KEY ([StaffFarmId]) REFERENCES [Users] ([Id]) ON DELETE CASCADE
-);
-GO
-
-CREATE TABLE [TemporaryCageAssignment] (
-    [Id] uniqueidentifier NOT NULL,
-    [CageId] uniqueidentifier NOT NULL,
-    [OriginalStaffId] uniqueidentifier NOT NULL,
-    [TemporaryStaffId] uniqueidentifier NOT NULL,
-    [StartDate] datetime2 NOT NULL,
-    [EndDate] datetime2 NOT NULL,
-    [Notes] nvarchar(255) NOT NULL,
-    CONSTRAINT [PK_TemporaryCageAssignment] PRIMARY KEY ([Id]),
-    CONSTRAINT [FK_TemporaryCageAssignment_Cages_CageId] FOREIGN KEY ([CageId]) REFERENCES [Cages] ([Id]) ON DELETE CASCADE,
-    CONSTRAINT [FK_TemporaryCageAssignment_Users_OriginalStaffId] FOREIGN KEY ([OriginalStaffId]) REFERENCES [Users] ([Id]) ON DELETE NO ACTION,
-    CONSTRAINT [FK_TemporaryCageAssignment_Users_TemporaryStaffId] FOREIGN KEY ([TemporaryStaffId]) REFERENCES [Users] ([Id]) ON DELETE NO ACTION
-);
-GO
-
-CREATE INDEX [IX_LeaveRequest_AdminId] ON [LeaveRequest] ([AdminId]);
-GO
-
-CREATE INDEX [IX_LeaveRequest_StaffFarmId] ON [LeaveRequest] ([StaffFarmId]);
-GO
-
-CREATE INDEX [IX_TemporaryCageAssignment_CageId] ON [TemporaryCageAssignment] ([CageId]);
-GO
-
-CREATE INDEX [IX_TemporaryCageAssignment_OriginalStaffId] ON [TemporaryCageAssignment] ([OriginalStaffId]);
-GO
-
-CREATE INDEX [IX_TemporaryCageAssignment_TemporaryStaffId] ON [TemporaryCageAssignment] ([TemporaryStaffId]);
-GO
-
-INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20241223065254_AddLeaveRequestAndTemporaryCageAssignment', N'8.0.10');
-GO
-
-COMMIT;
-GO
-
-BEGIN TRANSACTION;
-GO
-
-ALTER TABLE [VaccineSchedules] ADD [ApplicationAge] int NULL;
-GO
-
-ALTER TABLE [GrowthStages] ADD [AgeEnd] int NULL;
-GO
-
-ALTER TABLE [GrowthStages] ADD [AgeStart] int NULL;
-GO
-
-INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20241223103357_addMoreFieldToGrowstageAndVaccineSche', N'8.0.10');
-GO
-
-COMMIT;
-GO
-
-BEGIN TRANSACTION;
-GO
-
-DECLARE @var5 sysname;
-SELECT @var5 = [d].[name]
-FROM [sys].[default_constraints] [d]
-INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
-WHERE ([d].[parent_object_id] = OBJECT_ID(N'[VaccineSchedules]') AND [c].[name] = N'Date');
-IF @var5 IS NOT NULL EXEC(N'ALTER TABLE [VaccineSchedules] DROP CONSTRAINT [' + @var5 + '];');
-ALTER TABLE [VaccineSchedules] ALTER COLUMN [Date] datetime2 NULL;
-GO
-
-INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20241223123522_changesFieldDateInVaccineSche', N'8.0.10');
-GO
-
-COMMIT;
-GO
-
-BEGIN TRANSACTION;
-GO
-
-DECLARE @var6 sysname;
-SELECT @var6 = [d].[name]
-FROM [sys].[default_constraints] [d]
-INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
-WHERE ([d].[parent_object_id] = OBJECT_ID(N'[FoodTemplates]') AND [c].[name] = N'Session');
-IF @var6 IS NOT NULL EXEC(N'ALTER TABLE [FoodTemplates] DROP CONSTRAINT [' + @var6 + '];');
-ALTER TABLE [FoodTemplates] DROP COLUMN [Session];
-GO
-
-DECLARE @var7 sysname;
-SELECT @var7 = [d].[name]
-FROM [sys].[default_constraints] [d]
-INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
-WHERE ([d].[parent_object_id] = OBJECT_ID(N'[HealthLogs]') AND [c].[name] = N'Date');
-IF @var7 IS NOT NULL EXEC(N'ALTER TABLE [HealthLogs] DROP CONSTRAINT [' + @var7 + '];');
-ALTER TABLE [HealthLogs] ALTER COLUMN [Date] datetime2 NULL;
-GO
-
-INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20241225045602_deleteFieldInFoodTemplate', N'8.0.10');
-GO
-
-COMMIT;
-GO
-
-BEGIN TRANSACTION;
-GO
-
-DECLARE @var8 sysname;
-SELECT @var8 = [d].[name]
-FROM [sys].[default_constraints] [d]
-INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
-WHERE ([d].[parent_object_id] = OBJECT_ID(N'[FarmingBatchs]') AND [c].[name] = N'FarmId');
-IF @var8 IS NOT NULL EXEC(N'ALTER TABLE [FarmingBatchs] DROP CONSTRAINT [' + @var8 + '];');
-ALTER TABLE [FarmingBatchs] DROP COLUMN [FarmId];
-GO
-
-INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20241225052820_deleteColumnFarmidInFarmingBatch', N'8.0.10');
-GO
-
-COMMIT;
-GO
-
-BEGIN TRANSACTION;
-GO
-
-ALTER TABLE [FarmingBatchs] ADD [FarmId] uniqueidentifier NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
-GO
-
-INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20241225052935_changesFieldIntToGuid', N'8.0.10');
-GO
-
-COMMIT;
-GO
-
-BEGIN TRANSACTION;
-GO
-
-DECLARE @var9 sysname;
-SELECT @var9 = [d].[name]
-FROM [sys].[default_constraints] [d]
-INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
-WHERE ([d].[parent_object_id] = OBJECT_ID(N'[FarmingBatchs]') AND [c].[name] = N'StartDate');
-IF @var9 IS NOT NULL EXEC(N'ALTER TABLE [FarmingBatchs] DROP CONSTRAINT [' + @var9 + '];');
-GO
-
-INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20241225071900_changeDefaultStartDate', N'8.0.10');
-GO
-
-COMMIT;
-GO
-
-BEGIN TRANSACTION;
-GO
-
-ALTER TABLE [StatusLogs] DROP CONSTRAINT [FK__StatusLog__Statu__03F0984C];
-GO
-
-DROP TABLE [Statuses];
-GO
-
-DROP INDEX [IX_StatusLogs_StatusId] ON [StatusLogs];
-GO
-
-ALTER TABLE [StatusLogs] ADD [Status] nvarchar(max) NULL;
-GO
-
-INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20241225100125_deleteTableStatus', N'8.0.10');
-GO
-
-COMMIT;
-GO
-
-BEGIN TRANSACTION;
-GO
-
-DECLARE @var10 sysname;
-SELECT @var10 = [d].[name]
-FROM [sys].[default_constraints] [d]
-INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
-WHERE ([d].[parent_object_id] = OBJECT_ID(N'[StatusLogs]') AND [c].[name] = N'StatusId');
-IF @var10 IS NOT NULL EXEC(N'ALTER TABLE [StatusLogs] DROP CONSTRAINT [' + @var10 + '];');
-ALTER TABLE [StatusLogs] DROP COLUMN [StatusId];
-GO
-
-INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20241225100312_changfieldInStatusLog', N'8.0.10');
-GO
-
-COMMIT;
-GO
-
-BEGIN TRANSACTION;
-GO
-
-DECLARE @var11 sysname;
-SELECT @var11 = [d].[name]
-FROM [sys].[default_constraints] [d]
-INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
-WHERE ([d].[parent_object_id] = OBJECT_ID(N'[VaccineScheduleLogs]') AND [c].[name] = N'TaskId');
-IF @var11 IS NOT NULL EXEC(N'ALTER TABLE [VaccineScheduleLogs] DROP CONSTRAINT [' + @var11 + '];');
-ALTER TABLE [VaccineScheduleLogs] DROP COLUMN [TaskId];
-GO
-
-DECLARE @var12 sysname;
-SELECT @var12 = [d].[name]
-FROM [sys].[default_constraints] [d]
-INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
-WHERE ([d].[parent_object_id] = OBJECT_ID(N'[HealthLogs]') AND [c].[name] = N'TaskId');
-IF @var12 IS NOT NULL EXEC(N'ALTER TABLE [HealthLogs] DROP CONSTRAINT [' + @var12 + '];');
-ALTER TABLE [HealthLogs] DROP COLUMN [TaskId];
-GO
-
-DECLARE @var13 sysname;
-SELECT @var13 = [d].[name]
-FROM [sys].[default_constraints] [d]
-INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
-WHERE ([d].[parent_object_id] = OBJECT_ID(N'[DailyFoodUsageLogs]') AND [c].[name] = N'TaskId');
-IF @var13 IS NOT NULL EXEC(N'ALTER TABLE [DailyFoodUsageLogs] DROP CONSTRAINT [' + @var13 + '];');
-ALTER TABLE [DailyFoodUsageLogs] DROP COLUMN [TaskId];
-GO
-
-INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20241227060108_deletefildError', N'8.0.10');
-GO
-
-COMMIT;
-GO
-
-BEGIN TRANSACTION;
-GO
-
-ALTER TABLE [VaccineScheduleLogs] ADD [TaskId] uniqueidentifier NULL;
-GO
-
-ALTER TABLE [HealthLogs] ADD [TaskId] uniqueidentifier NULL;
-GO
-
-ALTER TABLE [DailyFoodUsageLogs] ADD [TaskId] uniqueidentifier NULL;
-GO
-
-INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20241227060137_changIntToGuidTaskIdInLogTable', N'8.0.10');
-GO
-
-COMMIT;
-GO
-
-BEGIN TRANSACTION;
-GO
-
-ALTER TABLE [Prescriptions] ADD [DaysToTake] int NULL;
-GO
-
-INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20250101171530_addFieldInPrescription', N'8.0.10');
-GO
-
-COMMIT;
-GO
-
-BEGIN TRANSACTION;
-GO
-
-DECLARE @var14 sysname;
-SELECT @var14 = [d].[name]
-FROM [sys].[default_constraints] [d]
-INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
-WHERE ([d].[parent_object_id] = OBJECT_ID(N'[MedicalSymptoms]') AND [c].[name] = N'Treatment');
-IF @var14 IS NOT NULL EXEC(N'ALTER TABLE [MedicalSymptoms] DROP CONSTRAINT [' + @var14 + '];');
-ALTER TABLE [MedicalSymptoms] DROP COLUMN [Treatment];
-GO
-
-ALTER TABLE [MedicalSymptoms] ADD [CreateAt] datetime2 NULL;
-GO
-
-INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20250102102927_changFieldInMedicalSymtoms', N'8.0.10');
+VALUES (N'20250228132957_init', N'8.0.10');
 GO
 
 COMMIT;

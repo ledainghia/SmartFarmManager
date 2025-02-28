@@ -554,6 +554,7 @@ public partial class SmartFarmContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__Electric__0B83AE01DB836F69");
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.TotalConsumption).HasColumnType("decimal(10, 2)");
 
             entity.HasOne(d => d.Farm).WithMany(p => p.ElectricityLogs)
                 .HasForeignKey(d => d.FarmId)
@@ -1265,7 +1266,7 @@ public partial class SmartFarmContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__WaterLog__C32B73CF24992978");
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-
+            entity.Property(e=>e.TotalConsumption).HasColumnType("decimal(10, 2)");
             entity.HasOne(d => d.Farm).WithMany(p => p.WaterLogs)
                 .HasForeignKey(d => d.FarmId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
