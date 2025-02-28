@@ -247,7 +247,7 @@ namespace SmartFarmManager.API.Controllers
                 var result = ApiResult<Dictionary<string, string[]>>.Fail(new Exception("Invalid email format."));
                 return BadRequest(result);
             }
-            var checkCustomer = await _userService.CheckUserByEmail(request.Email);
+            var checkCustomer = await _userService.CheckUserByEmail(request.Email, request.UserName);
             if (checkCustomer.Value)
             {
                 if (request.IsResend)
@@ -280,21 +280,25 @@ namespace SmartFarmManager.API.Controllers
             {
                 return BadRequest(ApiResult<SendOtpResponse>.Fail(new Exception("Phone number is required.")));
             }
-
-            var otp = new Random().Next(100000, 999999).ToString();
-            _cache.Set(request.PhoneNumber, otp, TimeSpan.FromMinutes(10));
-
-            bool isSent = await _otpPhoneService.SendOtpViaSmsAsync(request.PhoneNumber, otp);
-
-            if (isSent)
+            var checkCustomer = await _userService.CheckUserByPhone(request.PhoneNumber, request.UserName);
+            if (checkCustomer.Value)
             {
-                var response = ApiResult<SendOtpResponse>.Succeed(new SendOtpResponse { Message = "OTP sent successfully via SMS." });
-                return Ok(response);
+                var otp = new Random().Next(100000, 999999).ToString();
+                _cache.Set(request.PhoneNumber, otp, TimeSpan.FromMinutes(10));
+
+                bool isSent = await _otpPhoneService.SendOtpViaSmsAsync(request.PhoneNumber, otp);
+
+                if (isSent)
+                {
+                    var response = ApiResult<SendOtpResponse>.Succeed(new SendOtpResponse { Message = "OTP sent successfully via SMS." });
+                    return Ok(response);
+                }
+                else
+                {
+                    return BadRequest(ApiResult<SendOtpResponse>.Fail(new Exception("Failed to send OTP via SMS.")));
+                }
             }
-            else
-            {
-                return BadRequest(ApiResult<SendOtpResponse>.Fail(new Exception("Failed to send OTP via SMS.")));
-            }
+            return NotFound(ApiResult<Dictionary<string, string[]>>.Fail(new Exception("User is not found")));
         }
 
 

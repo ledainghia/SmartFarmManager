@@ -422,9 +422,9 @@ namespace SmartFarmManager.Service.Services
                    password.Any(ch => !char.IsLetterOrDigit(ch));
         }
 
-        public async Task<bool?> CheckUserByEmail(string email)
+        public async Task<bool?> CheckUserByEmail(string email, string username)
         {
-            var checkUser = await _unitOfWork.Users.FindByCondition(u => u.Email == email).FirstOrDefaultAsync();
+            var checkUser = await _unitOfWork.Users.FindByCondition(u => u.Email == email && u.Username == username).FirstOrDefaultAsync();
             if (checkUser == null)
             {
                 return false;
@@ -432,9 +432,9 @@ namespace SmartFarmManager.Service.Services
             return true;
         }
 
-        public async Task<bool?> CheckUserByPhone(string phone)
+        public async Task<bool?> CheckUserByPhone(string phone, string username)
         {
-            var checkUser = await _unitOfWork.Users.FindByCondition(u => u.PhoneNumber == phone).FirstOrDefaultAsync();
+            var checkUser = await _unitOfWork.Users.FindByCondition(u => u.PhoneNumber == phone && u.Username == username).FirstOrDefaultAsync();
             if (checkUser == null)
             {
                 return false;
