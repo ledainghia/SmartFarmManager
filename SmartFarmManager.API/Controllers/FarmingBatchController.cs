@@ -198,5 +198,16 @@ namespace SmartFarmManager.API.Controllers
 
             return Ok(ApiResult<FarmingBatchReportResponse>.Succeed(report));
         }
+
+        /// 📌 **API: Báo cáo chi tiết Farming Batch**
+        [HttpGet("{farmingBatchId}/detailed-report")]
+        public async Task<IActionResult> GetDetailedFarmingBatchReport(Guid farmingBatchId)
+        {
+            var report = await _farmingBatchService.GetDetailedFarmingBatchReportAsync(farmingBatchId);
+            if (report == null)
+                return NotFound(ApiResult<object>.Fail("Farming batch not found."));
+
+            return Ok(ApiResult<DetailedFarmingBatchReportResponse>.Succeed(report));
+        }
     }
 }

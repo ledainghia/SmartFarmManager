@@ -45,7 +45,7 @@ namespace SmartFarmManager.Service.Services
 
             if (growthStage == null)
                 return null;
-
+            var food = await _unitOfWork.FoodStacks.FindByCondition(f => f.FoodType == growthStage.FoodType).FirstOrDefaultAsync();
             // Tạo log
             var newLog = new DailyFoodUsageLog
             {
@@ -56,8 +56,10 @@ namespace SmartFarmManager.Service.Services
                 Photo = model.Photo,
                 LogTime = DateTimeUtils.GetServerTimeInVietnamTime(),
                 TaskId = model.TaskId,
+                UnitPrice = (double)food.CostPerKg,
             };
-
+            food.CurrentStock = food.CurrentStock - model.ActualWeight;
+            await _unitOfWork.FoodStacks.UpdateAsync(food);
             await _unitOfWork.DailyFoodUsageLogs.CreateAsync(newLog);
             await _unitOfWork.CommitAsync();
 

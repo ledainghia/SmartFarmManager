@@ -27,6 +27,8 @@ public partial class MedicalSymptom : EntityBase
 
     public  virtual Disease Disease { get; set; }
     public virtual ICollection<Picture> Pictures { get; set; } = new List<Picture>();
+    public Guid? DiseaseId { get; set; }
+    public virtual Disease Disease { get; set; }
 
     public virtual ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
     public virtual ICollection<MedicalSymtomDetail> MedicalSymptomDetails { get; set; } = new List<MedicalSymtomDetail>();
