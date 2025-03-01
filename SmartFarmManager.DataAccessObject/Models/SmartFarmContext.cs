@@ -1218,6 +1218,7 @@ public partial class SmartFarmContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__VaccineS__9C8A5B49BF96F02B");
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e=>e.ToltalPrice).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasDefaultValue("Chua tiêm");

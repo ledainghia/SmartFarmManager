@@ -314,7 +314,6 @@ namespace SmartFarmManager.API.Extensions
                 config.UseMicrosoftDependencyInjectionJobFactory();
             });
 
-            // Đăng ký Job Factory
             services.AddSingleton<IJobFactory, ScopedJobFactory>();
 
             // Đăng ký Scheduler Factory
@@ -324,7 +323,8 @@ namespace SmartFarmManager.API.Extensions
             services.AddSingleton(provider =>
             {
                 var scheduler = provider.GetRequiredService<ISchedulerFactory>().GetScheduler().Result;
-                scheduler.JobFactory = provider.GetRequiredService<IJobFactory>();
+                scheduler.JobFactory = provider.GetRequiredService<IJobFactory>();      
+                scheduler.
                 return scheduler;
             });
             services.AddSingleton<IQuartzService, QuartzService>();

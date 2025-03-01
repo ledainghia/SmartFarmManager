@@ -1,20 +1,14 @@
-﻿using SmartFarmManager.DataAccessObject.Models;
+﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
-using SmartFarmManager.Service.BusinessModels.Task;
-using SmartFarmManager.Service.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
-using SmartFarmManager.Repository.Repositories;
 using SmartFarmManager.Service.BusinessModels;
+using SmartFarmManager.Service.BusinessModels.Task;
+using SmartFarmManager.Service.BusinessModels.VaccineSchedule;
 using SmartFarmManager.Service.Helpers;
+using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Shared;
 using Task = SmartFarmManager.DataAccessObject.Models.Task;
-using SmartFarmManager.Service.BusinessModels.VaccineSchedule;
 
 namespace SmartFarmManager.Service.Services
 {
@@ -392,11 +386,11 @@ namespace SmartFarmManager.Service.Services
 
             if (status == TaskStatusEnum.Done)
             {
-                task.CompletedAt = DateTimeUtils.GetServerTimeInVietnamTime(); 
+                task.CompletedAt = DateTimeUtils.GetServerTimeInVietnamTime();
             }
             else
             {
-                task.CompletedAt = null; 
+                task.CompletedAt = null;
             }
 
             task.Status = status;
@@ -611,7 +605,7 @@ namespace SmartFarmManager.Service.Services
             var query = _unitOfWork.Tasks
                 .FindAll(false, x => x.AssignedToUser, x => x.TaskType, x => x.StatusLogs)
                 .Include(x => x.Cage)
-                .Include(x=>x.AssignedToUser)
+                .Include(x => x.AssignedToUser)
                 .Include(x => x.StatusLogs)
                 .AsQueryable();
 
@@ -622,7 +616,7 @@ namespace SmartFarmManager.Service.Services
                     t.TaskName.Contains(filter.KeySearch) ||
                     (t.AssignedToUser != null && t.AssignedToUser.FullName.Contains(filter.KeySearch)) ||
                     t.Status.Contains(filter.KeySearch)
-                    ||t.Cage.Name.Contains(filter.KeySearch));
+                    || t.Cage.Name.Contains(filter.KeySearch));
             }
 
             // Áp dụng các bộ lọc khác
@@ -1200,7 +1194,7 @@ namespace SmartFarmManager.Service.Services
                             ? (await _unitOfWork.TaskTypes.FindByCondition(tt => tt.Id == cleaningTaskTypeId).FirstOrDefaultAsync())?.PriorityNum ?? 1
                             : 1,
                         Description = "Task dọn dẹp chuồng theo lịch định kỳ.",
-                        DueDate = today,    
+                        DueDate = today,
                         Session = 1,
                         Status = TaskStatusEnum.Pending,
                         CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
@@ -1218,105 +1212,163 @@ namespace SmartFarmManager.Service.Services
             return true;
         }
 
+        //public async Task<bool> GenerateTasksForTomorrowAsync()
+        //{
+        //    // Lấy ngày hôm nay theo giờ Việt Nam
+        //    var today = DateTimeUtils.GetServerTimeInVietnamTime().Date;
+
+        //    // Lấy ngày cần generate task (ngày mai)
+        //    var targetDate = today.AddDays(1);
+        //    //var targetDate = today;
+        //    // Lấy tất cả các FarmingBatch đang ở trạng thái Active
+        //    var activeBatches = await _unitOfWork.FarmingBatches
+        //        .FindByCondition(fb => fb.Status == FarmingBatchStatusEnum.Active)
+        //        .Include(fb => fb.GrowthStages)
+        //        .ThenInclude(gs => gs.TaskDailies)
+        //        .Include(fb => fb.GrowthStages)
+        //        .ThenInclude(gs => gs.VaccineSchedules)
+        //        .Include(fb => fb.Cage)
+        //        .ToListAsync();
+
+        //    var tasksToCreate = new List<Task>();
+
+        //    foreach (var batch in activeBatches)
+        //    {
+        //        var existingTasksForTargetDate = await _unitOfWork.Tasks
+        //            .FindByCondition(t => t.DueDate.Value.Date == targetDate.Date && t.CageId == batch.CageId)
+        //            .AnyAsync();
+
+        //        if (existingTasksForTargetDate)
+        //        {
+        //            continue; // Nếu đã có task cho ngày này, bỏ qua
+        //        }
+
+        //        // Lấy AdminId của Farm liên quan đến Cage
+        //        var adminId = await GetFarmAdminIdByCageId(batch.CageId);
+
+        //        foreach (var growthStage in batch.GrowthStages)
+        //        {
+        //            // Kiểm tra nếu ngày cần generate nằm trong khoảng thời gian của GrowthStage
+        //            if (growthStage.AgeStartDate.Value.Date <= targetDate.Date && growthStage.AgeEndDate.Value.Date >= targetDate.Date)
+        //            {
+        //                // Generate Task từ TaskDaily
+        //                foreach (var taskDaily in growthStage.TaskDailies)
+        //                {
+        //                    tasksToCreate.Add(new Task
+        //                    {
+        //                        TaskTypeId = taskDaily.TaskTypeId,
+        //                        CageId = batch.CageId,
+        //                        AssignedToUserId = (await GetAssignedStaffForCage(batch.CageId, targetDate)) ?? Guid.Empty,
+        //                        CreatedByUserId = (Guid)adminId,
+        //                        TaskName = taskDaily.TaskName,
+        //                        PriorityNum = taskDaily.TaskTypeId.HasValue
+        //                            ? (await _unitOfWork.TaskTypes.FindByCondition(tt => tt.Id == taskDaily.TaskTypeId).FirstOrDefaultAsync())?.PriorityNum ?? 0
+        //                            : 0,
+        //                        Description = taskDaily.Description,
+        //                        DueDate = targetDate,
+        //                        Session = taskDaily.Session,
+        //                        Status = TaskStatusEnum.Pending,
+        //                        CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
+        //                    });
+        //                }
+
+        //                // Generate Task từ VaccineSchedule
+        //                foreach (var vaccineSchedule in growthStage.VaccineSchedules)
+        //                {
+        //                    if (vaccineSchedule.Date == targetDate && vaccineSchedule.Status == VaccineScheduleStatusEnum.Upcoming)
+        //                    {
+        //                        tasksToCreate.Add(new Task
+        //                        {
+        //                            TaskTypeId = await GetTaskTypeIdByName("Tiêm vắc xin"),
+        //                            CageId = batch.CageId,
+        //                            AssignedToUserId = (await GetAssignedStaffForCage(batch.CageId, targetDate)) ?? Guid.Empty,
+        //                            CreatedByUserId = (Guid)adminId,
+        //                            TaskName = $"Tiêm vắc xin: {vaccineSchedule.Vaccine.Name}",
+        //                            PriorityNum = 2,
+        //                            Description = $"Tiêm vắc xin {vaccineSchedule.Vaccine.Name} cho giai đoạn {growthStage.Name}.",
+        //                            DueDate = targetDate,
+        //                            Session = vaccineSchedule.Session,
+        //                            Status = TaskStatusEnum.Pending,
+        //                            CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
+        //                        });
+
+        //                        vaccineSchedule.Status = VaccineScheduleStatusEnum.Completed;
+        //                        await _unitOfWork.VaccineSchedules.UpdateAsync(vaccineSchedule);
+        //                    }
+        //                }
+        //            }
+        //        }
+        //    }
+
+        //    // Lưu các task vào database
+        //    if (tasksToCreate.Any())
+        //    {
+        //        await _unitOfWork.Tasks.CreateListAsync(tasksToCreate);
+        //        await _unitOfWork.CommitAsync();
+        //    }
+
+        //    return true;
+        //}
         public async Task<bool> GenerateTasksForTomorrowAsync()
         {
-            // Lấy ngày hôm nay theo giờ Việt Nam
-            var today = DateTimeUtils.GetServerTimeInVietnamTime().Date;
-
-            // Lấy ngày cần generate task (ngày mai)
-            var targetDate = today.AddDays(1);
-            //var targetDate = today;
-            // Lấy tất cả các FarmingBatch đang ở trạng thái Active
-            var activeBatches = await _unitOfWork.FarmingBatches
-                .FindByCondition(fb => fb.Status == FarmingBatchStatusEnum.Active)
-                .Include(fb => fb.GrowthStages)
-                .ThenInclude(gs => gs.TaskDailies)
-                .Include(fb => fb.GrowthStages)
-                .ThenInclude(gs => gs.VaccineSchedules)
-                .Include(fb => fb.Cage)
-                .ToListAsync();
-
-            var tasksToCreate = new List<Task>();
-
-            foreach (var batch in activeBatches)
+            try
             {
-                var existingTasksForTargetDateaa = await _unitOfWork.Tasks
-                    .FindByCondition(t => t.DueDate.Value.Date == targetDate.Date && t.CageId == batch.CageId).ToListAsync();
-                var existingTasksForTargetDate = await _unitOfWork.Tasks
-                    .FindByCondition(t => t.DueDate.Value.Date == targetDate.Date && t.CageId == batch.CageId)
-                    .AnyAsync();
+                // Lấy ngày hôm nay theo giờ Việt Nam
+                var today = DateTimeUtils.GetServerTimeInVietnamTime().Date;
 
-                if (existingTasksForTargetDate)
+                // Lấy ngày cần generate task (ngày mai)
+                var targetDate = today.AddDays(1);
+
+                // Lấy tất cả các FarmingBatch đang ở trạng thái Active
+                var activeBatches = await _unitOfWork.FarmingBatches
+                    .FindByCondition(fb => fb.Status == FarmingBatchStatusEnum.Active)
+                    .Include(fb => fb.GrowthStages)
+                    .ThenInclude(gs => gs.TaskDailies)
+                    .Include(fb => fb.GrowthStages)
+                    .ThenInclude(gs => gs.VaccineSchedules)
+                    .ThenInclude(vs=>vs.Vaccine)
+                    .Include(fb => fb.Cage)
+                    .ToListAsync();
+
+                var tasksToCreate = new List<Task>();
+
+                // Lặp qua tất cả các FarmingBatch và sử dụng GenerateTasksForDate để tạo task cho ngày mai
+                foreach (var batch in activeBatches)
                 {
-                    continue; // Nếu đã có task cho ngày này, bỏ qua
-                }
+                    var existingTasksForTargetDate = await _unitOfWork.Tasks
+                        .FindByCondition(t => t.DueDate.Value.Date == targetDate.Date && t.CageId == batch.CageId)
+                        .ToListAsync();
 
-                // Lấy AdminId của Farm liên quan đến Cage
-                var adminId = await GetFarmAdminIdByCageId(batch.CageId);
-
-                foreach (var growthStage in batch.GrowthStages)
-                {
-                    // Kiểm tra nếu ngày cần generate nằm trong khoảng thời gian của GrowthStage
-                    if (growthStage.AgeStartDate.Value.Date <= targetDate.Date && growthStage.AgeEndDate.Value.Date >= targetDate.Date)
+                    // Kiểm tra nếu đã có đủ task, bỏ qua
+                    if (existingTasksForTargetDate.Count >= batch.GrowthStages.Count)
                     {
-                        // Generate Task từ TaskDaily
-                        foreach (var taskDaily in growthStage.TaskDailies)
-                        {
-                            tasksToCreate.Add(new Task
-                            {
-                                TaskTypeId = taskDaily.TaskTypeId,
-                                CageId = batch.CageId,
-                                AssignedToUserId = (await GetAssignedStaffForCage(batch.CageId, targetDate)) ?? Guid.Empty,
-                                CreatedByUserId = (Guid)adminId,
-                                TaskName = taskDaily.TaskName,
-                                PriorityNum = taskDaily.TaskTypeId.HasValue
-                                    ? (await _unitOfWork.TaskTypes.FindByCondition(tt => tt.Id == taskDaily.TaskTypeId).FirstOrDefaultAsync())?.PriorityNum ?? 0
-                                    : 0,
-                                Description = taskDaily.Description,
-                                DueDate = targetDate,
-                                Session = taskDaily.Session,
-                                Status = TaskStatusEnum.Pending,
-                                CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
-                            });
-                        }
-
-                        // Generate Task từ VaccineSchedule
-                        foreach (var vaccineSchedule in growthStage.VaccineSchedules)
-                        {
-                            if (vaccineSchedule.Date == targetDate && vaccineSchedule.Status == VaccineScheduleStatusEnum.Upcoming)
-                            {
-                                tasksToCreate.Add(new Task
-                                {
-                                    TaskTypeId = await GetTaskTypeIdByName("Tiêm vắc xin"),
-                                    CageId = batch.CageId,
-                                    AssignedToUserId = (await GetAssignedStaffForCage(batch.CageId, targetDate)) ?? Guid.Empty,
-                                    CreatedByUserId = (Guid)adminId,
-                                    TaskName = $"Tiêm vắc xin: {vaccineSchedule.Vaccine.Name}",
-                                    PriorityNum = 2,
-                                    Description = $"Tiêm vắc xin {vaccineSchedule.Vaccine.Name} cho giai đoạn {growthStage.Name}.",
-                                    DueDate = targetDate,
-                                    Session = vaccineSchedule.Session,
-                                    Status = TaskStatusEnum.Pending,
-                                    CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
-                                });
-
-                                vaccineSchedule.Status = VaccineScheduleStatusEnum.Completed; 
-                                await _unitOfWork.VaccineSchedules.UpdateAsync(vaccineSchedule);
-                            }
-                        }
+                        continue;
                     }
+                    // Gọi phương thức GenerateTasksForDate để tạo task cho ngày mai
+                    tasksToCreate.AddRange(await GenerateTasksForDate(batch, targetDate, null));
                 }
-            }
 
-            // Lưu các task vào database
-            if (tasksToCreate.Any())
+                var numberOfTasksRequired = await CountTasksPlanningToCreateForDate(targetDate);
+                if(tasksToCreate.Count != numberOfTasksRequired)
+                {
+                    throw new Exception("Số lượng task tạo ra không đúng.");
+                }
+
+                // Lưu các task vào database
+                if (tasksToCreate.Any())
+                {
+                    await _unitOfWork.Tasks.CreateListAsync(tasksToCreate);
+                    await _unitOfWork.CommitAsync();
+                }
+
+                return true;
+            }
+            catch (Exception ex)
             {
-                await _unitOfWork.Tasks.CreateListAsync(tasksToCreate);
-                await _unitOfWork.CommitAsync();
+                throw new Exception("Đã xảy ra lỗi khi tạo task cho ngày mai. Vui lòng thử lại sau.", ex);
             }
-
-            return true;
         }
+
 
         public async Task<bool> GenerateTreatmentTasksAsync()
         {
@@ -1332,7 +1384,7 @@ namespace SmartFarmManager.Service.Services
                                       && p.PrescribedDate <= targetDate
                                       && p.EndDate >= targetDate)
                 .Include(p => p.PrescriptionMedications)
-                .ThenInclude(pm=>pm.Medication)
+                .ThenInclude(pm => pm.Medication)
                 .Include(p => p.MedicalSymtom)
                 .ToListAsync();
 
@@ -1588,21 +1640,23 @@ namespace SmartFarmManager.Service.Services
                     // Generate Task từ TaskDaily
                     foreach (var taskDaily in growthStage.TaskDailies)
                     {
+
+                        if(taskDaily.StartAt.HasValue && taskDaily.EndAt.HasValue)
+                        {
+                            if (currentTime.HasValue && date.Date < taskDaily.StartAt.Value.Date)
+                            {
+                                continue; // Bỏ qua nếu thời gian hiện tại nhỏ hơn thời gian bắt đầu
+                            }
+                            if (currentTime.HasValue && date.Date > taskDaily.EndAt.Value.Date)
+                            {
+                                continue; // Bỏ qua nếu thời gian hiện tại lớn hơn thời gian kết thúc
+                            }
+                        }
                         if (currentTime.HasValue && taskDaily.Session < currentSession)
                         {
                             continue; // Bỏ qua các session đã qua nếu là ngày hôm nay
                         }
 
-                        var existingTask = await _unitOfWork.Tasks
-                            .FindByCondition(t =>
-                                t.CageId == farmingBatch.CageId &&
-                                t.TaskName == taskDaily.TaskName &&
-                                t.DueDate.Value.Date == date &&
-                                t.Session == taskDaily.Session)
-                            .AnyAsync();
-
-                        if (!existingTask)
-                        {
                             var assignedStaff = await GetAssignedStaffForCage(farmingBatch.CageId, date);
 
                             if (assignedStaff == null)
@@ -1628,13 +1682,13 @@ namespace SmartFarmManager.Service.Services
                                 Status = TaskStatusEnum.Pending,
                                 CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
                             });
-                        }
+                        
                     }
 
                     // Generate Task từ VaccineSchedule
                     foreach (var vaccineSchedule in growthStage.VaccineSchedules)
                     {
-                        if (vaccineSchedule.Date == date && vaccineSchedule.Status == VaccineScheduleStatusEnum.Upcoming)
+                        if (vaccineSchedule.Date.Value.Date == date.Date && vaccineSchedule.Status == VaccineScheduleStatusEnum.Upcoming)
                         {
                             var assignedStaff = await GetAssignedStaffForCage(farmingBatch.CageId, date);
 
@@ -1670,7 +1724,7 @@ namespace SmartFarmManager.Service.Services
             }
 
             // Generate Cleaning Task
-            if (farmingBatch.CleaningFrequency > 0 && (date - farmingBatch.StartDate.Value.Date).Days % farmingBatch.CleaningFrequency == 0&& farmingBatch.StartDate.Value.Date != date.Date)
+            if (farmingBatch.CleaningFrequency > 0 && (date - farmingBatch.StartDate.Value.Date).Days % farmingBatch.CleaningFrequency == 0 && farmingBatch.StartDate.Value.Date != date.Date)
             {
                 var assignedStaff = await GetAssignedStaffForCage(farmingBatch.CageId, date);
 
@@ -1715,7 +1769,7 @@ namespace SmartFarmManager.Service.Services
                                       && p.PrescribedDate <= targetDate
                                       && p.EndDate >= targetDate)
                 .Include(p => p.PrescriptionMedications)
-                .ThenInclude(pm=>pm.Medication)
+                .ThenInclude(pm => pm.Medication)
                 .Include(p => p.MedicalSymtom)
                 .ToListAsync();
 
@@ -2023,7 +2077,67 @@ namespace SmartFarmManager.Service.Services
             return true;
         }
 
-        
+
+        public async Task<int> CountTasksPlanningToCreateForDate(DateTime targetDate)
+        {
+            int totalTasksToCreate = 0;
+
+            // Lấy tất cả các FarmingBatch đang ở trạng thái Active
+            var activeBatches = await _unitOfWork.FarmingBatches
+                .FindByCondition(fb => fb.Status == FarmingBatchStatusEnum.Active)
+                .Include(fb => fb.GrowthStages)
+                .ThenInclude(gs => gs.TaskDailies)
+                .Include(fb => fb.GrowthStages)
+                .ThenInclude(gs => gs.VaccineSchedules)
+                .Include(fb => fb.Cage)
+                .ToListAsync();
+
+            foreach (var batch in activeBatches)
+            {
+                // Kiểm tra số lượng task cần tạo cho taskDaily (chưa tính task đã có)
+                foreach (var growthStage in batch.GrowthStages)
+                {
+                    if (growthStage.AgeStartDate.Value.Date <= targetDate.Date && growthStage.AgeEndDate.Value.Date >= targetDate.Date)
+                    {
+                        foreach (var taskDaily in growthStage.TaskDailies)
+                        {
+                            // Kiểm tra xem taskDaily có cần tạo cho ngày mai không
+                            if (taskDaily.StartAt.HasValue && taskDaily.EndAt.HasValue)
+                            {
+                                if (targetDate.Date < taskDaily.StartAt.Value.Date || targetDate.Date > taskDaily.EndAt.Value.Date)
+                                {
+                                    continue; // Nếu ngày mai không nằm trong khoảng StartAt và EndAt, bỏ qua
+                                }
+                            }
+
+                            // Nếu taskDaily hợp lệ thì tính số lượng task cần tạo
+                            totalTasksToCreate++;
+                        }
+
+                        // Kiểm tra VaccineSchedule
+                        foreach (var vaccineSchedule in growthStage.VaccineSchedules)
+                        {
+                            if (vaccineSchedule.Date.Value.Date == targetDate.Date && vaccineSchedule.Status == VaccineScheduleStatusEnum.Upcoming)
+                            {
+                                totalTasksToCreate++;  // Cộng thêm 1 task cho vaccine
+                            }
+                        }
+                    }
+                }
+
+                // Kiểm tra task dọn chuồng
+                if (batch.CleaningFrequency > 0 && (targetDate.Date - batch.StartDate.Value.Date).Days % batch.CleaningFrequency == 0 && batch.StartDate.Value.Date != targetDate.Date)
+                {
+                    totalTasksToCreate++;  // Cộng thêm 1 task dọn chuồng
+                }
+            }
+
+            return totalTasksToCreate;
+        }
+
+
+
+
 
     }
 }

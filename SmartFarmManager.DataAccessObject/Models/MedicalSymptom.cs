@@ -22,8 +22,10 @@ public partial class MedicalSymptom : EntityBase
 
     public DateTime? FirstReminderSentAt { get; set; }
     public DateTime? SecondReminderSentAt { get; set; }
+    public Guid? DiseaseId { get; set; }
     public virtual FarmingBatch FarmingBatch { get; set; }
 
+    public  virtual Disease Disease { get; set; }
     public virtual ICollection<Picture> Pictures { get; set; } = new List<Picture>();
 
     public virtual ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
