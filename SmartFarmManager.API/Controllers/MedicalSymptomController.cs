@@ -40,7 +40,6 @@ namespace SmartFarmManager.API.Controllers
             var medicalSymptomModel = new MedicalSymptomModel
             {
                 FarmingBatchId = request.FarmingBatchId,
-                PrescriptionId = request.PrescriptionId,
                 Status = request.Status,
                 AffectedQuantity = request.AffectedQuantity,
                 Notes = request.Notes,
@@ -57,12 +56,29 @@ namespace SmartFarmManager.API.Controllers
                 }).ToList()
             };
 
-            var id = await _medicalSymptomService.CreateMedicalSymptomAsync(medicalSymptomModel);
-            if (id == null)
+            var medicalSymptom = await _medicalSymptomService.CreateMedicalSymptomAsync(medicalSymptomModel);
+            if (medicalSymptom == null)
             {
                 return BadRequest(ApiResult<object>.Fail($"Số lượng vật nuôi bị bệnh lớn hơn sô lượng vật nuôi chuồng hiện có"));
             }
-            return CreatedAtAction(nameof(GetMedicalSymptomById), new { id }, ApiResult<object>.Succeed(new { id }));
+            var response = new MedicalSymptomResponse
+            {
+                Id = medicalSymptom.Id,
+                FarmingBatchId = medicalSymptom.FarmingBatchId,
+                Diagnosis = medicalSymptom.Diagnosis,
+                Status = medicalSymptom.Status,
+                AffectedQuantity = medicalSymptom.AffectedQuantity,
+                Notes = medicalSymptom.Notes,
+                NameAnimal = medicalSymptom.NameAnimal,
+                CreateAt = medicalSymptom.CreateAt,
+                Pictures = medicalSymptom.Pictures.Select(p => new PictureResponse
+                {
+                    Id = p.Id,
+                    Image = p.Image,
+                    DateCaptured = p.DateCaptured
+                }).ToList()
+            };
+            return CreatedAtAction(nameof(GetMedicalSymptomById), new { response.Id }, ApiResult<MedicalSymptomResponse>.Succeed(response));
         }
 
         // GET: api/medical-symptoms/{id}

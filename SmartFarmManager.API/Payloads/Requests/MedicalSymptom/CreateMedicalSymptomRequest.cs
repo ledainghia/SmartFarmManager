@@ -6,7 +6,6 @@ namespace SmartFarmManager.API.Payloads.Requests.MedicalSymptom
     public class CreateMedicalSymptomRequest
     {
         public Guid FarmingBatchId { get; set; }
-        public Guid? PrescriptionId { get; set; }
         public string Symptoms { get; set; }
         public string? Status { get; set; }
         public int? AffectedQuantity { get; set; }

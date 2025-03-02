@@ -767,7 +767,7 @@ namespace SmartFarmManager.Service.Services
         //        throw new Exception("Failed to create Symptom. Details: " + ex.Message);
         //    }
         //}
-        public async Task<Guid?> CreateMedicalSymptomAsync(MedicalSymptomModel medicalSymptomModel)
+        public async Task<MedicalSymptomModel?> CreateMedicalSymptomAsync(MedicalSymptomModel medicalSymptomModel)
         {
             try
             {
@@ -803,7 +803,7 @@ namespace SmartFarmManager.Service.Services
                 var medicalSymptom = new DataAccessObject.Models.MedicalSymptom
                 {
                     FarmingBatchId = medicalSymptomModel.FarmingBatchId,
-                    PrescriptionId = medicalSymptomModel.PrescriptionId,
+                    PrescriptionId = Guid.Empty,
                     Status = MedicalSymptomStatuseEnum.Pending,
                     AffectedQuantity = medicalSymptomModel.AffectedQuantity,
                     Notes = medicalSymptomModel.Notes,
@@ -895,7 +895,26 @@ namespace SmartFarmManager.Service.Services
                 Console.WriteLine("✅ Đã tạo ReminderJobs.");
 
                 Console.WriteLine($"🎉 Hoàn thành CreateMedicalSymptomAsync! ID: {medicalSymptom.Id}");
-                return medicalSymptom.Id;
+
+                // Map dữ liệu trả về
+                var response = new MedicalSymptomModel
+                {
+                    Id = medicalSymptom.Id,
+                    FarmingBatchId = medicalSymptom.FarmingBatchId,
+                    Diagnosis = medicalSymptom.Diagnosis,
+                    Status = medicalSymptom.Status,
+                    AffectedQuantity = medicalSymptom.AffectedQuantity,
+                    Notes = medicalSymptom.Notes,
+                    CreateAt = medicalSymptom.CreateAt,
+                    Pictures = pictures.Select(p => new PictureModel
+                    {
+                        Id = p.RecordId,
+                        Image = p.Image,
+                        DateCaptured = p.DateCaptured
+                    }).ToList(),
+                    Prescriptions = null // Hiện tại Prescription chưa được tạo, có thể cập nhật sau
+                };
+                return response;
             }
             catch (Exception ex)
             {
