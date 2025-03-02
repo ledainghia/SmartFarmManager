@@ -323,8 +323,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddSingleton(provider =>
             {
                 var scheduler = provider.GetRequiredService<ISchedulerFactory>().GetScheduler().Result;
-                scheduler.JobFactory = provider.GetRequiredService<IJobFactory>();      
-                scheduler.
+                scheduler.JobFactory = provider.GetRequiredService<IJobFactory>();
                 return scheduler;
             });
             services.AddSingleton<IQuartzService, QuartzService>();
