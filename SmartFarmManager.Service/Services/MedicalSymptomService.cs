@@ -901,6 +901,7 @@ namespace SmartFarmManager.Service.Services
                 {
                     Id = medicalSymptom.Id,
                     FarmingBatchId = medicalSymptom.FarmingBatchId,
+                    Symtom = medicalSymptomModel.Symtom,
                     Diagnosis = medicalSymptom.Diagnosis,
                     Status = medicalSymptom.Status,
                     AffectedQuantity = medicalSymptom.AffectedQuantity,
