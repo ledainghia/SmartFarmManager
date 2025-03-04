@@ -108,8 +108,9 @@ namespace SmartFarmManager.Service.Services
 
             // Truy vấn CageStaffs, bao gồm StaffFarm và Cage
             var usersQuery = _unitOfWork.CageStaffs
-                                        .FindByCondition(cs => cageIds.Contains(cs.CageId))
-                                        .Include(cs => cs.StaffFarm.Role)
+                                        .FindByCondition(cs => cageIds.Contains(cs.CageId))                                       
+                                        .Include(cs => cs.StaffFarm)
+                                        .ThenInclude(s=>s.Role)
                                         .Include(cs => cs.Cage)
                                         .Select(cs => new
                                         {
@@ -117,6 +118,9 @@ namespace SmartFarmManager.Service.Services
                                             CageId = cs.CageId,
                                             CageName = cs.Cage.Name
                                         });
+
+            var vetUsers = await _unitOfWork.Users.FindByCondition(u => u.Role.RoleName == "Vet")
+                .Include(u => u.Role).FirstOrDefaultAsync();
 
             // Nhóm theo StaffFarm và gộp danh sách Cage
             var groupedUsers = await usersQuery
@@ -162,6 +166,23 @@ namespace SmartFarmManager.Service.Services
                     Overdue = _unitOfWork.Tasks.FindByCondition(x => x.AssignedToUserId == g.StaffFarm.Id && x.Status == "Overdue").Count(),
                 }
             }).ToList();
+
+            if (vetUsers != null)
+            {
+                userModels.Add(new UserModel
+                {
+                    Id = vetUsers.Id,
+                    Username = vetUsers.Username,
+                    FullName = vetUsers.FullName,
+                    Email = vetUsers.Email,
+                    PhoneNumber = vetUsers.PhoneNumber,
+                    Address = vetUsers.Address,
+                    Role = vetUsers.Role != null ? vetUsers.Role.RoleName : "No Role",
+                    IsActive = vetUsers.IsActive ?? false,
+                    Cages = null,
+                    TasksCountByStatus = null 
+                });
+            }
             var result= new PaginatedList<UserModel>(userModels, totalCount, pageIndex, pageSize);
             return new PagedResult<UserModel>()
             {

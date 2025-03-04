@@ -171,7 +171,7 @@ namespace SmartFarmManager.Service.Services
                     .Select(ms => ms.Diagnosis)
                     .FirstOrDefault()
             }).ToList() ?? new List<PrescriptionModel>(),
-                Symtom = string.Join(", ", ms.MedicalSymptomDetails.Select(d => d.Symptom.SymptomName))
+                Symptom = string.Join(", ", ms.MedicalSymptomDetails.Select(d => d.Symptom.SymptomName))
             });
         }
 
