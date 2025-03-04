@@ -854,7 +854,9 @@ namespace SmartFarmManager.Service.Services
                     Status = MedicalSymptomStatuseEnum.Pending,
                     AffectedQuantity = medicalSymptomModel.AffectedQuantity,
                     Notes = medicalSymptomModel.Notes,
-                    CreateAt = DateTimeUtils.GetServerTimeInVietnamTime()
+                    CreateAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                    QuantityInCage = medicalSymptomModel.QuantityInCage,
+                    IsEmergency = medicalSymptomModel.IsEmergency
                 };
                 Console.WriteLine("✅ Đã tạo đối tượng MedicalSymptom.");
 

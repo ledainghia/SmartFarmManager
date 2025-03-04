@@ -42,6 +42,8 @@ namespace SmartFarmManager.API.Controllers
                 FarmingBatchId = request.FarmingBatchId,
                 Status = request.Status,
                 AffectedQuantity = request.AffectedQuantity,
+                QuantityInCage = request.QuantityInCage,
+                IsEmergency = request.IsEmergency,
                 Notes = request.Notes,
                 CreateAt = DateTimeUtils.GetServerTimeInVietnamTime(),
                 Pictures = request.Pictures.Select(p => new PictureModel
