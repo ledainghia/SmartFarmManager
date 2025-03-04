@@ -110,7 +110,7 @@ namespace SmartFarmManager.Service.Services
             var usersQuery = _unitOfWork.CageStaffs
                                         .FindByCondition(cs => cageIds.Contains(cs.CageId))                                       
                                         .Include(cs => cs.StaffFarm)
-                                        .ThenInclude(s=>s.Role)
+                                        .ThenInclude(s=>s.Role)                                      
                                         .Include(cs => cs.Cage)
                                         .Select(cs => new
                                         {
@@ -151,7 +151,7 @@ namespace SmartFarmManager.Service.Services
                 Email = g.StaffFarm.Email,
                 PhoneNumber = g.StaffFarm.PhoneNumber,
                 Address = g.StaffFarm.Address,
-                Role = g.StaffFarm.Role != null ? g.StaffFarm.Role.RoleName : "No Role",
+                Role = g.StaffFarm.Role != null ? g.StaffFarm.Role.RoleName : "Staff Farm",
                 IsActive = g.StaffFarm.IsActive ?? false,
                 Cages = g.Cages.Select(c => new CageModel
                 {
