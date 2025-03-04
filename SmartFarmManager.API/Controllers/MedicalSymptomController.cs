@@ -149,49 +149,49 @@ namespace SmartFarmManager.API.Controllers
                 return NotFound(ApiResult<object>.Fail("No medical symptoms found."));
             }
 
-            var response = medicalSymptoms.Select(ms => new MedicalSymptomResponse
-            {
-                Id = ms.Id,
-                FarmingBatchId = ms.FarmingBatchId,
-                Diagnosis = ms.Diagnosis,
-                Status = ms.Status,
-                AffectedQuantity = ms.AffectedQuantity,
-                Notes = ms.Notes,
-                Quantity = ms.Quantity,
-                NameAnimal = ms.NameAnimal,
-                CreateAt = ms.CreateAt,
-                Symptoms = ms.Symtom,
-                Pictures = ms.Pictures.Select(p => new PictureResponse
-                {
-                    Id = p.Id,
-                    Image = p.Image,
-                    DateCaptured = p.DateCaptured
-                }).ToList(),
-                Prescriptions = ms.Prescriptions == null ? null : new PrescriptionResponse
-                {
-                    Id = ms.Prescriptions.Id,
-                    PrescribedDate = ms.Prescriptions.PrescribedDate,
-                    Status = ms.Prescriptions.Status,
-                    QuantityAnimal = ms.Prescriptions.QuantityAnimal,
-                    Notes = ms.Prescriptions.Notes,
-                    Price = ms.Prescriptions.Price,
-                    DaysToTake = ms.Prescriptions.DaysToTake,
-                    EndDate = ms.Prescriptions.EndDate,
-                    Medications = ms.Prescriptions.Medications.Select(m => new PrescriptionMedicationResponse
-                    {
-                        MedicationId = m.MedicationId,
-                        MedicationName = m.Medication?.Name,
-                        Morning = m.Morning,
-                        Afternoon = m.Afternoon,
-                        Evening = m.Evening,
-                        Noon = m.Noon,
-                        Notes = m.Notes
-                    }).ToList()
-                },
+            //var response = medicalSymptoms.Select(ms => new MedicalSymptomResponse
+            //{
+            //    Id = ms.Id,
+            //    FarmingBatchId = ms.FarmingBatchId,
+            //    Diagnosis = ms.Diagnosis,
+            //    Status = ms.Status,
+            //    AffectedQuantity = ms.AffectedQuantity,
+            //    Notes = ms.Notes,
+            //    Quantity = ms.Quantity,
+            //    NameAnimal = ms.NameAnimal,
+            //    CreateAt = ms.CreateAt,
+            //    Symptoms = ms.Symtom,
+            //    Pictures = ms.Pictures.Select(p => new PictureResponse
+            //    {
+            //        Id = p.Id,
+            //        Image = p.Image,
+            //        DateCaptured = p.DateCaptured
+            //    }).ToList(),
+            //    Prescriptions = ms.Prescriptions == null ? null : new PrescriptionResponse
+            //    {
+            //        Id = ms.Prescriptions.Id,
+            //        PrescribedDate = ms.Prescriptions.PrescribedDate,
+            //        Status = ms.Prescriptions.Status,
+            //        QuantityAnimal = ms.Prescriptions.QuantityAnimal,
+            //        Notes = ms.Prescriptions.Notes,
+            //        Price = ms.Prescriptions.Price,
+            //        DaysToTake = ms.Prescriptions.DaysToTake,
+            //        EndDate = ms.Prescriptions.EndDate,
+            //        Medications = ms.Prescriptions.Medications.Select(m => new PrescriptionMedicationResponse
+            //        {
+            //            MedicationId = m.MedicationId,
+            //            MedicationName = m.Medication?.Name,
+            //            Morning = m.Morning,
+            //            Afternoon = m.Afternoon,
+            //            Evening = m.Evening,
+            //            Noon = m.Noon,
+            //            Notes = m.Notes
+            //        }).ToList()
+            //    },
 
-            });
+            //});
 
-            return Ok(ApiResult<IEnumerable<MedicalSymptomResponse>>.Succeed(response));
+            return Ok(ApiResult<IEnumerable<GetAllMedicalSymptomModel>>.Succeed(medicalSymptoms));
         }
 
         // PUT: api/medical-symptoms/{id}

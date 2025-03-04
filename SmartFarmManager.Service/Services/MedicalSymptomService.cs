@@ -42,7 +42,7 @@ namespace SmartFarmManager.Service.Services
             _emailService = emailService;
         }
 
-        public async Task<IEnumerable<MedicalSymptomModel>> GetMedicalSymptomsAsync(string? status, DateTime? startDate, DateTime? endDate, string? searchTerm)
+        public async Task<IEnumerable<GetAllMedicalSymptomModel>> GetMedicalSymptomsAsync(string? status, DateTime? startDate, DateTime? endDate, string? searchTerm)
         {
             var query = _unitOfWork.MedicalSymptom
         .FindAll()
@@ -50,7 +50,6 @@ namespace SmartFarmManager.Service.Services
         .Include(p => p.FarmingBatch)
         .Include(p => p.Prescriptions).ThenInclude(p => p.PrescriptionMedications).ThenInclude(pm => pm.Medication)
         .Include(p => p.MedicalSymptomDetails).ThenInclude(p => p.Symptom)
-
         .AsQueryable();
             // Lọc theo trạng thái nếu có
             if (!string.IsNullOrEmpty(status))
@@ -78,7 +77,18 @@ namespace SmartFarmManager.Service.Services
             }
 
             var symptoms = await query.ToListAsync();
-            return symptoms.Select(ms => new MedicalSymptomModel
+            var farmingBatchIds = symptoms.Select(ms => ms.FarmingBatchId).Distinct().ToList();
+            var farmingBatches = await _unitOfWork.FarmingBatches
+                .FindAll()
+                .Where(fb => farmingBatchIds.Contains(fb.Id))
+                .Include(fb => fb.MedicalSymptoms) // Lấy triệu chứng của vụ nuôi
+                    .ThenInclude(ms => ms.Prescriptions)
+                        .ThenInclude(p => p.PrescriptionMedications)
+                            .ThenInclude(pm => pm.Medication)
+                .Include(fb => fb.MedicalSymptoms) // 🚀 Thêm để lấy bệnh (Disease)
+                    .ThenInclude(ms => ms.Disease)
+                .ToListAsync();
+            return symptoms.Select(ms => new GetAllMedicalSymptomModel
             {
                 Id = ms.Id,
                 FarmingBatchId = ms.FarmingBatchId,
@@ -122,6 +132,43 @@ namespace SmartFarmManager.Service.Services
                         }
                     }).ToList()
                 }).FirstOrDefault(),
+                // 🔥 Lấy tất cả đơn thuốc của vụ nuôi đó
+                PrescriptionsBefore = farmingBatches.FirstOrDefault(fb => fb.Id == ms.FarmingBatchId)?
+            .MedicalSymptoms
+            .SelectMany(ms => ms.Prescriptions)
+            .Where(p => p.Status != PrescriptionStatusEnum.Cancelled) // Lọc đơn thuốc hợp lệ
+            .Select(p => new PrescriptionModel
+            {
+                Id = p.Id,
+                PrescribedDate = p.PrescribedDate,
+                Status = p.Status,
+                QuantityAnimal = p.QuantityAnimal,
+                Notes = p.Notes,
+                Price = p.Price,
+                DaysToTake = p.DaysToTake,
+                EndDate = p.EndDate,
+                Medications = p.PrescriptionMedications.Select(pm => new PrescriptionMedicationModel
+                {
+                    MedicationId = pm.MedicationId,
+                    Morning = pm.Morning,
+                    Afternoon = pm.Afternoon,
+                    Evening = pm.Evening,
+                    Noon = pm.Noon,
+                    Notes = pm.Notes,
+                    Medication = new MedicationModel
+                    {
+                        Name = pm.Medication.Name,
+                        UsageInstructions = pm.Medication.UsageInstructions,
+                        Price = pm.Medication.Price,
+                        DoseQuantity = pm.Medication.DoseQuantity
+                    }
+                }).ToList(),
+                Disease = farmingBatches
+                    .SelectMany(fb => fb.MedicalSymptoms)
+                    .Where(ms => ms.Id == p.MedicalSymtomId)
+                    .Select(ms => ms.Diagnosis)
+                    .FirstOrDefault()
+            }).ToList() ?? new List<PrescriptionModel>(),
                 Symtom = string.Join(", ", ms.MedicalSymptomDetails.Select(d => d.Symptom.SymptomName))
             });
         }
