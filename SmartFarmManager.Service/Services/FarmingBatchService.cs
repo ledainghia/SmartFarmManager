@@ -222,7 +222,8 @@ namespace SmartFarmManager.Service.Services
                 farmingBatch.StartDate = DateTimeUtils.GetServerTimeInVietnamTime();
 
                 var currentStartDate = farmingBatch.StartDate;
-
+                var ageEndLastGrowthStage = farmingBatch.GrowthStages.Max(gs => gs.AgeEnd);
+                farmingBatch.EndDate = currentStartDate.Value.AddDays(ageEndLastGrowthStage ?? 0);
                 // **Cập nhật GrowthStages**
                 foreach (var stage in farmingBatch.GrowthStages.OrderBy(gs => gs.AgeStart))
                 {
