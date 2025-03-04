@@ -240,5 +240,36 @@ namespace SmartFarmManager.API.Controllers
             }
         }
 
+        [HttpGet("{prescriptionId}/is-last-session")]
+        public async Task<IActionResult> CheckLastPrescriptionSession(Guid prescriptionId)
+        {
+            try
+            {
+                var result = await _prescriptionService.IsLastPrescriptionSessionAsync(prescriptionId);
+                return Ok(ApiResult<bool>.Succeed(result));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResult<bool>.Fail(ex.Message));
+            }
+        }
+        [HttpPut("{prescriptionId}/status")]
+        public async Task<IActionResult> UpdatePrescriptionStatus(Guid prescriptionId, [FromBody] UpdatePrescriptionModel request)
+        {
+            try
+            {
+                var result = await _prescriptionService.UpdatePrescriptionStatusAsync(prescriptionId, request);
+                if (!result)
+                    return BadRequest(ApiResult<bool>.Fail("Failed to update prescription status."));
+
+                return Ok(ApiResult<bool>.Succeed(true));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResult<bool>.Fail(ex.Message));
+            }
+        }
+
+
     }
 }

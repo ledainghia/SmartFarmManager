@@ -415,5 +415,102 @@ namespace SmartFarmManager.Service.Services
             return true;
         }
 
+        public async Task<bool> IsLastPrescriptionSessionAsync(Guid prescriptionId)
+        {
+            //// 🔹 Tìm đơn thuốc theo ID và lấy luôn danh sách thuốc trong đơn
+            //var prescription = await _unitOfWork.Prescription
+            //    .FindByCondition(p => p.Id == prescriptionId)
+            //    .Include(p => p.PrescriptionMedications)
+            //    .FirstOrDefaultAsync();
+            var prescription = await _unitOfWork.Prescription
+                .FindByCondition(p => p.Id == prescriptionId && p.Status == PrescriptionStatusEnum.Active)
+                .Include(p => p.PrescriptionMedications)
+                .Include(p => p.MedicalSymtom)
+                .ThenInclude(p => p.FarmingBatch)
+                .FirstOrDefaultAsync();
+
+            // ✅ Kiểm tra nếu đơn thuốc không tồn tại
+            if (prescription == null || !prescription.EndDate.HasValue)
+                return false;
+
+            // 🔹 Kiểm tra xem có thuốc kê vào từng buổi hay không
+            var hasMorningMedication = prescription.PrescriptionMedications.Any(m => m.Morning > 0);
+            var hasNoonMedication = prescription.PrescriptionMedications.Any(m => m.Noon > 0);
+            var hasAfternoonMedication = prescription.PrescriptionMedications.Any(m => m.Afternoon > 0);
+            var hasEveningMedication = prescription.PrescriptionMedications.Any(m => m.Evening > 0);
+
+            // 🔹 Lấy thời gian hiện tại theo giờ server (Việt Nam)
+            var now = DateTimeUtils.GetServerTimeInVietnamTime();
+            var currentTime = now.TimeOfDay;
+            var currentSession = SessionTime.GetCurrentSession(currentTime);
+
+            // ✅ Nếu hôm nay không phải ngày cuối → return false
+            if (now.Date != prescription.EndDate.Value.Date)
+                return false;
+
+            // ✅ Kiểm tra xem có phải buổi cuối cùng không
+            var isLastSession = currentSession switch
+            {
+                1 => !hasNoonMedication && !hasAfternoonMedication && !hasEveningMedication,  // Morning là buổi cuối
+                2 => !hasAfternoonMedication && !hasEveningMedication,                        // Noon là buổi cuối
+                3 => !hasEveningMedication,                                                  // Afternoon là buổi cuối
+                4 => true,                                                                   // Evening là buổi cuối
+                _ => false
+            };
+
+            return isLastSession;
+        }
+        public async Task<bool> UpdatePrescriptionStatusAsync(Guid prescriptionId, UpdatePrescriptionModel request)
+        {
+            // 🔹 Lấy đơn thuốc từ DB
+            var prescription = await _unitOfWork.Prescription
+                .FindByCondition(p => p.Id == prescriptionId && p.Status == PrescriptionStatusEnum.Active)
+                .Include(p => p.PrescriptionMedications)
+                .Include(p => p.MedicalSymtom)
+                .ThenInclude(ms => ms.FarmingBatch)
+                .FirstOrDefaultAsync();
+
+            // ❌ Kiểm tra nếu đơn thuốc không tồn tại
+            if (prescription == null)
+                throw new ArgumentException("Prescription not found or not active.");
+
+            // ❌ Kiểm tra nếu trạng thái không hợp lệ
+            if (request.Status != PrescriptionStatusEnum.Completed && request.Status != PrescriptionStatusEnum.Dead)
+                throw new ArgumentException("Invalid status. Only 'Completed' or 'Dead' are allowed.");
+
+            // ✅ Kiểm tra số lượng vật nuôi bị ảnh hưởng
+            if (request.Status == PrescriptionStatusEnum.Completed)
+            {
+                if (request.RemainingQuantity == null)
+                    throw new ArgumentException("RemainingQuantity is required for status 'Completed'.");
+
+                if (request.RemainingQuantity > prescription.QuantityAnimal)
+                    throw new ArgumentException("Remaining quantity cannot exceed total affected animals.");
+
+                prescription.RemainingQuantity = request.RemainingQuantity;
+            }
+            else if (request.Status == PrescriptionStatusEnum.Dead)
+            {
+                prescription.RemainingQuantity = 0; // ✅ Nếu chết hết, RemainingQuantity = 0
+            }
+
+            // ✅ Cập nhật trạng thái đơn thuốc
+            prescription.Status = request.Status;
+
+            // 🔹 Cập nhật số lượng bị ảnh hưởng trong **FarmingBatch**
+            var farmingBatch = prescription.MedicalSymtom?.FarmingBatch;
+            if (farmingBatch != null)
+            {
+                farmingBatch.AffectedQuantity -= prescription.RemainingQuantity ?? 0;
+                await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatch);
+            }
+
+            // ✅ Lưu thay đổi
+            await _unitOfWork.Prescription.UpdateAsync(prescription);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
+
     }
 }
