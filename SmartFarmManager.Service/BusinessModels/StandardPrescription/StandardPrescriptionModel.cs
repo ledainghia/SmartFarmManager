@@ -12,6 +12,7 @@ namespace SmartFarmManager.Service.BusinessModels.StandardPrescription
         public Guid Id { get; set; }
         public string Notes { get; set; }
         public Guid DiseaseId { get; set; }
+        public int RecommentDay { get; set; }
         public List<StandardPrescriptionMedicationModel> Medications { get; set; }
     }
 

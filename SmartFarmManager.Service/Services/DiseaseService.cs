@@ -35,7 +35,6 @@ namespace SmartFarmManager.Service.Services
                     Id = d.Id,
                     Name = d.Name,
                     Description = d.Description,
-                    RecommentDay = d.recommendDay,
                 }),
                 TotalItems = totalCount,
                 TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),

@@ -38,6 +38,7 @@ namespace SmartFarmManager.Service.Services
                 Id = prescriptions.Id,
                 Notes = prescriptions.Notes,
                 DiseaseId = prescriptions.DiseaseId,
+                RecommentDay = prescriptions.RecommendDay,
                 Medications = prescriptions.StandardPrescriptionMedications.Select(spm => new StandardPrescriptionMedicationModel
                 {
                     Id = spm.Id,
