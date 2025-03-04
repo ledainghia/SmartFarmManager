@@ -16,6 +16,9 @@ public partial class MedicalSymptom : EntityBase
     public string Status { get; set; }
 
     public int? AffectedQuantity { get; set; }
+    public bool IsEmergency { get; set; } = false;
+    public int? QuantityInCage { get; set; }
+
 
     public string Notes { get; set; }
     public DateTime? CreateAt {get;set;}

@@ -11,6 +11,7 @@ namespace SmartFarmManager.DataAccessObject.Models
         public string Name { get; set; }
 
         public string Description { get; set; }
+        public int recommendDay { get; set; }
 
         public virtual ICollection<StandardPrescription> StandardPrescriptions { get; set; } = new List<StandardPrescription>();
 
