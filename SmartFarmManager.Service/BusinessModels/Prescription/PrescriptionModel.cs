@@ -20,6 +20,7 @@ namespace SmartFarmManager.Service.BusinessModels.Prescription
         public decimal? Price { get; set; }
         public int? DaysToTake { get; set; }
         public DateTime? EndDate { get; set; }
+        public string Disease { get; set; }
         public List<PrescriptionMedicationModel> Medications { get; set; }
     }
 }
