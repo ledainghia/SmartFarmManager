@@ -13,7 +13,7 @@ namespace SmartFarmManager.Service.BusinessModels.MedicalSymptom
     {
         public Guid Id { get; set; }
         public Guid FarmingBatchId { get; set; }
-        public string Symtom { get; set; }
+        public string Symptoms { get; set; }
 
         public Guid? PrescriptionId { get; set; }
 
@@ -27,6 +27,8 @@ namespace SmartFarmManager.Service.BusinessModels.MedicalSymptom
         public string NameAnimal { get; set; }
 
         public string Notes { get; set; }
+        public bool IsEmergency { get; set; }
+        public int? QuantityInCage { get; set; }
 
         public virtual ICollection<PictureModel> Pictures { get; set; } = new List<PictureModel>();
 

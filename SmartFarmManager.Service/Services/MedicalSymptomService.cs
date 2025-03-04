@@ -99,6 +99,8 @@ namespace SmartFarmManager.Service.Services
                 Quantity = ms.FarmingBatch?.Quantity ?? 0,
                 NameAnimal = ms.FarmingBatch.Name,
                 CreateAt = ms.CreateAt,
+                IsEmergency = ms.IsEmergency,
+                QuantityInCage = ms.QuantityInCage,
                 Pictures = ms.Pictures.Select(p => new PictureModel
                 {
                     Id = p.Id,
