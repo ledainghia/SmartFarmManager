@@ -107,6 +107,7 @@ namespace SmartFarmManager.Service.Services
                     Name = fb.Name,
                     StartDate = fb.StartDate,
                     CompleteAt = fb.CompleteAt,
+                    EndDate = fb.EndDate,
                     Status = fb.Status,
                     CleaningFrequency = fb.CleaningFrequency,
                     Quantity = fb.Quantity,
