@@ -97,6 +97,7 @@ namespace SmartFarmManager.Service.Services
                     CameraUrl = c.CameraUrl,
                     StaffId = c.CageStaffs.FirstOrDefault().StaffFarmId,
                     StaffName = c.CageStaffs.FirstOrDefault().StaffFarm.FullName,
+                    IsSolationCage = c.IsSolationCage,
                     // Lấy thông tin FarmingBatch phù hợp
                     FarmingBatch = c.FarmingBatches
                 .Where(fb => fb.StartDate < DateTimeUtils.GetServerTimeInVietnamTime() && fb.CompleteAt == null && fb.Status == FarmingBatchStatusEnum.Active)
