@@ -6,6 +6,7 @@ using SmartFarmManager.API.Payloads.Responses.Prescription;
 using SmartFarmManager.Service.BusinessModels.Prescription;
 using SmartFarmManager.Service.BusinessModels.PrescriptionMedication;
 using SmartFarmManager.Service.Interfaces;
+using SmartFarmManager.Service.Services;
 
 namespace SmartFarmManager.API.Controllers
 {
@@ -267,6 +268,23 @@ namespace SmartFarmManager.API.Controllers
             catch (Exception ex)
             {
                 return BadRequest(ApiResult<bool>.Fail(ex.Message));
+            }
+        }
+        [HttpPost("{medicalSymptomId}/create-new-prescription")]
+        public async Task<IActionResult> CreateNewPrescription([FromBody] PrescriptionModel request, Guid medicalSymptomId)
+        {
+            try
+            {
+                var result = await _prescriptionService.CreateNewPrescriptionAsync(request, medicalSymptomId);
+
+                if (!result)
+                    return BadRequest(ApiResult<object>.Fail("Failed to create new prescription."));
+
+                return Ok(ApiResult<object>.Succeed("New prescription created successfully."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail($"An error occurred: {ex.Message}"));
             }
         }
 

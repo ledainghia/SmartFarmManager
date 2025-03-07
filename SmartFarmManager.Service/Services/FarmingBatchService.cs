@@ -462,6 +462,7 @@ namespace SmartFarmManager.Service.Services
                 Status = farmingBatch.Status,
                 CleaningFrequency = farmingBatch.CleaningFrequency,
                 Quantity = farmingBatch.Quantity,
+                AffectedQuantity = farmingBatch?.AffectedQuantity,
             };
         }
 

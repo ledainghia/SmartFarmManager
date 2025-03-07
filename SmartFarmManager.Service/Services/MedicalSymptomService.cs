@@ -827,14 +827,14 @@ namespace SmartFarmManager.Service.Services
                 Console.WriteLine($"✅ Lấy ngày hiện tại: {currentDate}");
 
                 // Tìm giai đoạn phát triển hiện tại
-                var growthStage = await _unitOfWork.GrowthStages
-                    .FindByCondition(gs => gs.FarmingBatchId == medicalSymptomModel.FarmingBatchId &&
-                                           gs.AgeStartDate.HasValue &&
-                                           gs.AgeEndDate.HasValue &&
-                                           currentDate >= DateOnly.FromDateTime(gs.AgeStartDate.Value) &&
-                                           currentDate <= DateOnly.FromDateTime(gs.AgeEndDate.Value))
-                    .FirstOrDefaultAsync();
-                Console.WriteLine($"✅ Tìm giai đoạn phát triển: {growthStage?.Id}");
+                //var growthStage = await _unitOfWork.GrowthStages
+                //    .FindByCondition(gs => gs.FarmingBatchId == medicalSymptomModel.FarmingBatchId &&
+                //                           gs.AgeStartDate.HasValue &&
+                //                           gs.AgeEndDate.HasValue &&
+                //                           currentDate >= DateOnly.FromDateTime(gs.AgeStartDate.Value) &&
+                //                           currentDate <= DateOnly.FromDateTime(gs.AgeEndDate.Value))
+                //    .FirstOrDefaultAsync();
+                //Console.WriteLine($"✅ Tìm giai đoạn phát triển: {growthStage?.Id}");
 
                 var farmingBatches = await _unitOfWork.FarmingBatches
                     .FindByCondition(fb => fb.Id == medicalSymptomModel.FarmingBatchId)
@@ -842,11 +842,11 @@ namespace SmartFarmManager.Service.Services
                     .FirstOrDefaultAsync();
                 Console.WriteLine($"✅ Tìm farming batch: {farmingBatches?.Id}");
 
-                if (medicalSymptomModel.AffectedQuantity > growthStage.Quantity - farmingBatches.AffectedQuantity)
-                {
-                    Console.WriteLine("⛔ Affected quantity vượt quá số lượng cho phép.");
-                    return null;
-                }
+                //if (medicalSymptomModel.AffectedQuantity > growthStage.Quantity - farmingBatches.AffectedQuantity)
+                //{
+                //    Console.WriteLine("⛔ Affected quantity vượt quá số lượng cho phép.");
+                //    return null;
+                //}
 
                 // Bước 1: Tạo đối tượng MedicalSymptom
                 var medicalSymptom = new DataAccessObject.Models.MedicalSymptom

@@ -511,6 +511,562 @@ namespace SmartFarmManager.Service.Services
 
             return true;
         }
+        public async Task<bool> CreateNewPrescriptionAsync(PrescriptionModel request, Guid medicalSymptomId)
+        {
+            await _unitOfWork.BeginTransactionAsync();
+
+            try
+            {
+                var serverTime = DateTimeUtils.GetServerTimeInVietnamTime();
+                var currentSessionCheck = SessionTime.GetCurrentSession(serverTime.TimeOfDay);
+
+                // 🔹 Lấy triệu chứng đang điều trị
+                var medicalSymptom = await _unitOfWork.MedicalSymptom
+                    .FindByCondition(ms => ms.Id == medicalSymptomId)
+                    .Include(ms => ms.Prescriptions)
+                    .ThenInclude(p => p.PrescriptionMedications)
+                    .FirstOrDefaultAsync();
+
+                if (medicalSymptom == null)
+                    return false;
+
+                // 🔹 Lấy đơn thuốc Active hiện tại
+                var activePrescription = medicalSymptom.Prescriptions
+                    .Where(p => p.Status == PrescriptionStatusEnum.Active)
+                    .OrderByDescending(p => p.PrescribedDate)
+                    .FirstOrDefault();
+
+                if (activePrescription != null)
+                {
+                    // 🔹 Tính lại tổng số liều đã uống
+                    int totalDosesTaken = 0;
+                    decimal totalCost = 0;
+
+                    foreach (var pm in activePrescription.PrescriptionMedications)
+                    {
+                        int takenMorning = 0, takenNoon = 0, takenAfternoon = 0, takenEvening = 0;
+
+                        // ✅ Tính số liều đã uống theo từng session
+                        if (serverTime.Date > activePrescription.PrescribedDate.Value.Date)
+                        {
+                            // Đã qua ít nhất 1 ngày
+                            int fullDaysPassed = (serverTime.Date - activePrescription.PrescribedDate.Value.Date).Days;
+                            takenMorning = pm.Morning * fullDaysPassed;
+                            takenNoon = pm.Noon * fullDaysPassed;
+                            takenAfternoon = pm.Afternoon * fullDaysPassed;
+                            takenEvening = pm.Evening * fullDaysPassed;
+                        }
+
+                        // ✅ Tính số liều trong ngày hiện tại
+                        if (serverTime.Date == activePrescription.PrescribedDate.Value.Date || currentSessionCheck > 0)
+                        {
+                            if (currentSessionCheck >= 1) takenMorning += pm.Morning;
+                            if (currentSessionCheck >= 2) takenNoon += pm.Noon;
+                            if (currentSessionCheck >= 3) takenAfternoon += pm.Afternoon;
+                            if (currentSessionCheck >= 4) takenEvening += pm.Evening;
+                        }
+
+                        int totalDosesForMedication = takenMorning + takenNoon + takenAfternoon + takenEvening;
+                        totalDosesTaken += totalDosesForMedication;
+
+                        // ✅ Tính tổng tiền
+                        var medication = await _unitOfWork.Medication.GetByIdAsync(pm.MedicationId);
+                        if (medication?.PricePerDose != null)
+                        {
+                            totalCost += totalDosesForMedication * medication.PricePerDose.Value;
+                        }
+                    }
+
+                    // 🔹 Cập nhật giá trị cho đơn thuốc cũ
+                    activePrescription.Status = PrescriptionStatusEnum.Completed;
+                    activePrescription.EndDate = serverTime;
+                    activePrescription.Price = totalCost;
+                    await _unitOfWork.Prescription.UpdateAsync(activePrescription);
+                }
+                var tasksToUpdate = await _unitOfWork.Tasks
+                .FindByCondition(t =>
+                    t.PrescriptionId == activePrescription.Id &&
+                    t.DueDate >= serverTime.Date &&
+                    t.Session > currentSessionCheck &&
+                    t.Status == TaskStatusEnum.Pending || t.Status == TaskStatusEnum.InProgress)
+                .ToListAsync();
+
+                foreach (var task in tasksToUpdate)
+                {
+                    task.Status = TaskStatusEnum.Done;
+                }
+
+                await _unitOfWork.Tasks.UpdateListAsync(tasksToUpdate);
+                var cage = await _unitOfWork.Cages.FindByCondition(c => c.IsDeleted == false && c.IsSolationCage == true).FirstOrDefaultAsync();
+                Guid? newPrescriptionId = null;
+                // 🔹 Tạo đơn thuốc mới
+                var medications = request.Medications;
+
+                var totalPrice = medications.Sum(m =>
+                {
+                    var medication = _unitOfWork.Medication.GetByIdAsync(m.MedicationId).Result; // Lấy thông tin thuốc
+
+                    // Tính tổng số liều (Morning + Noon + Afternoon + Evening)
+                    var totalDoses = m.Morning + m.Noon + m.Afternoon + m.Evening;
+
+                    // Tính giá dựa trên tổng số liều và giá mỗi liều
+                    return medication.PricePerDose.HasValue ? medication.PricePerDose.Value * totalDoses : 0;
+                });
+                // Kiểm tra trạng thái đơn thuốc có hợp lệ không
+                if (request.Status != PrescriptionStatusEnum.Active)
+                {
+                    throw new ArgumentException($"Trạng thái đơn thuốc không hợp lệ: {request.Status}");
+                }
+                var newPrescription = new Prescription
+                {
+                    MedicalSymtomId = medicalSymptomId,
+                    CageId = cage.Id,
+                    //PrescribedDate = updatedModel.Prescriptions.PrescribedDate,
+                    PrescribedDate = DateTimeUtils.GetServerTimeInVietnamTime(),
+                    Notes = request.Notes,
+                    DaysToTake = request.DaysToTake,
+                    Status = request.Status,
+                    QuantityAnimal = request.QuantityAnimal.Value,
+                    //EndDate = updatedModel.Prescriptions.PrescribedDate.Value.AddDays((double)updatedModel.Prescriptions.DaysToTake),
+                    EndDate = DateTimeUtils.GetServerTimeInVietnamTime().AddDays((double)request.DaysToTake),
+                    Price = totalPrice * request.DaysToTake * request.QuantityAnimal.Value
+                };
+
+                await _unitOfWork.Prescription.CreateAsync(newPrescription);
+                var newPrescriptionMedication = request.Medications.Select(m => new PrescriptionMedication
+                {
+                    PrescriptionId = newPrescription.Id,
+                    Notes = m.Notes,
+                    MedicationId = m.MedicationId,
+                    Morning = m.Morning,
+                    Afternoon = m.Afternoon,
+                    Evening = m.Evening,
+                    Noon = m.Noon
+                }).ToList();
+                await _unitOfWork.PrescriptionMedications.CreateListAsync(newPrescriptionMedication);
+                newPrescriptionId = newPrescription.Id;
+                //update affectedQuantity in farmingBatch
+                var symtom = await _unitOfWork.MedicalSymptom.FindByCondition(ms => ms.Id ==medicalSymptomId).Include(ms => ms.FarmingBatch).FirstOrDefaultAsync();
+                var farmingBatch = await _unitOfWork.FarmingBatches.FindByCondition(c => c.Id == symtom.FarmingBatch.Id).FirstOrDefaultAsync();
+                farmingBatch.AffectedQuantity += request.QuantityAnimal.Value;
+                await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatch);
+
+
+
+                //create task in today and tomorow
+                // Lấy thời gian hiện tại và buổi hiện tại
+                var currentTime = DateTimeUtils.GetServerTimeInVietnamTime().TimeOfDay;
+                var currentSession = SessionTime.GetCurrentSession(currentTime);
+
+                // Kiểm tra đơn thuốc có thuốc kê cho các buổi sáng, trưa, chiều, tối hay không
+                var hasMorningMedication = request.Medications.Any(m => m.Morning > 0);
+                var hasNoonMedication = request.Medications.Any(m => m.Noon > 0);
+                var hasAfternoonMedication = request.Medications.Any(m => m.Afternoon > 0);
+                var hasEveningMedication = request.Medications.Any(m => m.Evening > 0);
+
+                // Tạo danh sách TaskDaily và Task
+                var taskList = new List<DataAccessObject.Models.Task>();
+                var taskType = await _unitOfWork.TaskTypes.FindByCondition(t => t.TaskTypeName == "Cho uống thuốc").FirstOrDefaultAsync();
+
+                // Tạo task cho ngày hiện tại
+                DateOnly startDate = DateOnly.FromDateTime(DateTimeUtils.GetServerTimeInVietnamTime());
+                TimeSpan startTime = TimeSpan.Zero;
+                var assignedUserTodayId = await _userService.GetAssignedUserForCageAsync(cage.Id, startDate);
+
+                var medicationIds = request.Medications.Select(m => m.MedicationId).ToList();
+
+                // Truy vấn từ cơ sở dữ liệu để lấy MedicationName dựa trên MedicationId
+                var medicationList = await _unitOfWork.Medication
+                    .FindByCondition(m => medicationIds.Contains(m.Id))
+                    .Select(m => new { m.Id, m.Name })
+                    .ToListAsync();
+
+                // Bước 1: Lấy danh sách MedicationId
+                var medicationListIds = newPrescriptionMedication.Select(pm => pm.MedicationId).ToList();
+
+                // Bước 2: Truy vấn cơ sở dữ liệu để lấy MedicationName
+                var medicationsList = await _unitOfWork.Medication
+                    .FindByCondition(m => medicationIds.Contains(m.Id))
+                    .ToListAsync();
+                var prescriptionMedicationsWithNames = newPrescriptionMedication.Select(pm => new
+                {
+                    pm.MedicationId,
+                    MedicationName = medicationsList.FirstOrDefault(m => m.Id == pm.MedicationId)?.Name,
+                    pm.Notes,
+                    pm.Morning,
+                    pm.Noon,
+                    pm.Afternoon,
+                    pm.Evening
+                }).ToList();
+
+                var sessionTasks = new Dictionary<int, List<(string MedicationName, int Quantity)>>();
+
+                sessionTasks[(int)SessionTypeEnum.Morning] = prescriptionMedicationsWithNames
+                    .Where(pm => pm.Morning > 0)
+                    .Select(pm => (pm.MedicationName, pm.Morning))
+                    .ToList();
+
+                sessionTasks[(int)SessionTypeEnum.Noon] = prescriptionMedicationsWithNames
+                    .Where(pm => pm.Noon > 0)
+                    .Select(pm => (pm.MedicationName, pm.Noon))
+                    .ToList();
+
+                sessionTasks[(int)SessionTypeEnum.Afternoon] = prescriptionMedicationsWithNames
+                    .Where(pm => pm.Afternoon > 0)
+                    .Select(pm => (pm.MedicationName, pm.Afternoon))
+                    .ToList();
+
+                sessionTasks[(int)SessionTypeEnum.Evening] = prescriptionMedicationsWithNames
+                    .Where(pm => pm.Evening > 0)
+                    .Select(pm => (pm.MedicationName, pm.Evening))
+                    .ToList();
+
+                // Kiểm tra và tạo task cho buổi sáng
+                if (currentSession < 1 && currentSession > 0 && hasMorningMedication) // Buổi sáng
+                {
+                    var morningMedications = sessionTasks[(int)SessionTypeEnum.Morning];
+                    var medicationDetails = string.Join(", ", morningMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
+
+                    startTime = SessionTime.Morning.Start;
+                    taskList.Add(new DataAccessObject.Models.Task
+                    {
+
+                        TaskTypeId = taskType.Id,
+                        CageId = cage.Id,
+                        AssignedToUserId = assignedUserTodayId.Value, // Sẽ gán sau
+                        CreatedByUserId = null,
+                        TaskName = "Uống thuốc (Sáng)",
+                        Description = $"Điều trị cho {newPrescription.QuantityAnimal} con. Thuốc: {medicationDetails}.",
+                        PriorityNum = 1,
+                        DueDate = startDate.ToDateTime(TimeOnly.MinValue),
+                        //Status = currentSession == 1 ? TaskStatusEnum.InProgress : TaskStatusEnum.Pending,
+                        Status = TaskStatusEnum.Pending,
+                        Session = (int)SessionTypeEnum.Morning,
+                        CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                        PrescriptionId = newPrescription.Id,
+                        IsTreatmentTask = true
+                    });
+                }
+
+                // Kiểm tra và tạo task cho buổi trưa
+                if (currentSession < 2 && currentSession > 0 && hasNoonMedication) // Buổi trưa
+                {
+                    var noonMedications = sessionTasks[(int)SessionTypeEnum.Noon];
+                    var medicationDetails = string.Join(", ", noonMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
+                    startTime = SessionTime.Noon.Start;
+                    taskList.Add(new DataAccessObject.Models.Task
+                    {
+                        TaskTypeId = taskType.Id,
+                        CageId = cage.Id,
+                        AssignedToUserId = assignedUserTodayId.Value, // Sẽ gán sau
+                        CreatedByUserId = null,
+                        TaskName = "Uống thuốc (Trưa)",
+                        Description = $"Điều trị cho {newPrescription.QuantityAnimal} con. Thuốc: {medicationDetails}.",
+                        PriorityNum = 1,
+                        DueDate = startDate.ToDateTime(TimeOnly.MinValue),
+                        Status = TaskStatusEnum.Pending,
+                        Session = (int)SessionTypeEnum.Noon,
+                        CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                        PrescriptionId = newPrescription.Id,
+                        IsTreatmentTask = true
+                    });
+                }
+
+                // Kiểm tra và tạo task cho buổi chiều
+                if (currentSession < 3 && currentSession > 0 && hasAfternoonMedication) // Buổi chiều
+                {
+                    var afternoonMedications = sessionTasks[(int)SessionTypeEnum.Afternoon];
+                    var medicationDetails = string.Join(", ", afternoonMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
+                    startTime = SessionTime.Afternoon.Start;
+                    taskList.Add(new DataAccessObject.Models.Task
+                    {
+                        TaskTypeId = taskType.Id,
+                        CageId = cage.Id,
+                        AssignedToUserId = assignedUserTodayId.Value, // Sẽ gán sau
+                        CreatedByUserId = null,
+                        TaskName = "Uống thuốc (Chiều)",
+                        Description = $"Điều trị cho {newPrescription.QuantityAnimal} con. Thuốc: {medicationDetails}.",
+                        PriorityNum = 1,
+                        DueDate = startDate.ToDateTime(TimeOnly.MinValue),
+                        Status = TaskStatusEnum.Pending,
+                        Session = (int)SessionTypeEnum.Afternoon,
+                        CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                        PrescriptionId = newPrescription.Id,
+                        IsTreatmentTask = true
+                    });
+                }
+
+                // Kiểm tra và tạo task cho buổi tối
+                if (currentSession < 4 && currentSession > 0 && hasEveningMedication) // Buổi tối
+                {
+                    var eveningMedications = sessionTasks[(int)SessionTypeEnum.Evening];
+                    var medicationDetails = string.Join(", ", eveningMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
+                    startTime = SessionTime.Evening.Start;
+                    taskList.Add(new DataAccessObject.Models.Task
+                    {
+                        TaskTypeId = taskType.Id,
+                        CageId = cage.Id,
+                        AssignedToUserId = assignedUserTodayId.Value, // Sẽ gán sau
+                        CreatedByUserId = null,
+                        TaskName = "Uống thuốc (Tối)",
+                        Description = $"Điều trị cho {newPrescription.QuantityAnimal} con. Thuốc: {medicationDetails}.",
+                        PriorityNum = 1,
+                        DueDate = startDate.ToDateTime(TimeOnly.MinValue),
+                        Status = TaskStatusEnum.Pending,
+                        Session = (int)SessionTypeEnum.Evening,
+                        CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                        PrescriptionId = newPrescription.Id,
+                        IsTreatmentTask = true
+                    });
+                }
+
+                var lastDate = startDate.AddDays((request.DaysToTake.Value - 1));
+                // Tạo task cho ngày mai nếu có thuốc kê cho buổi sáng, trưa, chiều, tối
+                var tomorrow = startDate.AddDays(1);
+                if (request.DaysToTake == 1)
+                {
+                    lastDate = lastDate.AddDays(1); // Thêm ngày mai nếu kê đơn vào buổi trưa, chiều, tối
+                                                    // Kiểm tra có thuốc kê cho buổi sáng, trưa, chiều, tối ngày mai
+                    if (tomorrow <= lastDate)
+                    {
+                        // Kiểm tra và tạo task cho buổi sáng ngày mai nếu có thuốc kê cho sáng
+                        if (hasMorningMedication && currentSession >= 1)
+                        {
+                            var morningMedications = sessionTasks[(int)SessionTypeEnum.Morning];
+                            var medicationDetails = string.Join(", ", morningMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
+                            var assignedUserId = await _userService.GetAssignedUserForCageAsync(cage.Id, tomorrow);
+                            if (assignedUserId != null)
+                            {
+                                taskList.Add(new DataAccessObject.Models.Task
+                                {
+                                    TaskTypeId = taskType.Id,
+                                    CageId = cage.Id,
+                                    AssignedToUserId = assignedUserId.Value,
+                                    CreatedByUserId = null,
+                                    TaskName = $"Uống thuốc (Sáng)",
+                                    Description = $"Điều trị cho {newPrescription.QuantityAnimal} con. Thuốc: {medicationDetails}.",
+                                    PriorityNum = taskType.PriorityNum.Value,
+                                    DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
+                                    Status = TaskStatusEnum.Pending,
+                                    Session = (int)SessionTypeEnum.Morning,
+                                    CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                                    PrescriptionId = newPrescription.Id,
+                                    IsTreatmentTask = true
+                                });
+                            }
+                        }
+
+                        // Tạo task cho buổi trưa ngày mai nếu có thuốc kê cho trưa
+                        if (hasNoonMedication && currentSession >= 2)
+                        {
+                            var noonMedications = sessionTasks[(int)SessionTypeEnum.Noon];
+                            var medicationDetails = string.Join(", ", noonMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
+                            var assignedUserId = await _userService.GetAssignedUserForCageAsync(cage.Id, tomorrow);
+                            if (assignedUserId != null)
+                            {
+                                taskList.Add(new DataAccessObject.Models.Task
+                                {
+                                    TaskTypeId = taskType.Id,
+                                    CageId = cage.Id,
+                                    AssignedToUserId = assignedUserId.Value,
+                                    CreatedByUserId = null,
+                                    TaskName = $"Uống thuốc (Trưa)",
+                                    Description = $"Điều trị cho {newPrescription.QuantityAnimal} con. Thuốc: {medicationDetails}.",
+                                    PriorityNum = taskType.PriorityNum.Value,
+                                    DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
+                                    Status = TaskStatusEnum.Pending,
+                                    Session = (int)SessionTypeEnum.Noon,
+                                    CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                                    PrescriptionId = newPrescription.Id,
+                                    IsTreatmentTask = true
+                                });
+                            }
+                        }
+
+                        // Tạo task cho buổi chiều ngày mai nếu có thuốc kê cho chiều
+                        if (hasAfternoonMedication && currentSession >= 3)
+                        {
+                            var afternoonMedications = sessionTasks[(int)SessionTypeEnum.Afternoon];
+                            var medicationDetails = string.Join(", ", afternoonMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
+                            var assignedUserId = await _userService.GetAssignedUserForCageAsync(cage.Id, tomorrow);
+                            if (assignedUserId != null)
+                            {
+                                taskList.Add(new DataAccessObject.Models.Task
+                                {
+                                    TaskTypeId = taskType.Id,
+                                    CageId = cage.Id,
+                                    AssignedToUserId = assignedUserId.Value,
+                                    CreatedByUserId = null,
+                                    TaskName = $"Uống thuốc (Chiều)",
+                                    Description = $"Điều trị cho  {newPrescription.QuantityAnimal}  con. Thuốc:  {medicationDetails} .",
+                                    PriorityNum = taskType.PriorityNum.Value,
+                                    DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
+                                    Status = TaskStatusEnum.Pending,
+                                    Session = (int)SessionTypeEnum.Afternoon,
+                                    CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                                    PrescriptionId = newPrescription.Id,
+                                    IsTreatmentTask = true
+                                });
+                            }
+                        }
+
+                        // Tạo task cho buổi tối ngày mai nếu có thuốc kê cho tối
+                        if (hasEveningMedication && currentSession >= 4)
+                        {
+                            var eveningMedications = sessionTasks[(int)SessionTypeEnum.Evening];
+                            var medicationDetails = string.Join(", ", eveningMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
+                            var assignedUserId = await _userService.GetAssignedUserForCageAsync(cage.Id, tomorrow);
+                            if (assignedUserId != null)
+                            {
+                                taskList.Add(new DataAccessObject.Models.Task
+                                {
+                                    TaskTypeId = taskType.Id,
+                                    CageId = cage.Id,
+                                    AssignedToUserId = assignedUserId.Value,
+                                    CreatedByUserId = null,
+                                    TaskName = $"Uống thuốc (Tối)",
+                                    Description = $"Điều trị cho {newPrescription.QuantityAnimal} con. Thuốc: {medicationDetails}.",
+                                    PriorityNum = taskType.PriorityNum.Value,
+                                    DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
+                                    Status = TaskStatusEnum.Pending,
+                                    Session = (int)SessionTypeEnum.Evening,
+                                    CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                                    PrescriptionId = newPrescription.Id,
+                                    IsTreatmentTask = true
+                                });
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Kiểm tra có thuốc kê cho buổi sáng, trưa, chiều, tối ngày mai
+                    if (tomorrow < lastDate)
+                    {
+                        // Kiểm tra và tạo task cho buổi sáng ngày mai nếu có thuốc kê cho sáng
+                        if (hasMorningMedication)
+                        {
+                            var morningMedications = sessionTasks[(int)SessionTypeEnum.Morning];
+                            var medicationDetails = string.Join(", ", morningMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
+                            var assignedUserId = await _userService.GetAssignedUserForCageAsync(cage.Id, tomorrow);
+                            if (assignedUserId != null)
+                            {
+                                taskList.Add(new DataAccessObject.Models.Task
+                                {
+                                    TaskTypeId = taskType.Id,
+                                    CageId = cage.Id,
+                                    AssignedToUserId = assignedUserId.Value,
+                                    CreatedByUserId = null,
+                                    TaskName = $"Uống thuốc (Sáng)",
+                                    Description = $"Điều trị cho {newPrescription.QuantityAnimal} con. Thuốc: {medicationDetails}.",
+                                    PriorityNum = taskType.PriorityNum.Value,
+                                    DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
+                                    Status = TaskStatusEnum.Pending,
+                                    Session = (int)SessionTypeEnum.Morning,
+                                    CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                                    PrescriptionId = newPrescription.Id,
+                                    IsTreatmentTask = true
+                                });
+                            }
+                        }
+
+                        // Tạo task cho buổi trưa ngày mai nếu có thuốc kê cho trưa
+                        if (hasNoonMedication)
+                        {
+                            var noonMedications = sessionTasks[(int)SessionTypeEnum.Noon];
+                            var medicationDetails = string.Join(", ", noonMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
+                            var assignedUserId = await _userService.GetAssignedUserForCageAsync(cage.Id, tomorrow);
+                            if (assignedUserId != null)
+                            {
+                                taskList.Add(new DataAccessObject.Models.Task
+                                {
+                                    TaskTypeId = taskType.Id,
+                                    CageId = cage.Id,
+                                    AssignedToUserId = assignedUserId.Value,
+                                    CreatedByUserId = null,
+                                    TaskName = $"Uống thuốc (Trưa)",
+                                    Description = $"Điều trị cho {newPrescription.QuantityAnimal} con. Thuốc: {medicationDetails}.",
+                                    PriorityNum = taskType.PriorityNum.Value,
+                                    DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
+                                    Status = TaskStatusEnum.Pending,
+                                    Session = (int)SessionTypeEnum.Noon,
+                                    CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                                    PrescriptionId = newPrescription.Id,
+                                    IsTreatmentTask = true
+                                });
+                            }
+                        }
+
+                        // Tạo task cho buổi chiều ngày mai nếu có thuốc kê cho chiều
+                        if (hasAfternoonMedication)
+                        {
+                            var afternoonMedications = sessionTasks[(int)SessionTypeEnum.Afternoon];
+                            var medicationDetails = string.Join(", ", afternoonMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
+                            var assignedUserId = await _userService.GetAssignedUserForCageAsync(cage.Id, tomorrow);
+                            if (assignedUserId != null)
+                            {
+                                taskList.Add(new DataAccessObject.Models.Task
+                                {
+                                    TaskTypeId = taskType.Id,
+                                    CageId = cage.Id,
+                                    AssignedToUserId = assignedUserId.Value,
+                                    CreatedByUserId = null,
+                                    TaskName = $"Uống thuốc (Chiều)",
+                                    Description = $"Điều trị cho  {newPrescription.QuantityAnimal}  con. Thuốc:  {medicationDetails} .",
+                                    PriorityNum = taskType.PriorityNum.Value,
+                                    DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
+                                    Status = TaskStatusEnum.Pending,
+                                    Session = (int)SessionTypeEnum.Afternoon,
+                                    CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                                    PrescriptionId = newPrescription.Id,
+                                    IsTreatmentTask = true
+                                });
+                            }
+                        }
+
+                        // Tạo task cho buổi tối ngày mai nếu có thuốc kê cho tối
+                        if (hasEveningMedication)
+                        {
+                            var eveningMedications = sessionTasks[(int)SessionTypeEnum.Evening];
+                            var medicationDetails = string.Join(", ", eveningMedications.Select(m => $"{m.MedicationName} (Số liều: {m.Quantity})"));
+                            var assignedUserId = await _userService.GetAssignedUserForCageAsync(cage.Id, tomorrow);
+                            if (assignedUserId != null)
+                            {
+                                taskList.Add(new DataAccessObject.Models.Task
+                                {
+                                    TaskTypeId = taskType.Id,
+                                    CageId = cage.Id,
+                                    AssignedToUserId = assignedUserId.Value,
+                                    CreatedByUserId = null,
+                                    TaskName = $"Uống thuốc (Tối)",
+                                    Description = $"Điều trị cho {newPrescription.QuantityAnimal} con. Thuốc: {medicationDetails}.",
+                                    PriorityNum = taskType.PriorityNum.Value,
+                                    DueDate = tomorrow.ToDateTime(TimeOnly.MinValue),
+                                    Status = TaskStatusEnum.Pending,
+                                    Session = (int)SessionTypeEnum.Evening,
+                                    CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                                    PrescriptionId = newPrescription.Id,
+                                    IsTreatmentTask = true
+                                });
+                            }
+                        }
+                    }
+                }
+                // Lưu TaskDaily và Task
+                if (taskList.Any())
+                {
+                    await _unitOfWork.Tasks.CreateListAsync(taskList);
+                }
+                await _unitOfWork.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackAsync();
+                throw new Exception($"Failed to create renew prescription: {ex.Message}");
+            }
+        }
+
 
     }
 }

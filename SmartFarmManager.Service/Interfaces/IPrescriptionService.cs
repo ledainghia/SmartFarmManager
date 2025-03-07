@@ -17,5 +17,6 @@ namespace SmartFarmManager.Service.Interfaces
 
         Task<bool> IsLastPrescriptionSessionAsync(Guid prescriptionId);
         Task<bool> UpdatePrescriptionStatusAsync(Guid prescriptionId, UpdatePrescriptionModel request);
+        Task<bool> CreateNewPrescriptionAsync(PrescriptionModel request, Guid medicalSymptomId);
     }
 }
