@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.FarmConfig;
+using SmartFarmManager.Service.BusinessModels.FarmConfig;
 using SmartFarmManager.Service.Interfaces;
 
 namespace SmartFarmManager.API.Controllers
@@ -91,6 +92,19 @@ namespace SmartFarmManager.API.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, ApiResult<string>.Fail("An error occurred while updating farm configuration."));
+            }
+        }
+        [HttpGet("{farmId}")]
+        public async Task<IActionResult> GetFarmConfig(Guid farmId)
+        {
+            try
+            {
+                var farmConfig = await _farmConfigService.GetFarmConfigByFarmIdAsync(farmId);
+                return Ok(ApiResult<FarmConfigItemModel>.Succeed(farmConfig));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
             }
         }
 

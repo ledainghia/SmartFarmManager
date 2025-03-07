@@ -91,6 +91,21 @@ namespace SmartFarmManager.Service.Services
             return true;
         }
 
+        public async Task<FarmConfigItemModel> GetFarmConfigByFarmIdAsync(Guid farmId)
+        {
+            var farmConfig = await _unitOfWork.FarmConfigs.FindByCondition(fc => fc.FarmId == farmId).FirstOrDefaultAsync();
+            if (farmConfig == null)
+            {
+                throw new ArgumentException($"Farm config with FarmId {farmId} not found.");
+            }
+            return new FarmConfigItemModel
+            {
+                FarmId = farmConfig.FarmId,
+                MaxCagesPerStaff = farmConfig.MaxCagesPerStaff,
+                MaxFarmingBatchesPerCage = farmConfig.MaxFarmingBatchesPerCage,               
+            };
+        }
+
 
 
     }

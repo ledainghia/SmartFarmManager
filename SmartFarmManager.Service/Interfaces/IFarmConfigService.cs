@@ -12,5 +12,6 @@ namespace SmartFarmManager.Service.Interfaces
         Task UpdateFarmTimeDifferenceAsync(Guid farmId, DateTime newTime);
         Task ResetTimeDifferenceAsync(Guid farmId);
         Task<bool> UpdateFarmConfigAsync(Guid farmId, FarmConfigUpdateModel model);
+        Task<FarmConfigItemModel> GetFarmConfigByFarmIdAsync(Guid farmId);
     }
 }
