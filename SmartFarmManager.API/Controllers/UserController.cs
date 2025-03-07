@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
+using MimeKit.Utils;
 using Org.BouncyCastle.Security;
 using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.User;
@@ -108,7 +109,8 @@ namespace SmartFarmManager.API.Controllers
         [HttpGet("server-time")]
         public IActionResult GetServerTime()
         {
-            var serverTime = DateTimeOffset.Now.ToOffset(TimeSpan.FromHours(7));
+            //var serverTime = DateTimeOffset.Now.ToOffset(TimeSpan.FromHours(7));
+            var serverTime = DateTimeUtils.GetServerTimeInVietnamTime();
             return Ok(ApiResult<DateTimeOffset>.Succeed(serverTime));
         }
         [HttpGet("check-timezone")]

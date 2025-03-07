@@ -63,6 +63,7 @@ namespace SmartFarmManager.Repository
         public ISensorDataLogRepository SensorDataLogs { get; }
         public IStockLogRepository StockLogs { get; }
         public IEggHarvestRepository EggHarvests { get; }
+        public IFarmConfigRepository FarmConfigs { get; }
         public UnitOfWork(SmartFarmContext context, IUserRepository users,
             ITaskTypeRepository taskTypes,
             ITaskRepository tasks,
@@ -109,7 +110,8 @@ namespace SmartFarmManager.Repository
             ISensorTypeRepository sensorTypes,
             ISensorDataLogRepository sensorDataLogs,
             IStockLogRepository stockLogs,
-            IEggHarvestRepository eggHarvests)
+            IEggHarvestRepository eggHarvests,
+            IFarmConfigRepository farmConfigs)
         {
             _context = context;
             Users = users;
@@ -160,6 +162,7 @@ namespace SmartFarmManager.Repository
             SensorDataLogs = sensorDataLogs;
             StockLogs = stockLogs;
             EggHarvests = eggHarvests;
+            FarmConfigs = farmConfigs;
         }
          
 

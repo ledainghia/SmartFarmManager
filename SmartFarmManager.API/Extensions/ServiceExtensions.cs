@@ -235,6 +235,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<ISensorDataLogRepository,SensorDataLogRepository>();
             services.AddScoped<IStockLogRepository, StockLogRepository>();
             services.AddScoped<IEggHarvestRepository, EggHarvestRepository>();
+            services.AddScoped<IFarmConfigRepository, FarmConfigRepository>();
             return services;
         }
 
@@ -285,7 +286,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IFoodStackService, FoodStackService>();
             services.AddScoped<IStockLogService, StockLogService>();
             services.AddScoped<IEggHarvestService, EggHarvestService>();
-
+            services.AddScoped<IFarmConfigService, FarmConfigService>();
             return services;
         }
 

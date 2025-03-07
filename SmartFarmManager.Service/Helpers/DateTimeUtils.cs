@@ -8,8 +8,14 @@ namespace SmartFarmManager.Service.Helpers
 {
     public static class DateTimeUtils
     {
+
+        private static TimeSpan _timeDifference = TimeSpan.Zero;
         private static readonly TimeZoneInfo VietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
 
+        public static void SetTimeDifference(TimeSpan timeDifference)
+        {
+            _timeDifference = timeDifference;
+        }
         /// <summary>
         /// Chuyển đổi DateTime.UtcNow sang giờ Việt Nam
         /// </summary>
@@ -36,7 +42,10 @@ namespace SmartFarmManager.Service.Helpers
             DateTimeOffset serverTimeOffset = new DateTimeOffset(serverTime, TimeZoneInfo.Local.GetUtcOffset(serverTime));
 
             // Chuyển từ giờ server sang múi giờ Việt Nam
-            return TimeZoneInfo.ConvertTime(serverTimeOffset, VietnamTimeZone).DateTime;
+            DateTime vietnamTime=TimeZoneInfo.ConvertTime(serverTimeOffset, VietnamTimeZone).DateTime;
+
+            vietnamTime = vietnamTime.Add(_timeDifference);
+            return vietnamTime;
         }
     }
 }

@@ -158,6 +158,7 @@ public partial class SmartFarmContext : DbContext
     public virtual DbSet<StandardPrescriptionMedication> StandardPrescriptionMedications { get; set; }
     public virtual DbSet<MasterData> MasterData { get; set; }
     public virtual DbSet<WhitelistDomain> WhitelistDomains { get; set; }
+    public virtual DbSet<FarmConfig> FarmConfigs { get; set; }
 
 
 
@@ -166,6 +167,17 @@ public partial class SmartFarmContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
 
+        modelBuilder.Entity<FarmConfig>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e=>e.MaxCagesPerStaff).HasDefaultValue(5);
+            entity.Property(e => e.MaxFarmingBatchesPerCage).HasDefaultValue(5);
+            entity.Property(e => e.TimeDifference).HasDefaultValue(new TimeSpan(0, 0, 0));
+            entity.HasOne(e => e.Farm)
+            .WithOne(f => f.FarmConfig)
+            .HasForeignKey<FarmConfig>(e => e.FarmId);
+        });
         modelBuilder.Entity<WhitelistDomain>(entity =>
         {
             entity.ToTable("WhitelistDomains");
