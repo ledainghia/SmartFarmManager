@@ -173,7 +173,7 @@ public partial class SmartFarmContext : DbContext
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e=>e.MaxCagesPerStaff).HasDefaultValue(5);
             entity.Property(e => e.MaxFarmingBatchesPerCage).HasDefaultValue(5);
-            entity.Property(e => e.TimeDifference).HasDefaultValue(new TimeSpan(0, 0, 0));
+            entity.Property(e => e.TimeDifferenceInMinutes).HasDefaultValue(0);
             entity.HasOne(e => e.Farm)
             .WithOne(f => f.FarmConfig)
             .HasForeignKey<FarmConfig>(e => e.FarmId);

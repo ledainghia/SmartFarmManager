@@ -35,5 +35,6 @@ namespace SmartFarmManager.API.Controllers
             await _configurationService.UpdateConfigurationAsync(request);
             return Ok(new { Success = true, Message = "Cập nhật cấu hình thành công." });
         }
+
     }
 }
