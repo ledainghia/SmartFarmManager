@@ -111,7 +111,13 @@ namespace SmartFarmManager.API.Controllers
         {
             //var serverTime = DateTimeOffset.Now.ToOffset(TimeSpan.FromHours(7));
             var serverTime = DateTimeUtils.GetServerTimeInVietnamTime();
-            return Ok(ApiResult<DateTimeOffset>.Succeed(serverTime));
+            var currentSession = SessionTime.GetCurrentSession(serverTime.TimeOfDay);
+            var response = new
+            {
+                ServerTime = serverTime,
+                CurrentSession = currentSession
+            };
+            return Ok(ApiResult<object>.Succeed(response));
         }
         [HttpGet("check-timezone")]
         public IActionResult CheckTimeZone()
