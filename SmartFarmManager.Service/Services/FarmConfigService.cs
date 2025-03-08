@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MimeKit.Utils;
 using SmartFarmManager.Repository.Interfaces;
+using SmartFarmManager.Service.BusinessModels.FarmConfig;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using System;
@@ -34,13 +35,13 @@ namespace SmartFarmManager.Service.Services
 
             TimeSpan timeDifference = newTime - currentTime;
 
-            farmConfig.TimeDifference = timeDifference;
+            farmConfig.TimeDifferenceInMinutes = (int)timeDifference.TotalMinutes ;
             farmConfig.LastTimeUpdated = DateTime.UtcNow;
 
             await _unitOfWork.FarmConfigs.UpdateAsync(farmConfig);
             await _unitOfWork.CommitAsync();
 
-            DateTimeUtils.SetTimeDifference(farmConfig.TimeDifference);
+            DateTimeUtils.SetTimeDifference(farmConfig.TimeDifferenceInMinutes);
         }
 
         public async Task ResetTimeDifferenceAsync(Guid farmId)
@@ -50,11 +51,59 @@ namespace SmartFarmManager.Service.Services
             {
                 throw new Exception("Farm configuration not found.");
             }
-            farmConfig.TimeDifference = TimeSpan.Zero;
+            farmConfig.TimeDifferenceInMinutes = 0;
             farmConfig.LastTimeUpdated = DateTime.UtcNow;
             await _unitOfWork.FarmConfigs.UpdateAsync(farmConfig);
             await _unitOfWork.CommitAsync();
-            DateTimeUtils.SetTimeDifference(farmConfig.TimeDifference);
+            DateTimeUtils.SetTimeDifference(farmConfig.TimeDifferenceInMinutes);
+        }
+
+        public async Task<bool> UpdateFarmConfigAsync(Guid farmId, FarmConfigUpdateModel model)
+        {
+            var farmConfig = await _unitOfWork.FarmConfigs.FindByCondition(fc => fc.FarmId == farmId).FirstOrDefaultAsync();
+
+            if (farmConfig == null)
+            {
+                throw new ArgumentException($"Farm config with FarmId {farmId} not found.");
+            }
+
+            if (model.MaxCagesPerStaff.HasValue)
+            {
+                if (model.MaxCagesPerStaff.Value <= 0)
+                {
+                    throw new ArgumentException("MaxCagesPerStaff must be greater than 0.");
+                }
+                farmConfig.MaxCagesPerStaff = model.MaxCagesPerStaff.Value;
+            }
+
+            if (model.MaxFarmingBatchesPerCage.HasValue)
+            {
+                if (model.MaxFarmingBatchesPerCage.Value <= 0)
+                {
+                    throw new ArgumentException("MaxFarmingBatchesPerCage must be greater than 0.");
+                }
+                farmConfig.MaxFarmingBatchesPerCage = model.MaxFarmingBatchesPerCage.Value;
+            }
+            farmConfig.LastTimeUpdated = DateTime.UtcNow;
+            await _unitOfWork.FarmConfigs.UpdateAsync(farmConfig);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
+
+        public async Task<FarmConfigItemModel> GetFarmConfigByFarmIdAsync(Guid farmId)
+        {
+            var farmConfig = await _unitOfWork.FarmConfigs.FindByCondition(fc => fc.FarmId == farmId).FirstOrDefaultAsync();
+            if (farmConfig == null)
+            {
+                throw new ArgumentException($"Farm config with FarmId {farmId} not found.");
+            }
+            return new FarmConfigItemModel
+            {
+                FarmId = farmConfig.FarmId,
+                MaxCagesPerStaff = farmConfig.MaxCagesPerStaff,
+                MaxFarmingBatchesPerCage = farmConfig.MaxFarmingBatchesPerCage,               
+            };
         }
 
 

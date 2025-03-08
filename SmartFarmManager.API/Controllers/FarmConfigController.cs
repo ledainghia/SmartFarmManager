@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.FarmConfig;
+using SmartFarmManager.Service.BusinessModels.FarmConfig;
 using SmartFarmManager.Service.Interfaces;
 
 namespace SmartFarmManager.API.Controllers
@@ -35,6 +36,7 @@ namespace SmartFarmManager.API.Controllers
                 return StatusCode(500, ApiResult<string>.Fail(ex.Message));
             }
         }
+
         [HttpPost("reset-time")]
         public async Task<IActionResult> ResetTime([FromQuery] Guid farmId)
         {
@@ -47,6 +49,58 @@ namespace SmartFarmManager.API.Controllers
             {
                 await _farmConfigService.ResetTimeDifferenceAsync(farmId);
                 return Ok(ApiResult<string>.Succeed("Time difference updated successfully."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+            }
+        }
+
+        [HttpPut("{farmId}")]
+        public async Task<IActionResult> UpdateFarmConfig(Guid farmId, [FromBody] FarmConfigUpdateRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                                               .Select(e => e.ErrorMessage)
+                                               .ToList();
+
+                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
+        {
+            { "Errors", errors.ToArray() }
+        }));
+            }
+
+            try
+            {
+                // Gọi Service để cập nhật Farm Config
+                var result = await _farmConfigService.UpdateFarmConfigAsync(farmId, request.MapToModel());
+
+                if (result)
+                {
+                    return Ok(ApiResult<string>.Succeed("Farm configuration updated successfully."));
+                }
+                else
+                {
+                    return BadRequest(ApiResult<string>.Fail("Failed to update farm configuration."));
+                }
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail("An error occurred while updating farm configuration."));
+            }
+        }
+        [HttpGet("{farmId}")]
+        public async Task<IActionResult> GetFarmConfig(Guid farmId)
+        {
+            try
+            {
+                var farmConfig = await _farmConfigService.GetFarmConfigByFarmIdAsync(farmId);
+                return Ok(ApiResult<FarmConfigItemModel>.Succeed(farmConfig));
             }
             catch (Exception ex)
             {

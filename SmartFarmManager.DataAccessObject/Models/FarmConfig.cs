@@ -12,7 +12,7 @@ namespace SmartFarmManager.DataAccessObject.Models
         public Guid FarmId { get; set; }
         public int MaxCagesPerStaff { get; set; } 
         public int MaxFarmingBatchesPerCage { get; set; } 
-        public TimeSpan TimeDifference { get; set; } 
+        public int TimeDifferenceInMinutes { get; set; } 
         public virtual Farm Farm { get; set; }
         public DateTime LastTimeUpdated { get; set; } 
     }
