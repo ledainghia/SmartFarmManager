@@ -80,12 +80,17 @@ namespace SmartFarmManager.Service.Services
             }
 
             // Check if cage is already assigned
-            var isAssigned = await _unitOfWork.CageStaffs.FindByCondition(cs => cs.CageId == cageId).AnyAsync();
+            var isAssigned = await _unitOfWork.CageStaffs.FindByCondition(cs => cs.CageId == cageId && cs.StaffFarmId==userId).AnyAsync();
             if (isAssigned)
             {
                 return (false, "Cage is already assigned to a staff.");
             }
-
+            var count = await _unitOfWork.CageStaffs.FindByCondition(cs => cs.StaffFarmId == userId).CountAsync();
+            var farmConfig = await _unitOfWork.FarmConfigs.FindAll().FirstOrDefaultAsync();
+            if(count >= farmConfig.MaxCagesPerStaff)
+            {
+                return (false, "Staff has reached the maximum number of cages.");
+            }
             // Assign staff to the cage
             var cageStaff = new CageStaff
             {

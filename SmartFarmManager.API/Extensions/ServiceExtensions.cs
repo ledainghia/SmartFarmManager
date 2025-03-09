@@ -287,6 +287,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IStockLogService, StockLogService>();
             services.AddScoped<IEggHarvestService, EggHarvestService>();
             services.AddScoped<IFarmConfigService, FarmConfigService>();
+            services.AddScoped<IElectricityLogService, ElectricityLogService>();
             return services;
         }
 
