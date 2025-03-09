@@ -457,8 +457,15 @@ namespace SmartFarmManager.Service.Services
                 4 => true,                                                                   // Evening là buổi cuối
                 _ => false
             };
-
-            return isLastSession;
+            if (isLastSession)
+            {
+                var checkListPrescription = await _unitOfWork.Prescription.FindByCondition(p => p.MedicalSymtomId == prescription.MedicalSymtomId && p.Status == PrescriptionStatusEnum.Active).CountAsync();
+                if(checkListPrescription > 1)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
         public async Task<bool> UpdatePrescriptionStatusAsync(Guid prescriptionId, UpdatePrescriptionModel request)
         {
