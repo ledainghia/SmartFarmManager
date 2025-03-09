@@ -64,6 +64,7 @@ namespace SmartFarmManager.Repository
         public IStockLogRepository StockLogs { get; }
         public IEggHarvestRepository EggHarvests { get; }
         public IFarmConfigRepository FarmConfigs { get; }
+        
         public UnitOfWork(SmartFarmContext context, IUserRepository users,
             ITaskTypeRepository taskTypes,
             ITaskRepository tasks,

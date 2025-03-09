@@ -29,8 +29,7 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<bool> CreateFarmingBatchAsync(CreateFarmingBatchModel model)
         {
-            var configService = new SystemConfigurationService();
-            var config = await configService.GetConfigurationAsync();
+            var farmConfig = await _unitOfWork.FarmConfigs.FindAll().FirstOrDefaultAsync();
 
             // Kiểm tra số lần tạo vụ nuôi trong chuồng
             var batchCount = await _unitOfWork.FarmingBatches
@@ -38,9 +37,9 @@ namespace SmartFarmManager.Service.Services
                                (fb.Status == FarmingBatchStatusEnum.Planning ||
                                 fb.Status == FarmingBatchStatusEnum.Active))
         .CountAsync();
-            if (batchCount >= config.MaxFarmingBatchPerCage)
+            if (batchCount >= farmConfig.MaxFarmingBatchesPerCage)
             {
-                throw new InvalidOperationException($"Chuồng này đã đạt số lượng vụ nuôi tối đa ({config.MaxFarmingBatchPerCage}).");
+                throw new InvalidOperationException($"Chuồng này đã đạt số lượng vụ nuôi tối đa ({farmConfig.MaxFarmingBatchesPerCage}).");
             }
 
             await _unitOfWork.BeginTransactionAsync();
