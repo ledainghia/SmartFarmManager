@@ -47,7 +47,7 @@ namespace SmartFarmManager.Service.Services
             var query = _unitOfWork.MedicalSymptom
         .FindAll()
         .Include(p => p.Pictures)
-        .Include(p => p.FarmingBatch)
+        .Include(p => p.FarmingBatch).ThenInclude(p => p.Cage)
         .Include(p => p.Prescriptions).ThenInclude(p => p.PrescriptionMedications).ThenInclude(pm => pm.Medication)
         .Include(p => p.MedicalSymptomDetails).ThenInclude(p => p.Symptom)
         .AsQueryable();
@@ -101,6 +101,7 @@ namespace SmartFarmManager.Service.Services
                 CreateAt = ms.CreateAt,
                 IsEmergency = ms.IsEmergency,
                 QuantityInCage = ms.QuantityInCage,
+                CageAnimalName = ms.FarmingBatch.Cage.Name,
                 Pictures = ms.Pictures.Select(p => new PictureModel
                 {
                     Id = p.Id,
