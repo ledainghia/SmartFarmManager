@@ -176,6 +176,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddRepositories();
             services.AddApplicationServices();
             services.AddConfigurations();
+            
             services.AddQuartzServices();
             services.AddAppHostedService();
             //services.AddMqttClientService(configuration);
@@ -232,6 +233,9 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<ISensorRepository, SensorRepository>();
             services.AddScoped<ISensorTypeRepository, SensorTypeRepository>();
             services.AddScoped<ISensorDataLogRepository,SensorDataLogRepository>();
+            services.AddScoped<IStockLogRepository, StockLogRepository>();
+            services.AddScoped<IEggHarvestRepository, EggHarvestRepository>();
+            services.AddScoped<IFarmConfigRepository, FarmConfigRepository>();
             return services;
         }
 
@@ -276,8 +280,15 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<ICostingService, CostingService>();
             services.AddScoped<IWebhookService, WebhookService>();
             services.AddScoped<IWhitelistDomainService, WhitelistDomainService>();
-
-
+            services.AddScoped<IVaccineScheduleService, VaccineScheduleService>();
+            services.AddScoped<IAnimalSaleService, AnimalSaleService>();
+            services.AddScoped<OTPPhoneService>();
+            services.AddScoped<IFoodStackService, FoodStackService>();
+            services.AddScoped<IStockLogService, StockLogService>();
+            services.AddScoped<IEggHarvestService, EggHarvestService>();
+            services.AddScoped<IFarmConfigService, FarmConfigService>();
+            services.AddScoped<IElectricityLogService, ElectricityLogService>();
+            services.AddScoped<IWaterLogService, WaterLogService>();
             return services;
         }
 
@@ -306,7 +317,6 @@ namespace SmartFarmManager.API.Extensions
                 config.UseMicrosoftDependencyInjectionJobFactory();
             });
 
-            // Đăng ký Job Factory
             services.AddSingleton<IJobFactory, ScopedJobFactory>();
 
             // Đăng ký Scheduler Factory

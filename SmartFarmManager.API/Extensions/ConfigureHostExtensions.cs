@@ -11,7 +11,7 @@
                 .AddJsonFile($"appsetting.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
                 .AddEnvironmentVariables();
             });
-
+            
 
         }
     }

@@ -99,6 +99,46 @@ namespace SmartFarmManager.Service.Services
                 TaskId = log.TaskId
             };
         }
+        public async Task<bool> CreateVaccineLogAsync(CreateVaccineLogRequest request)
+        {
+            // 1️⃣ Tìm VaccineSchedule theo Date, Session, VaccineId
+            var vaccineSchedule = await _unitOfWork.VaccineSchedules
+                .FindByCondition(vs => vs.Date.Value.Date == request.Date.Date &&
+                                       vs.Session == request.Session &&
+                                       vs.VaccineId == request.VaccineId)
+                .FirstOrDefaultAsync();
+
+            if (vaccineSchedule == null)
+                throw new ArgumentException("No matching VaccineSchedule found.");
+
+            // 2️⃣ Lấy thông tin giá vaccine
+            var vaccine = await _unitOfWork.Vaccines.FindByCondition(v => v.Id == request.VaccineId).FirstOrDefaultAsync();
+            if (vaccine == null)
+                throw new ArgumentException("Vaccine not found.");
+
+            // 3️⃣ Tạo log mới trong VaccineScheduleLog
+            var newLog = new VaccineScheduleLog
+            {
+                Id = Guid.NewGuid(),
+                ScheduleId = vaccineSchedule.Id,
+                Date = DateOnly.FromDateTime(request.Date),
+                Notes = request.Notes,
+                Photo = request.Photo,
+                TaskId = request.TaskId
+            };
+
+            await _unitOfWork.VaccineScheduleLogs.CreateAsync(newLog);
+
+            // 4️⃣ Cập nhật VaccineSchedule
+            vaccineSchedule.Status = VaccineScheduleStatusEnum.Completed;
+            vaccineSchedule.Quantity = request.Quantity;
+            vaccineSchedule.ToltalPrice = request.Quantity * (decimal)vaccine.Price;
+
+            await _unitOfWork.VaccineSchedules.UpdateAsync(vaccineSchedule);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
 
     }
 }

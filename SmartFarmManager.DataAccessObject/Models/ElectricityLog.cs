@@ -10,7 +10,8 @@ public partial class ElectricityLog : EntityBase
 
     public Guid FarmId { get; set; }
 
-    public double Data { get; set; }
+    public string Data { get; set; }
+    public decimal TotalConsumption { get; set; }
 
     public DateTime CreatedDate { get; set; }
 

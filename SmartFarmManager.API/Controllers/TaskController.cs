@@ -233,7 +233,7 @@ namespace SmartFarmManager.API.Controllers
         {
             try
             {
-                var result = await _taskService.GenerateTreatmentTasksAsyncV2();
+                var result = await _taskService.GenerateTasksForTomorrowAsync();
 
                 if (!result)
                 {
@@ -320,7 +320,7 @@ namespace SmartFarmManager.API.Controllers
         {
             try
             {
-                await _taskService.UpdateEveningTaskStatusesAsync();
+                await _taskService.UpdateAllTaskStatusesAsync();
                 return Ok(ApiResult<string>.Succeed("Task statuses updated successfully."));
             }
             catch (Exception ex)
@@ -329,6 +329,19 @@ namespace SmartFarmManager.API.Controllers
             }
         }
 
+        [HttpGet("tasks/count-by-status")]
+        public async Task<IActionResult> GetTaskCountByStatus([FromQuery] DateTime startDate,[FromQuery] DateTime endDate,[FromQuery] Guid? assignedToUserId = null,[FromQuery] Guid? farmId = null)
+        {
+            try
+            {
+                var taskCounts = await _taskService.GetTaskCountByStatusAsync(startDate, endDate, assignedToUserId, farmId);
+                return Ok(ApiResult<Dictionary<string, int>>.Succeed(taskCounts));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+            }
+        }
 
     }
 }

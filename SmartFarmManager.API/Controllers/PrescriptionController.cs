@@ -6,6 +6,7 @@ using SmartFarmManager.API.Payloads.Responses.Prescription;
 using SmartFarmManager.Service.BusinessModels.Prescription;
 using SmartFarmManager.Service.BusinessModels.PrescriptionMedication;
 using SmartFarmManager.Service.Interfaces;
+using SmartFarmManager.Service.Services;
 
 namespace SmartFarmManager.API.Controllers
 {
@@ -239,6 +240,54 @@ namespace SmartFarmManager.API.Controllers
                 return StatusCode(500, ApiResult<string>.Fail(ex.Message));
             }
         }
+
+        [HttpGet("{prescriptionId}/is-last-session")]
+        public async Task<IActionResult> CheckLastPrescriptionSession(Guid prescriptionId)
+        {
+            try
+            {
+                var result = await _prescriptionService.IsLastPrescriptionSessionAsync(prescriptionId);
+                return Ok(ApiResult<bool>.Succeed(result));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResult<bool>.Fail(ex.Message));
+            }
+        }
+        [HttpPut("{prescriptionId}/status")]
+        public async Task<IActionResult> UpdatePrescriptionStatus(Guid prescriptionId, [FromBody] UpdatePrescriptionModel request)
+        {
+            try
+            {
+                var result = await _prescriptionService.UpdatePrescriptionStatusAsync(prescriptionId, request);
+                if (!result)
+                    return BadRequest(ApiResult<bool>.Fail("Failed to update prescription status."));
+
+                return Ok(ApiResult<bool>.Succeed(true));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResult<bool>.Fail(ex.Message));
+            }
+        }
+        [HttpPost("{medicalSymptomId}/create-new-prescription")]
+        public async Task<IActionResult> CreateNewPrescription([FromBody] PrescriptionModel request, Guid medicalSymptomId)
+        {
+            try
+            {
+                var result = await _prescriptionService.CreateNewPrescriptionAsync(request, medicalSymptomId);
+
+                if (!result)
+                    return BadRequest(ApiResult<object>.Fail("Failed to create new prescription."));
+
+                return Ok(ApiResult<object>.Succeed("New prescription created successfully."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail($"An error occurred: {ex.Message}"));
+            }
+        }
+
 
     }
 }

@@ -29,7 +29,7 @@ public partial class Farm : EntityBase
     public DateTime? DeletedDate { get; set; }
 
     public string Macaddress { get; set; } // thay long dua 
-
+    public virtual FarmConfig FarmConfig { get; set; }
     public virtual ICollection<ElectricityLog> ElectricityLogs { get; set; } = new List<ElectricityLog>();
 
     public virtual ICollection<FarmAdmin> FarmAdmins { get; set; } = new List<FarmAdmin>();

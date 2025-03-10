@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.MedicalSymptom;
@@ -11,6 +12,7 @@ using SmartFarmManager.Service.BusinessModels.MedicalSymptomDetail;
 using SmartFarmManager.Service.BusinessModels.Picture;
 using SmartFarmManager.Service.BusinessModels.Prescription;
 using SmartFarmManager.Service.BusinessModels.PrescriptionMedication;
+using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 
 namespace SmartFarmManager.API.Controllers
@@ -38,11 +40,12 @@ namespace SmartFarmManager.API.Controllers
             var medicalSymptomModel = new MedicalSymptomModel
             {
                 FarmingBatchId = request.FarmingBatchId,
-                PrescriptionId = request.PrescriptionId,
                 Status = request.Status,
                 AffectedQuantity = request.AffectedQuantity,
+                QuantityInCage = request.QuantityInCage,
+                IsEmergency = request.IsEmergency,
                 Notes = request.Notes,
-                CreateAt = DateTime.UtcNow,
+                CreateAt = DateTimeUtils.GetServerTimeInVietnamTime(),
                 Pictures = request.Pictures.Select(p => new PictureModel
                 {
                     Image = p.Image,
@@ -55,12 +58,29 @@ namespace SmartFarmManager.API.Controllers
                 }).ToList()
             };
 
-            var id = await _medicalSymptomService.CreateMedicalSymptomAsync(medicalSymptomModel);
-            if (id == null)
+            var medicalSymptom = await _medicalSymptomService.CreateMedicalSymptomAsync(medicalSymptomModel);
+            if (medicalSymptom == null)
             {
                 return BadRequest(ApiResult<object>.Fail($"Số lượng vật nuôi bị bệnh lớn hơn sô lượng vật nuôi chuồng hiện có"));
             }
-            return CreatedAtAction(nameof(GetMedicalSymptomById), new { id }, ApiResult<object>.Succeed(new { id }));
+            var response = new MedicalSymptomResponse
+            {
+                Id = medicalSymptom.Id,
+                FarmingBatchId = medicalSymptom.FarmingBatchId,
+                Diagnosis = medicalSymptom.Diagnosis,
+                Status = medicalSymptom.Status,
+                AffectedQuantity = medicalSymptom.AffectedQuantity,
+                Notes = medicalSymptom.Notes,
+                NameAnimal = medicalSymptom.NameAnimal,
+                CreateAt = medicalSymptom.CreateAt,
+                Pictures = medicalSymptom.Pictures.Select(p => new PictureResponse
+                {
+                    Id = p.Id,
+                    Image = p.Image,
+                    DateCaptured = p.DateCaptured
+                }).ToList()
+            };
+            return CreatedAtAction(nameof(GetMedicalSymptomById), new { response.Id }, ApiResult<MedicalSymptomResponse>.Succeed(response));
         }
 
         // GET: api/medical-symptoms/{id}
@@ -131,49 +151,49 @@ namespace SmartFarmManager.API.Controllers
                 return NotFound(ApiResult<object>.Fail("No medical symptoms found."));
             }
 
-            var response = medicalSymptoms.Select(ms => new MedicalSymptomResponse
-            {
-                Id = ms.Id,
-                FarmingBatchId = ms.FarmingBatchId,
-                Diagnosis = ms.Diagnosis,
-                Status = ms.Status,
-                AffectedQuantity = ms.AffectedQuantity,
-                Notes = ms.Notes,
-                Quantity = ms.Quantity,
-                NameAnimal = ms.NameAnimal,
-                CreateAt = ms.CreateAt,
-                Symptoms = ms.Symtom,
-                Pictures = ms.Pictures.Select(p => new PictureResponse
-                {
-                    Id = p.Id,
-                    Image = p.Image,
-                    DateCaptured = p.DateCaptured
-                }).ToList(),
-                Prescriptions = ms.Prescriptions == null ? null : new PrescriptionResponse
-                {
-                    Id = ms.Prescriptions.Id,
-                    PrescribedDate = ms.Prescriptions.PrescribedDate,
-                    Status = ms.Prescriptions.Status,
-                    QuantityAnimal = ms.Prescriptions.QuantityAnimal,
-                    Notes = ms.Prescriptions.Notes,
-                    Price = ms.Prescriptions.Price,
-                    DaysToTake = ms.Prescriptions.DaysToTake,
-                    EndDate = ms.Prescriptions.EndDate,
-                    Medications = ms.Prescriptions.Medications.Select(m => new PrescriptionMedicationResponse
-                    {
-                        MedicationId = m.MedicationId,
-                        MedicationName = m.Medication?.Name,
-                        Morning = m.Morning,
-                        Afternoon = m.Afternoon,
-                        Evening = m.Evening,
-                        Noon = m.Noon,
-                        Notes = m.Notes
-                    }).ToList()
-                },
+            //var response = medicalSymptoms.Select(ms => new MedicalSymptomResponse
+            //{
+            //    Id = ms.Id,
+            //    FarmingBatchId = ms.FarmingBatchId,
+            //    Diagnosis = ms.Diagnosis,
+            //    Status = ms.Status,
+            //    AffectedQuantity = ms.AffectedQuantity,
+            //    Notes = ms.Notes,
+            //    Quantity = ms.Quantity,
+            //    NameAnimal = ms.NameAnimal,
+            //    CreateAt = ms.CreateAt,
+            //    Symptoms = ms.Symtom,
+            //    Pictures = ms.Pictures.Select(p => new PictureResponse
+            //    {
+            //        Id = p.Id,
+            //        Image = p.Image,
+            //        DateCaptured = p.DateCaptured
+            //    }).ToList(),
+            //    Prescriptions = ms.Prescriptions == null ? null : new PrescriptionResponse
+            //    {
+            //        Id = ms.Prescriptions.Id,
+            //        PrescribedDate = ms.Prescriptions.PrescribedDate,
+            //        Status = ms.Prescriptions.Status,
+            //        QuantityAnimal = ms.Prescriptions.QuantityAnimal,
+            //        Notes = ms.Prescriptions.Notes,
+            //        Price = ms.Prescriptions.Price,
+            //        DaysToTake = ms.Prescriptions.DaysToTake,
+            //        EndDate = ms.Prescriptions.EndDate,
+            //        Medications = ms.Prescriptions.Medications.Select(m => new PrescriptionMedicationResponse
+            //        {
+            //            MedicationId = m.MedicationId,
+            //            MedicationName = m.Medication?.Name,
+            //            Morning = m.Morning,
+            //            Afternoon = m.Afternoon,
+            //            Evening = m.Evening,
+            //            Noon = m.Noon,
+            //            Notes = m.Notes
+            //        }).ToList()
+            //    },
 
-            });
+            //});
 
-            return Ok(ApiResult<IEnumerable<MedicalSymptomResponse>>.Succeed(response));
+            return Ok(ApiResult<IEnumerable<GetAllMedicalSymptomModel>>.Succeed(medicalSymptoms));
         }
 
         // PUT: api/medical-symptoms/{id}
@@ -245,7 +265,7 @@ namespace SmartFarmManager.API.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred. Please contact support."));
+                return StatusCode(500, ApiResult<string>.Fail($"An unexpected error occurred. Please contact support. {ex.Message}"));
             }
         }
         // GET: api/medical-symptoms/by-staff-and-batch

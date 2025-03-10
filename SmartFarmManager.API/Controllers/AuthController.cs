@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.Auth;
 using SmartFarmManager.API.Payloads.Responses.Auth;
+using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Service.BusinessModels.Auth;
 using SmartFarmManager.Service.Interfaces;
 using System.IdentityModel.Tokens.Jwt;
@@ -127,7 +128,8 @@ namespace SmartFarmManager.API.Controllers
                     PhoneNumber = userProfile.PhoneNumber,
                     Address = userProfile.Address,
                     Role = userProfile.Role,
-                    CreatedAt = userProfile.CreatedAt
+                    CreatedAt = userProfile.CreatedAt,
+                    ImageUrl = userProfile.ImageUrl
                 };
 
                 return Ok(ApiResult<UserProfileResponse>.Succeed(response));

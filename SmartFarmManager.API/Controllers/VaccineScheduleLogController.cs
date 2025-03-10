@@ -5,6 +5,7 @@ using SmartFarmManager.API.Payloads.Requests.VaccineScheduleLog;
 using SmartFarmManager.API.Payloads.Responses.VaccineScheduleLog;
 using SmartFarmManager.Service.BusinessModels.VaccineScheduleLog;
 using SmartFarmManager.Service.Interfaces;
+using SmartFarmManager.Service.Services;
 
 namespace SmartFarmManager.API.Controllers
 {
@@ -46,7 +47,7 @@ namespace SmartFarmManager.API.Controllers
             if (log == null)
                 return NotFound(ApiResult<string>.Fail("Không tìm thấy log tiêm vắc-xin"));
 
-            var response = new VaccineScheduleLogResponse
+            var response = new Payloads.Responses.VaccineScheduleLog.VaccineScheduleLogResponse
             {
                 Id = log.Id,
                 ScheduleId = log.ScheduleId.Value,
@@ -56,7 +57,7 @@ namespace SmartFarmManager.API.Controllers
                 TaskId = log.TaskId
             };
 
-            return Ok(ApiResult<VaccineScheduleLogResponse>.Succeed(response));
+            return Ok(ApiResult<Payloads.Responses.VaccineScheduleLog.VaccineScheduleLogResponse>.Succeed(response));
         }
 
         [HttpGet("task/{taskId:guid}")]
@@ -67,7 +68,7 @@ namespace SmartFarmManager.API.Controllers
             if (log == null)
                 return NotFound(ApiResult<string>.Fail("Không tìm thấy log tiêm vắc-xin cho TaskId này"));
 
-            var response = new VaccineScheduleLogResponse
+            var response = new Payloads.Responses.VaccineScheduleLog.VaccineScheduleLogResponse
             {
                 Id = log.Id,
                 ScheduleId = log.ScheduleId.Value,
@@ -77,8 +78,33 @@ namespace SmartFarmManager.API.Controllers
                 TaskId = log.TaskId
             };
 
-            return Ok(ApiResult<VaccineScheduleLogResponse>.Succeed(response));
+            return Ok(ApiResult<Payloads.Responses.VaccineScheduleLog.VaccineScheduleLogResponse>.Succeed(response));
         }
+        [HttpPost("vaccine-log/create")]
+        public async Task<IActionResult> CreateVaccineLog([FromBody] CreateVaccineLogRequest request)
+        {
+            try
+            {
+
+                var result = await _vaccineScheduleLogService.CreateVaccineLogAsync(request);
+                return result
+                    ? Ok(ApiResult<string>.Succeed("Vaccine log created successfully."))
+                    : BadRequest(ApiResult<string>.Fail("Failed to create vaccine log."));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ApiResult<string>.Fail(ex.Message)); // Trả về lỗi Conflict nếu trùng lặp
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred. Please contact support."));
+            }
+        }
+
 
     }
 }

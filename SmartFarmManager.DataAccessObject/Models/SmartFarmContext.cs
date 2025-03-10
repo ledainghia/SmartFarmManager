@@ -158,6 +158,7 @@ public partial class SmartFarmContext : DbContext
     public virtual DbSet<StandardPrescriptionMedication> StandardPrescriptionMedications { get; set; }
     public virtual DbSet<MasterData> MasterData { get; set; }
     public virtual DbSet<WhitelistDomain> WhitelistDomains { get; set; }
+    public virtual DbSet<FarmConfig> FarmConfigs { get; set; }
 
 
 
@@ -166,6 +167,17 @@ public partial class SmartFarmContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
 
+        modelBuilder.Entity<FarmConfig>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e=>e.MaxCagesPerStaff).HasDefaultValue(5);
+            entity.Property(e => e.MaxFarmingBatchesPerCage).HasDefaultValue(5);
+            entity.Property(e => e.TimeDifferenceInMinutes).HasDefaultValue(0);
+            entity.HasOne(e => e.Farm)
+            .WithOne(f => f.FarmConfig)
+            .HasForeignKey<FarmConfig>(e => e.FarmId);
+        });
         modelBuilder.Entity<WhitelistDomain>(entity =>
         {
             entity.ToTable("WhitelistDomains");
@@ -554,6 +566,7 @@ public partial class SmartFarmContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__Electric__0B83AE01DB836F69");
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.TotalConsumption).HasColumnType("decimal(10, 2)");
 
             entity.HasOne(d => d.Farm).WithMany(p => p.ElectricityLogs)
                 .HasForeignKey(d => d.FarmId)
@@ -1085,7 +1098,7 @@ public partial class SmartFarmContext : DbContext
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.CostPerKg).HasColumnType("decimal(10, 2)");
-            entity.Property(e => e.NameFood).HasMaxLength(100);
+            entity.Property(e => e.FoodType).HasMaxLength(100);
             entity.Property(e => e.Quantity).HasColumnType("decimal(10, 2)");
 
             entity.HasOne(d => d.Stack).WithMany(p => p.StockLogs)
@@ -1217,6 +1230,7 @@ public partial class SmartFarmContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__VaccineS__9C8A5B49BF96F02B");
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e=>e.ToltalPrice).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasDefaultValue("Chua tiêm");
@@ -1265,7 +1279,7 @@ public partial class SmartFarmContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__WaterLog__C32B73CF24992978");
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-
+            entity.Property(e=>e.TotalConsumption).HasColumnType("decimal(10, 2)");
             entity.HasOne(d => d.Farm).WithMany(p => p.WaterLogs)
                 .HasForeignKey(d => d.FarmId)
                 .OnDelete(DeleteBehavior.ClientSetNull)

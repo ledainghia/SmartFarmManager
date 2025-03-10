@@ -17,8 +17,19 @@ namespace SmartFarmManager.Service.BusinessModels.Auth
         public string Address { get; set; }
         public string Role { get; set; }
         public bool IsActive { get; set; }
+        public string? ImageUrl { get; set; }
         public List<CageModel> Cages { get; set; } = new List<CageModel>();
+        public TaskStatusCountModel TasksCountByStatus { get; set; }
     }
-    
+
+    public class TaskStatusCountModel
+    {
+        public int Pending { get; set; }
+        public int InProgress { get; set; }
+        public int Done { get; set; }
+        public int Overdue { get; set; }
+        public int Cancelled { get; set; }
+    }
+
 
 }

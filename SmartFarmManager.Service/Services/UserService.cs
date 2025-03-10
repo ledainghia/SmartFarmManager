@@ -82,7 +82,8 @@ namespace SmartFarmManager.Service.Services
                 Address = user.Address,
                 Role = user.Role.RoleName,
                 IsActive = user.IsActive ?? false,
-                CreatedAt = user.CreatedAt ?? DateTime.MinValue
+                CreatedAt = user.CreatedAt ?? DateTime.MinValue,
+                ImageUrl = user.ImageURL
             };
         }
 
@@ -256,17 +257,30 @@ namespace SmartFarmManager.Service.Services
         }
         public async Task<BusinessModels.Users.UserModel> CreateUserAsync(UserCreateModel request)
         {
-            var existingUser = await _unitOfWork.Users
-                .FindByCondition(u => u.Username == request.Username)
-                .FirstOrDefaultAsync();
 
-            if (existingUser != null)
-                throw new ArgumentException("Username already exists.");
+            // Kiểm tra Role
+            var role = await _unitOfWork.Roles.FindByCondition(r => r.Id == request.RoleId).FirstOrDefaultAsync();
+            if (role == null)
+                throw new ArgumentException("Invalid Role ID.");
+
+            // Nếu Role là Vet hoặc AdminFarm, chỉ có 1 tài khoản active
+            if (role.RoleName == "Vet" || role.RoleName == "AdminFarm")
+            {
+                var activeUserCount = await _unitOfWork.Users
+                    .FindByCondition(u => u.RoleId == request.RoleId && u.IsActive == true)
+                    .CountAsync();
+
+                if (activeUserCount > 0)
+                    throw new ArgumentException($"{role.RoleName} can only have one active account.");
+            }
+
+            // Tạo Username tự động
+            var username = await GenerateUniqueUsernameAsync(request.FullName);
 
             var newUser = new User
             {
                 Id = Guid.NewGuid(),
-                Username = request.Username,
+                Username = username, // Tạo username mới
                 FullName = request.FullName,
                 Email = request.Email,
                 PhoneNumber = request.PhoneNumber,
@@ -283,7 +297,6 @@ namespace SmartFarmManager.Service.Services
             return new BusinessModels.Users.UserModel
             {
                 Id = newUser.Id,
-                Username = newUser.Username,
                 FullName = newUser.FullName,
                 Email = newUser.Email,
                 PhoneNumber = newUser.PhoneNumber,
@@ -293,6 +306,48 @@ namespace SmartFarmManager.Service.Services
                 RoleId = newUser.RoleId
             };
         }
+
+        private async Task<string> GenerateUniqueUsernameAsync(string fullName)
+        {
+            // 1️⃣ Tách tên thành các phần
+            var nameParts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (nameParts.Length < 2)
+                throw new ArgumentException("Full name must have at least two words.");
+
+            // 2️⃣ Lấy họ cuối cùng
+            string lastName = nameParts[^1];
+
+            // 3️⃣ Lấy chữ cái đầu tiên của tất cả các phần còn lại
+            string initials = string.Join("", nameParts.Take(nameParts.Length - 1).Select(n => n[0]));
+
+            // 4️⃣ Kết hợp lại thành username
+            string usernameBase = RemoveDiacritics(lastName.ToLower() + initials.ToLower());
+
+            // 5️⃣ Kiểm tra số lượng username có cùng tiền tố trong database
+            var existingUsersCount = await _unitOfWork.Users
+                .FindByCondition(u => u.Username.StartsWith(usernameBase))
+                .CountAsync();
+
+            return $"{usernameBase}{existingUsersCount + 1}";
+        }
+
+        private string RemoveDiacritics(string text)
+        {
+            var normalizedString = text.Normalize(NormalizationForm.FormD);
+            var stringBuilder = new StringBuilder();
+
+            foreach (var c in normalizedString)
+            {
+                var unicodeCategory = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c);
+                if (unicodeCategory != System.Globalization.UnicodeCategory.NonSpacingMark)
+                {
+                    stringBuilder.Append(c);
+                }
+            }
+
+            return stringBuilder.ToString().Normalize(NormalizationForm.FormC);
+        }
+
 
         public async Task<bool> UpdateUserAsync(Guid userId, UserUpdateModel request)
         {
@@ -306,6 +361,7 @@ namespace SmartFarmManager.Service.Services
             user.Email = request.Email;
             user.PhoneNumber = request.PhoneNumber;
             user.Address = request.Address;
+            user.ImageURL = request.ImageUrl;
 
             await _unitOfWork.Users.UpdateAsync(user);
             return await _unitOfWork.CommitAsync() > 0;
@@ -368,9 +424,19 @@ namespace SmartFarmManager.Service.Services
                    password.Any(ch => !char.IsLetterOrDigit(ch));
         }
 
-        public async Task<bool?> CheckUserByEmail(string email)
+        public async Task<bool?> CheckUserByEmail(string email, string username)
         {
-            var checkUser = await _unitOfWork.Users.FindByCondition(u => u.Email == email).FirstOrDefaultAsync();
+            var checkUser = await _unitOfWork.Users.FindByCondition(u => u.Email == email && u.Username == username).FirstOrDefaultAsync();
+            if (checkUser == null)
+            {
+                return false;
+            }
+            return true;
+        }
+
+        public async Task<bool?> CheckUserByPhone(string phone, string username)
+        {
+            var checkUser = await _unitOfWork.Users.FindByCondition(u => u.PhoneNumber == phone && u.Username == username).FirstOrDefaultAsync();
             if (checkUser == null)
             {
                 return false;
@@ -459,6 +525,37 @@ namespace SmartFarmManager.Service.Services
                 CreatedAt = user.CreatedAt,
                 RoleId = user.RoleId
             });
+        }
+
+        /// <summary>
+        /// Kiểm tra mật khẩu có đúng không
+        /// </summary>
+        public async Task<bool> VerifyPasswordAsync(UserPasswordRequest request)
+        {
+            var user = await _unitOfWork.Users.FindByCondition(u => u.Id == request.UserId).FirstOrDefaultAsync();
+
+            if (user == null)
+                throw new ArgumentException("User not found.");
+
+            string hashedPassword = SecurityUtil.Hash(request.Password);
+            return user.PasswordHash == hashedPassword;
+        }
+
+        /// <summary>
+        /// Đặt lại mật khẩu mới
+        /// </summary>
+        public async Task<bool> ResetPasswordAsync(UserPasswordRequest request)
+        {
+            var user = await _unitOfWork.Users.FindByCondition(u => u.Id == request.UserId).FirstOrDefaultAsync();
+
+            if (user == null)
+                throw new ArgumentException("User not found.");
+
+            user.PasswordHash = SecurityUtil.Hash(request.Password);
+            await _unitOfWork.Users.UpdateAsync(user);
+            await _unitOfWork.CommitAsync();
+
+            return true;
         }
     }
 }

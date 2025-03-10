@@ -3,8 +3,11 @@ using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Cages;
+using SmartFarmManager.Service.BusinessModels.DailyFoodUsageLog;
 using SmartFarmManager.Service.BusinessModels.FarmingBatch;
+using SmartFarmManager.Service.BusinessModels.Prescription;
 using SmartFarmManager.Service.BusinessModels.Task;
+using SmartFarmManager.Service.BusinessModels.Vaccine;
 using SmartFarmManager.Service.Configuration;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
@@ -26,8 +29,7 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<bool> CreateFarmingBatchAsync(CreateFarmingBatchModel model)
         {
-            var configService = new SystemConfigurationService();
-            var config = await configService.GetConfigurationAsync();
+            var farmConfig = await _unitOfWork.FarmConfigs.FindAll().FirstOrDefaultAsync();
 
             // Kiểm tra số lần tạo vụ nuôi trong chuồng
             var batchCount = await _unitOfWork.FarmingBatches
@@ -35,9 +37,9 @@ namespace SmartFarmManager.Service.Services
                                (fb.Status == FarmingBatchStatusEnum.Planning ||
                                 fb.Status == FarmingBatchStatusEnum.Active))
         .CountAsync();
-            if (batchCount >= config.MaxFarmingBatchPerCage)
+            if (batchCount >= farmConfig.MaxFarmingBatchesPerCage)
             {
-                throw new InvalidOperationException($"Chuồng này đã đạt số lượng vụ nuôi tối đa ({config.MaxFarmingBatchPerCage}).");
+                throw new InvalidOperationException($"Chuồng này đã đạt số lượng vụ nuôi tối đa ({farmConfig.MaxFarmingBatchesPerCage}).");
             }
 
             await _unitOfWork.BeginTransactionAsync();
@@ -219,7 +221,8 @@ namespace SmartFarmManager.Service.Services
                 farmingBatch.StartDate = DateTimeUtils.GetServerTimeInVietnamTime();
 
                 var currentStartDate = farmingBatch.StartDate;
-
+                var ageEndLastGrowthStage = farmingBatch.GrowthStages.Max(gs => gs.AgeEnd);
+                farmingBatch.EndDate = currentStartDate.Value.AddDays(ageEndLastGrowthStage ?? 0);
                 // **Cập nhật GrowthStages**
                 foreach (var stage in farmingBatch.GrowthStages.OrderBy(gs => gs.AgeStart))
                 {
@@ -395,6 +398,7 @@ namespace SmartFarmManager.Service.Services
                     StartDate = fb.StartDate,
                     CompleteAt = fb.CompleteAt,
                     Status = fb.Status,
+                    EndDate=fb.EndDate,
                     CleaningFrequency = fb.CleaningFrequency,
                     Quantity = fb.Quantity,
                     Cage = fb.Cage == null ? null : new CageModel
@@ -457,6 +461,7 @@ namespace SmartFarmManager.Service.Services
                 Status = farmingBatch.Status,
                 CleaningFrequency = farmingBatch.CleaningFrequency,
                 Quantity = farmingBatch.Quantity,
+                AffectedQuantity = farmingBatch?.AffectedQuantity,
             };
         }
 
@@ -496,6 +501,7 @@ namespace SmartFarmManager.Service.Services
                 .Where(fb => fb.Id == farmingBatchId && fb.Status == FarmingBatchStatusEnum.Completed)
                 .Include(fb => fb.Cage)
                 .Include(fb => fb.AnimalSales)
+                    .ThenInclude(a => a.SaleType)
                 .Include(fb => fb.GrowthStages)
                     .ThenInclude(gs => gs.DailyFoodUsageLogs)
                 .Include(fb => fb.GrowthStages)
@@ -550,6 +556,123 @@ namespace SmartFarmManager.Service.Services
                 NetProfit = netProfit
             };
         }
+
+        public async Task<DetailedFarmingBatchReportResponse> GetDetailedFarmingBatchReportAsync(Guid farmingBatchId)
+        {
+            var farmingBatch = await _unitOfWork.FarmingBatches
+                .FindAll()
+                .Where(fb => fb.Id == farmingBatchId && fb.Status == FarmingBatchStatusEnum.Completed)
+                .Include(fb => fb.Cage)
+                .Include(fb => fb.AnimalSales)
+                    .ThenInclude(a => a.SaleType)
+                .Include(fb => fb.GrowthStages)
+                    .ThenInclude(gs => gs.DailyFoodUsageLogs)
+                .Include(fb => fb.GrowthStages)
+                    .ThenInclude(gs => gs.VaccineSchedules)
+                    .ThenInclude(vs => vs.Vaccine)
+                .Include(fb => fb.MedicalSymptoms)
+                    .ThenInclude(ms => ms.Prescriptions)
+                .Include(fb => fb.MedicalSymptoms)
+                    .ThenInclude(ms => ms.MedicalSymptomDetails)
+                    .ThenInclude(msd => msd.Symptom)
+                .Include(fb => fb.MedicalSymptoms)
+                    .ThenInclude(ms => ms.Disease) // ✅ Thêm thông tin bệnh (Disease)
+                .Include(fb => fb.GrowthStages)
+                    .ThenInclude(gs => gs.EggHarvests)
+                .FirstOrDefaultAsync();
+
+            if (farmingBatch == null)
+                return null;
+
+            // Tổng doanh thu bán trứng và thịt
+            var totalEggSales = farmingBatch.AnimalSales
+                .Where(sale => sale.SaleType.StageTypeName == "EggSale")
+                .Sum(sale => sale.UnitPrice * sale.Quantity) ?? 0;
+
+            var totalMeatSales = farmingBatch.AnimalSales
+                .Where(sale => sale.SaleType.StageTypeName == "MeatSale")
+                .Sum(sale => sale.UnitPrice * sale.Quantity) ?? 0;
+
+            // Tổng chi phí thức ăn
+            var totalFoodCost = farmingBatch.GrowthStages
+                .SelectMany(gs => gs.DailyFoodUsageLogs)
+                .Sum(log => (decimal)log.UnitPrice * (log.ActualWeight ?? 0));
+
+            // Tổng chi phí vaccine
+            var totalVaccineCost = farmingBatch.GrowthStages
+                .SelectMany(gs => gs.VaccineSchedules)
+                .Sum(vaccine => vaccine.Quantity * (vaccine.ToltalPrice ?? 0));
+
+            // Tổng chi phí thuốc
+            var totalMedicineCost = farmingBatch.MedicalSymptoms
+                .SelectMany(ms => ms.Prescriptions)
+                .Sum(p => p.Price ?? 0);
+
+            // Tổng số trứng thu hoạch
+            var totalEggsCollected = farmingBatch.GrowthStages
+                .SelectMany(gs => gs.EggHarvests)
+                .Sum(eh => eh.EggCount);
+
+            // Chi tiết vaccine tiêm trong từng giai đoạn
+            var vaccineDetails = farmingBatch.GrowthStages
+                .SelectMany(gs => gs.VaccineSchedules)
+                .Select(vs => new VaccineDetail
+                {
+                    VaccineName = vs.Vaccine.Name,
+                    Quantity = vs.Quantity,
+                    TotalPrice = vs.ToltalPrice ?? 0,
+                    DateAdministered = vs.Date
+                })
+                .ToList();
+
+            // Chi tiết đơn thuốc trong quá trình nuôi
+            var prescriptionDetails = farmingBatch.MedicalSymptoms
+                .Select(ms => new PrescriptionDetail
+                {
+                    PrescriptionId = ms.Prescriptions.FirstOrDefault()?.Id ?? Guid.Empty,
+                    Diagnosis = ms.Diagnosis,
+                    AffectedQuantity = ms.AffectedQuantity ?? 0,
+                    PrescriptionPrice = ms.Prescriptions.Sum(p => p.Price ?? 0),
+                    DiseaseName = ms.Disease != null ? ms.Disease.Name : "Unknown", // ✅ Thêm thông tin bệnh (Disease)
+                    DiseaseDescription = ms.Disease != null ? ms.Disease.Description : "N/A",
+                    Symptoms = ms.MedicalSymptomDetails.Select(msd => msd.Symptom.SymptomName).ToList()
+                })
+                .ToList();
+
+            // Chi tiết loại thức ăn và tổng số ký đã sử dụng
+            var foodUsageDetails = farmingBatch.GrowthStages
+                .SelectMany(gs => gs.DailyFoodUsageLogs)
+                .GroupBy(log => log.Stage.FoodType)
+                .Select(group => new FoodUsageDetail
+                {
+                    FoodType = group.Key,
+                    TotalWeightUsed = group.Sum(log => log.ActualWeight ?? 0)
+                })
+                .ToList();
+
+            // Lợi nhuận ròng
+            var netProfit = ((decimal)totalEggSales + (decimal)totalMeatSales) - (totalFoodCost + (decimal)totalVaccineCost + totalMedicineCost);
+
+            return new DetailedFarmingBatchReportResponse
+            {
+                FarmingBatchId = farmingBatch.Id,
+                FarmingBatchName = farmingBatch.Name,
+                CageName = farmingBatch.Cage.Name,
+                StartDate = farmingBatch.StartDate,
+                EndDate = farmingBatch.CompleteAt,
+                TotalEggSales = (decimal)totalEggSales,
+                TotalMeatSales = (decimal)totalMeatSales,
+                TotalFoodCost = totalFoodCost,
+                TotalVaccineCost = (decimal)totalVaccineCost,
+                TotalMedicineCost = totalMedicineCost,
+                TotalEggsCollected = totalEggsCollected,
+                NetProfit = netProfit,
+                VaccineDetails = vaccineDetails,
+                PrescriptionDetails = prescriptionDetails,
+                FoodUsageDetails = foodUsageDetails
+            };
+        }
+
 
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
+using MimeKit.Utils;
 using Org.BouncyCastle.Security;
 using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.User;
@@ -26,14 +27,16 @@ namespace SmartFarmManager.API.Controllers
         private readonly IUserService _userService;
         private readonly IMemoryCache _cache;
         private readonly EmailService _emailService;
+        private readonly OTPPhoneService _otpPhoneService;
 
-        public UserController(ITaskService taskService, ICageService cageService, IUserService userService, IMemoryCache cache, EmailService emailService)
+        public UserController(ITaskService taskService, ICageService cageService, IUserService userService, IMemoryCache cache, EmailService emailService, OTPPhoneService otpPhoneService)
         {
             _taskService = taskService;
             _cageService = cageService;
             _userService = userService;
             _cache = cache;
             _emailService = emailService;
+            _otpPhoneService = otpPhoneService;
         }
 
         [HttpGet("{userId}/tasks")]
@@ -106,8 +109,15 @@ namespace SmartFarmManager.API.Controllers
         [HttpGet("server-time")]
         public IActionResult GetServerTime()
         {
-            var serverTime = DateTimeOffset.Now.ToOffset(TimeSpan.FromHours(7));
-            return Ok(ApiResult<DateTimeOffset>.Succeed(serverTime));
+            //var serverTime = DateTimeOffset.Now.ToOffset(TimeSpan.FromHours(7));
+            var serverTime = DateTimeUtils.GetServerTimeInVietnamTime();
+            var currentSession = SessionTime.GetCurrentSession(serverTime.TimeOfDay);
+            var response = new
+            {
+                ServerTime = serverTime,
+                CurrentSession = currentSession
+            };
+            return Ok(ApiResult<object>.Succeed(response));
         }
         [HttpGet("check-timezone")]
         public IActionResult CheckTimeZone()
@@ -165,8 +175,23 @@ namespace SmartFarmManager.API.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateUser([FromBody] UserCreateModel request)
         {
-            var user = await _userService.CreateUserAsync(request);
-            return Ok(ApiResult<UserModel>.Succeed(user));
+            try
+            {
+                var user = await _userService.CreateUserAsync(request);
+                return Ok(ApiResult<UserModel>.Succeed(user));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred. Please contact support."));
+            }
         }
 
         [HttpPut("{userId}")]
@@ -230,7 +255,7 @@ namespace SmartFarmManager.API.Controllers
                 var result = ApiResult<Dictionary<string, string[]>>.Fail(new Exception("Invalid email format."));
                 return BadRequest(result);
             }
-            var checkCustomer = await _userService.CheckUserByEmail(request.Email);
+            var checkCustomer = await _userService.CheckUserByEmail(request.Email, request.UserName);
             if (checkCustomer.Value)
             {
                 if (request.IsResend)
@@ -256,6 +281,35 @@ namespace SmartFarmManager.API.Controllers
             }
             return NotFound(ApiResult<Dictionary<string, string[]>>.Fail(new Exception("User is not found")));
         }
+        [HttpPost("otp/sms/send")]
+        public async Task<IActionResult> SendOtpSms([FromBody] SendOptPhoneRequest request)
+        {
+            if (string.IsNullOrEmpty(request.PhoneNumber))
+            {
+                return BadRequest(ApiResult<SendOtpResponse>.Fail(new Exception("Phone number is required.")));
+            }
+            var checkCustomer = await _userService.CheckUserByPhone(request.PhoneNumber, request.UserName);
+            if (checkCustomer.Value)
+            {
+                var otp = new Random().Next(100000, 999999).ToString();
+                _cache.Set(request.PhoneNumber, otp, TimeSpan.FromMinutes(10));
+
+                bool isSent = await _otpPhoneService.SendOtpViaSmsAsync(request.PhoneNumber, otp);
+
+                if (isSent)
+                {
+                    var response = ApiResult<SendOtpResponse>.Succeed(new SendOtpResponse { Message = "OTP sent successfully via SMS." });
+                    return Ok(response);
+                }
+                else
+                {
+                    return BadRequest(ApiResult<SendOtpResponse>.Fail(new Exception("Failed to send OTP via SMS.")));
+                }
+            }
+            return NotFound(ApiResult<Dictionary<string, string[]>>.Fail(new Exception("User is not found")));
+        }
+
+
         //[HttpPost("otp/send")]
         //public async Task<IActionResult> SendOtp([FromBody] SendOtpRequest request)
         //{
@@ -331,6 +385,24 @@ namespace SmartFarmManager.API.Controllers
             }
             return Unauthorized(ApiResult<SendOtpResponse>.Succeed(new SendOtpResponse { Message = "Invalid OTP" }));
         }
+        [HttpPost("otp/sms/verify")]
+        public IActionResult VerifyOtpSms([FromBody] VerifyOtpPhoneRequest request)
+        {
+            if (string.IsNullOrEmpty(request.PhoneNumber))
+            {
+                return BadRequest(ApiResult<SendOtpResponse>.Fail(new Exception("Phone number is required.")));
+            }
+
+            if (_cache.TryGetValue(request.PhoneNumber, out string otp) && otp == request.Otp)
+            {
+                _cache.Remove(request.PhoneNumber); // Xóa OTP sau khi xác thực thành công
+                var response = ApiResult<SendOtpResponse>.Succeed(new SendOtpResponse { Message = "OTP verified successfully via SMS." });
+                return Ok(response);
+            }
+
+            return Unauthorized(ApiResult<SendOtpResponse>.Fail(new Exception("Invalid OTP.")));
+        }
+
 
         [HttpGet]
         public async Task<IActionResult> GetUsers(
@@ -355,6 +427,56 @@ namespace SmartFarmManager.API.Controllers
         {
             var users = await _userService.GetUsersAsync(roleName, isActive, search);
             return Ok(ApiResult<IEnumerable<UserModel>>.Succeed(users));
+        }
+
+        /// <summary>
+        /// Kiểm tra mật khẩu có đúng không
+        /// </summary>
+        [HttpPost("verify-password")]
+        public async Task<IActionResult> VerifyPassword([FromBody] UserPasswordRequest request)
+        {
+            try
+            {
+                bool isValid = await _userService.VerifyPasswordAsync(request);
+                if (!isValid)
+                    return BadRequest(ApiResult<string>.Fail("Incorrect password."));
+
+                return Ok(ApiResult<string>.Succeed("Password is correct."));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+        }
+
+        /// <summary>
+        /// Đặt lại mật khẩu mới
+        /// </summary>
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] UserPasswordRequest request)
+        {
+            try
+            {
+                bool isReset = await _userService.ResetPasswordAsync(request);
+                if (!isReset)
+                    return BadRequest(ApiResult<string>.Fail("Failed to reset password."));
+
+                return Ok(ApiResult<string>.Succeed("Password reset successfully."));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+        }
+        [HttpPost("checkPhoneCall")]
+        public async Task<IActionResult> RequestOtp([FromQuery] string phoneNumber)
+        {
+            //var otp = _otpService.GenerateOtp();
+            var otp = new Random().Next(100000, 999999).ToString();
+            Console.WriteLine(otp);
+            //await _otpService.SaveOtpAsync(model.PhoneNumber, otp, model.UserName);
+            await _otpPhoneService.SendOtpViaSmsAsync(phoneNumber, otp);
+            return Ok(new { message = "OTP sent successfully." });
         }
     }
 }

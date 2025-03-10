@@ -4,27 +4,28 @@ namespace SmartFarmManager.API.Payloads.Requests.Cages
 {
     public class CageFilterPagingRequest
     {
-        public Guid? FarmId { get; set; } // Lọc theo farm
-        public string? AnimalType { get; set; } // Lọc theo loại động vật
-        public string? Name { get; set; } // Tìm kiếm theo tên
-        public bool? BoardStatus { get; set; } // Lọc theo trạng thái board
+        public Guid? FarmId { get; set; }  // Lọc theo FarmId
+        public string? PenCode { get; set; } // Lọc theo PenCode
+        public string? Name { get; set; }  // Lọc theo Name của chuồng
+        public string? SearchKey { get; set; }  // Trường tìm kiếm tổng hợp
+        public int PageNumber { get; set; } = 1;
+        public int PageSize { get; set; } = 20;
         public bool? HasFarmingBatch { get; set; }
-        public int PageNumber { get; set; } = 1; // Số trang (mặc định là 1)
-        public int PageSize { get; set; } = 10; // Số item trên mỗi trang (mặc định là 10)
-
 
         public CageFilterModel MapToModel()
         {
-            return new CageFilterModel()
+            return new CageFilterModel
             {
-                FarmId = this.FarmId,
-                AnimalType = this.AnimalType,
-                Name = this.Name,
-                BoardStatus = this.BoardStatus,
-                HasFarmingBatch = this.HasFarmingBatch,
-                PageNumber = this.PageNumber,
-                PageSize = this.PageSize
+                FarmId = FarmId,
+                PenCode = PenCode,
+                Name = Name,
+                SearchKey = SearchKey,
+                PageNumber = PageNumber,
+                PageSize = PageSize,
+                HasFarmingBatch = HasFarmingBatch
             };
         }
     }
+   
+
 }

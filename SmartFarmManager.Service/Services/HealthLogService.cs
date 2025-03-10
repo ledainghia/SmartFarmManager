@@ -36,41 +36,41 @@ namespace SmartFarmManager.Service.Services
                 .FirstOrDefaultAsync();
             if (prescription == null)
                 return null;
-            // Kiểm tra đơn thuốc có thuốc kê cho các buổi sáng, trưa, chiều, tối hay không
-            var hasMorningMedication = prescription.PrescriptionMedications.Any(m => m.Morning > 0);
-            var hasNoonMedication = prescription.PrescriptionMedications.Any(m => m.Noon > 0);
-            var hasAfternoonMedication = prescription.PrescriptionMedications.Any(m => m.Afternoon > 0);
-            var hasEveningMedication = prescription.PrescriptionMedications.Any(m => m.Evening > 0);
+            //// Kiểm tra đơn thuốc có thuốc kê cho các buổi sáng, trưa, chiều, tối hay không
+            //var hasMorningMedication = prescription.PrescriptionMedications.Any(m => m.Morning > 0);
+            //var hasNoonMedication = prescription.PrescriptionMedications.Any(m => m.Noon > 0);
+            //var hasAfternoonMedication = prescription.PrescriptionMedications.Any(m => m.Afternoon > 0);
+            //var hasEveningMedication = prescription.PrescriptionMedications.Any(m => m.Evening > 0);
 
-            // Lấy thời gian hiện tại
-            var now = DateTimeUtils.GetServerTimeInVietnamTime();
-            var currentTime = now.TimeOfDay;
-            var currentSession = SessionTime.GetCurrentSession(currentTime);
+            //// Lấy thời gian hiện tại
+            //var now = DateTimeUtils.GetServerTimeInVietnamTime();
+            //var currentTime = now.TimeOfDay;
+            //var currentSession = SessionTime.GetCurrentSession(currentTime);
 
-            // Nếu ngày hiện tại trùng với EndDate và là buổi cuối cùng được kê thuốc
-            if (prescription.EndDate.HasValue && now.Date == prescription.EndDate.Value.Date)
-            {
-                var isLastSession = currentSession switch
-                {
-                    1 => !hasNoonMedication && !hasAfternoonMedication && !hasEveningMedication,  // Morning là buổi cuối
-                    2 => !hasAfternoonMedication && !hasEveningMedication,                      // Noon là buổi cuối
-                    3 => !hasEveningMedication,                                                // Afternoon là buổi cuối
-                    4 => true,                                                                 // Evening là buổi cuối
-                    _ => false
-                };
+            //// Nếu ngày hiện tại trùng với EndDate và là buổi cuối cùng được kê thuốc
+            //if (prescription.EndDate.HasValue && now.Date == prescription.EndDate.Value.Date)
+            //{
+            //    var isLastSession = currentSession switch
+            //    {
+            //        1 => !hasNoonMedication && !hasAfternoonMedication && !hasEveningMedication,  // Morning là buổi cuối
+            //        2 => !hasAfternoonMedication && !hasEveningMedication,                      // Noon là buổi cuối
+            //        3 => !hasEveningMedication,                                                // Afternoon là buổi cuối
+            //        4 => true,                                                                 // Evening là buổi cuối
+            //        _ => false
+            //    };
 
-                if (isLastSession)
-                {
-                    // Cập nhật trạng thái Prescription thành Completed
-                    prescription.Status = PrescriptionStatusEnum.Completed;
-                    await _unitOfWork.Prescription.UpdateAsync(prescription);
-                    var farmingBatch = await _unitOfWork.FarmingBatches.FindByCondition(f => f.Id == prescription.MedicalSymtom.FarmingBatchId).FirstOrDefaultAsync();
-                    if (farmingBatch != null) {
-                        farmingBatch.AffectedQuantity -= prescription.QuantityAnimal;
-                        await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatch);
-                    }
-                }
-            }
+            //    if (isLastSession)
+            //    {
+            //        // Cập nhật trạng thái Prescription thành Completed
+            //        prescription.Status = PrescriptionStatusEnum.Completed;
+            //        await _unitOfWork.Prescription.UpdateAsync(prescription);
+            //        var farmingBatch = await _unitOfWork.FarmingBatches.FindByCondition(f => f.Id == prescription.MedicalSymtom.FarmingBatchId).FirstOrDefaultAsync();
+            //        if (farmingBatch != null) {
+            //            farmingBatch.AffectedQuantity -= prescription.QuantityAnimal;
+            //            await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatch);
+            //        }
+            //    }
+            //}
             // Tạo log
             var newLog = new HealthLog
             {

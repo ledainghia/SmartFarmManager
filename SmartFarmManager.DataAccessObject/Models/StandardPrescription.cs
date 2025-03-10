@@ -11,6 +11,7 @@ namespace SmartFarmManager.DataAccessObject.Models
         public Guid DiseaseId { get; set; }
 
         public string Notes { get; set; }
+        public int RecommendDay{ get; set; }
 
         public virtual Disease Disease { get; set; }
 
