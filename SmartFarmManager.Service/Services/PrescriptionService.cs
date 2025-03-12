@@ -298,6 +298,7 @@ namespace SmartFarmManager.Service.Services
                 .FindByCondition(p => p.Id == id)
                 .Include(p => p.PrescriptionMedications)
                 .ThenInclude(pm => pm.Medication)
+                .Include(p => p.MedicalSymtom). ThenInclude(ms => ms.MedicalSymptomDetails). ThenInclude(msd => msd.Symptom)
                 .FirstOrDefaultAsync();
 
             if (prescription == null)
@@ -315,6 +316,8 @@ namespace SmartFarmManager.Service.Services
                 Price = prescription.Price,
                 CageId = prescription.CageId,
                 DaysToTake = prescription.DaysToTake,
+                Symptoms = string.Join(", ", prescription.MedicalSymtom?.MedicalSymptomDetails?.Where(d => d.Symptom != null)
+                            .Select(d => d.Symptom.SymptomName) ?? new List<string>()),
                 Medications = prescription.PrescriptionMedications.Select(pm => new PrescriptionMedicationModel
                 {
                     MedicationId = pm.MedicationId,
