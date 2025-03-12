@@ -1076,6 +1076,82 @@ namespace SmartFarmManager.Service.Services
                 throw new Exception($"Failed to create renew prescription: {ex.Message}");
             }
         }
+        public async Task<PaginatedList<PrescriptionModel>> GetPrescriptionsAsync(
+    DateTime? startDate, DateTime? endDate, string? status, string? cageName, int pageNumber, int pageSize)
+        {
+            var query = _unitOfWork.Prescription
+                .FindAll()
+                .Include(p => p.MedicalSymtom).ThenInclude(ms => ms.FarmingBatch).ThenInclude(fb => fb.Cage)
+                .Include(p => p.PrescriptionMedications)
+                    .ThenInclude(pm => pm.Medication)
+                .AsQueryable();
+
+            // 🔹 Lọc theo ngày kê đơn (PrescribedDate)
+            if (startDate.HasValue)
+            {
+                query = query.Where(p => p.PrescribedDate >= startDate.Value);
+            }
+
+            if (endDate.HasValue)
+            {
+                query = query.Where(p => p.PrescribedDate <= endDate.Value);
+            }
+
+            // 🔹 Lọc theo trạng thái đơn thuốc
+            if (!string.IsNullOrEmpty(status))
+            {
+                query = query.Where(p => p.Status == status);
+            }
+
+            // 🔹 Lọc theo tên chuồng
+            if (!string.IsNullOrEmpty(cageName))
+            {
+                query = query.Where(p => p.MedicalSymtom.FarmingBatch.Cage.Name.Contains(cageName));
+            }
+
+            // 🔹 Đếm tổng số đơn thuốc
+            int totalCount = await query.CountAsync();
+
+            // 🔹 Phân trang
+            var prescriptions = await query
+                .OrderByDescending(p => p.PrescribedDate) // Sắp xếp theo ngày kê đơn mới nhất
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(p => new PrescriptionModel
+                {
+                    Id = p.Id,
+                    RecordId = p.MedicalSymtomId,
+                    CageId = p.CageId,
+                    //CageName = p.Cage.Name,
+                    PrescribedDate = p.PrescribedDate,
+                    EndDate = p.EndDate,
+                    Notes = p.Notes,
+                    QuantityAnimal = p.QuantityAnimal,
+                    RemainingQuantity = p.RemainingQuantity,
+                    Status = p.Status,
+                    DaysToTake = p.DaysToTake,
+                    Price = p.Price,
+                    Medications = p.PrescriptionMedications.Select(pm => new PrescriptionMedicationModel
+                    {
+                        MedicationId = pm.MedicationId,
+                        Medication = new MedicationModel
+                        {
+                            Name = pm.Medication.Name,
+                            UsageInstructions = pm.Medication.UsageInstructions,
+                            Price = pm.Medication.Price,
+                            DoseQuantity = pm.Medication.DoseQuantity
+                        },
+                        Morning = pm.Morning,
+                        Noon = pm.Noon,
+                        Afternoon = pm.Afternoon,
+                        Evening = pm.Evening,
+                        Notes = pm.Notes
+                    }).ToList()
+                })
+                .ToListAsync();
+
+            return new PaginatedList<PrescriptionModel>(prescriptions, totalCount, pageNumber, pageSize);
+        }
 
 
     }

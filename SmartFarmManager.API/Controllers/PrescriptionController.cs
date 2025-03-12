@@ -5,6 +5,7 @@ using SmartFarmManager.API.Payloads.Requests.Prescription;
 using SmartFarmManager.API.Payloads.Responses.Prescription;
 using SmartFarmManager.Service.BusinessModels.Prescription;
 using SmartFarmManager.Service.BusinessModels.PrescriptionMedication;
+using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Services;
 
@@ -282,6 +283,26 @@ namespace SmartFarmManager.API.Controllers
                     return BadRequest(ApiResult<object>.Fail("Failed to create new prescription."));
 
                 return Ok(ApiResult<object>.Succeed("New prescription created successfully."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail($"An error occurred: {ex.Message}"));
+            }
+        }
+
+        [HttpGet("vet")]
+        public async Task<IActionResult> GetPrescriptions(
+    [FromQuery] DateTime? startDate,
+    [FromQuery] DateTime? endDate,
+    [FromQuery] string? status,
+    [FromQuery] string? cageName,
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                var result = await _prescriptionService.GetPrescriptionsAsync(startDate, endDate, status, cageName, pageNumber, pageSize);
+                return Ok(ApiResult<PaginatedList<PrescriptionModel>>.Succeed(result));
             }
             catch (Exception ex)
             {
