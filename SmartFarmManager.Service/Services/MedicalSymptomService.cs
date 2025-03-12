@@ -698,7 +698,7 @@ namespace SmartFarmManager.Service.Services
                         TaskId = firstTask.Id,
                         CageId = cage.Id
                     };
-                    //await notificationService.SendNotification(staffFarm.DeviceId, "Bạn nhận được công việc mới!", notificationStaff);
+                    await notificationService.SendNotification(staffFarm.DeviceId, "Bạn nhận được công việc mới!", notificationStaff);
                     await _unitOfWork.Notifications.CreateAsync(notificationStaff);
                 }
                 return true;
@@ -927,14 +927,14 @@ namespace SmartFarmManager.Service.Services
                     CageId = farmingBatches.CageId
                 };
                 Console.WriteLine($"✅ Tạo noti cho Admin");
-                //await notificationService.SendNotification(vetFarm.DeviceId, "Có báo cáo triệu chứng mới", notificationVet);
-                //Console.WriteLine("✅ Đã gửi thông báo cho Vet.");
+                await notificationService.SendNotification(vetFarm.DeviceId, "Có báo cáo triệu chứng mới", notificationVet);
+                Console.WriteLine("✅ Đã gửi thông báo cho Vet.");
 
-                //await _unitOfWork.Notifications.CreateAsync(notificationVet);
+                await _unitOfWork.Notifications.CreateAsync(notificationVet);
 
 
-                //await notificationService.SendNotification(adminFarm.DeviceId, "Có báo cáo triệu chứng mới", notificationAdmin);
-                //Console.WriteLine("✅ Đã gửi thông báo cho Admin.");
+                await notificationService.SendNotification(adminFarm.DeviceId, "Có báo cáo triệu chứng mới", notificationAdmin);
+                Console.WriteLine("✅ Đã gửi thông báo cho Admin.");
 
                 await _unitOfWork.Notifications.CreateAsync(notificationAdmin);
 
