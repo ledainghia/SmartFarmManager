@@ -29,6 +29,7 @@ namespace SmartFarmManager.Service.BusinessModels.MedicalSymptom
         public string Notes { get; set; }
         public bool IsEmergency { get; set; }
         public int? QuantityInCage { get; set; }
+        public string? CageAnimalName { get; set; }
 
         public virtual ICollection<PictureModel> Pictures { get; set; } = new List<PictureModel>();
 

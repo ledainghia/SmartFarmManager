@@ -52,6 +52,7 @@ namespace SmartFarmManager.API.Controllers
                     Price = prescription.Price,
                     CageId = prescription.CageId,
                     DaysToTake = prescription.DaysToTake,
+                    Symptoms = prescription.Symptoms,
                     Medications = prescription.Medications.Select(m => new PrescriptionMedicationResponse
                     {
                         MedicationId = m.MedicationId,

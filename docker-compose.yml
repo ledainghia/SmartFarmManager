@@ -47,8 +47,6 @@ services:
       - MailSettings__SenderEmail=nguyentruongthinh17022003@gmail.com
       - MailSettings__UserName=nguyentruongthinh17022003@gmail.com
       - MailSettings__PassWord=ngsd qlcf yfli nbfw
-    depends_on:
-      - database
     restart: unless-stopped
 
 volumes:

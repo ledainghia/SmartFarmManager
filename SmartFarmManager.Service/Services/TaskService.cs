@@ -748,7 +748,12 @@ namespace SmartFarmManager.Service.Services
             {
                 return null;
             }
-
+            Prescription? cageAnimal = null;
+            if (task.TaskType.TaskTypeName == "Cho uống thuốc")
+            {
+                cageAnimal = await _unitOfWork.Prescription.FindByCondition(t => t.Id == task.PrescriptionId).Include(p => p.MedicalSymtom).ThenInclude(p => p.FarmingBatch).ThenInclude(p => p.Cage).FirstOrDefaultAsync();
+            }
+            
             // Map Task sang TaskDetailResponse
             return new TaskDetailModel
             {
@@ -765,6 +770,7 @@ namespace SmartFarmManager.Service.Services
                 CreatedAt = task.CreatedAt,
                 IsTreatmentTask = task.IsTreatmentTask,
                 PrescriptionId = task.PrescriptionId,
+                CageAnimalName = task.TaskType.TaskTypeName == "Cho uống thuốc" && cageAnimal != null ? cageAnimal.MedicalSymtom.FarmingBatch.Cage.Name : null,
                 AssignedToUser = new UserResponseModel
                 {
                     UserId = task.AssignedToUser.Id,

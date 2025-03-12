@@ -47,7 +47,7 @@ namespace SmartFarmManager.Service.Services
             var query = _unitOfWork.MedicalSymptom
         .FindAll()
         .Include(p => p.Pictures)
-        .Include(p => p.FarmingBatch)
+        .Include(p => p.FarmingBatch).ThenInclude(p => p.Cage)
         .Include(p => p.Prescriptions).ThenInclude(p => p.PrescriptionMedications).ThenInclude(pm => pm.Medication)
         .Include(p => p.MedicalSymptomDetails).ThenInclude(p => p.Symptom)
         .AsQueryable();
@@ -101,6 +101,7 @@ namespace SmartFarmManager.Service.Services
                 CreateAt = ms.CreateAt,
                 IsEmergency = ms.IsEmergency,
                 QuantityInCage = ms.QuantityInCage,
+                CageAnimalName = ms.FarmingBatch.Cage.Name,
                 Pictures = ms.Pictures.Select(p => new PictureModel
                 {
                     Id = p.Id,
@@ -206,6 +207,7 @@ namespace SmartFarmManager.Service.Services
                 existingSymptom.Diagnosis = updatedModel.Diagnosis;
                 existingSymptom.Status = updatedModel.Status;
                 existingSymptom.Notes = updatedModel.Notes;
+                existingSymptom.IsEmergency = false;
                 var cage = await _unitOfWork.Cages.FindByCondition(c => c.IsDeleted == false && c.IsSolationCage == true).FirstOrDefaultAsync();
                 Guid? newPrescriptionId = null;
                 // Tạo mới Prescription nếu có
@@ -696,7 +698,7 @@ namespace SmartFarmManager.Service.Services
                         TaskId = firstTask.Id,
                         CageId = cage.Id
                     };
-                    //await notificationService.SendNotification(staffFarm.DeviceId, "Bạn nhận được công việc mới!", notificationStaff);
+                    await notificationService.SendNotification(staffFarm.DeviceId, "Bạn nhận được công việc mới!", notificationStaff);
                     await _unitOfWork.Notifications.CreateAsync(notificationStaff);
                 }
                 return true;
@@ -925,14 +927,14 @@ namespace SmartFarmManager.Service.Services
                     CageId = farmingBatches.CageId
                 };
                 Console.WriteLine($"✅ Tạo noti cho Admin");
-                //await notificationService.SendNotification(vetFarm.DeviceId, "Có báo cáo triệu chứng mới", notificationVet);
-                //Console.WriteLine("✅ Đã gửi thông báo cho Vet.");
+                await notificationService.SendNotification(vetFarm.DeviceId, "Có báo cáo triệu chứng mới", notificationVet);
+                Console.WriteLine("✅ Đã gửi thông báo cho Vet.");
 
-                //await _unitOfWork.Notifications.CreateAsync(notificationVet);
+                await _unitOfWork.Notifications.CreateAsync(notificationVet);
 
 
-                //await notificationService.SendNotification(adminFarm.DeviceId, "Có báo cáo triệu chứng mới", notificationAdmin);
-                //Console.WriteLine("✅ Đã gửi thông báo cho Admin.");
+                await notificationService.SendNotification(adminFarm.DeviceId, "Có báo cáo triệu chứng mới", notificationAdmin);
+                Console.WriteLine("✅ Đã gửi thông báo cho Admin.");
 
                 await _unitOfWork.Notifications.CreateAsync(notificationAdmin);
 
