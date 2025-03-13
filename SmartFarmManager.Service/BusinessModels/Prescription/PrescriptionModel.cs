@@ -22,7 +22,7 @@ namespace SmartFarmManager.Service.BusinessModels.Prescription
         public int? DaysToTake { get; set; }
         public DateTime? EndDate { get; set; }
         public string Disease { get; set; }
-
+        public string? CageAnimalName { get; set; }
         public string Symptoms { get; set; }
         public List<PrescriptionMedicationModel> Medications { get; set; }
     }

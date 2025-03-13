@@ -1,4 +1,5 @@
 ﻿using SmartFarmManager.DataAccessObject.Models;
+using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Prescription;
 using SmartFarmManager.Service.Helpers;
 using System;
@@ -19,7 +20,7 @@ namespace SmartFarmManager.Service.Interfaces
         Task<bool> IsLastPrescriptionSessionAsync(Guid prescriptionId);
         Task<bool> UpdatePrescriptionStatusAsync(Guid prescriptionId, UpdatePrescriptionModel request);
         Task<bool> CreateNewPrescriptionAsync(PrescriptionModel request, Guid medicalSymptomId);
-        Task<PaginatedList<PrescriptionModel>> GetPrescriptionsAsync(
+        Task<PagedResult<PrescriptionModel>> GetPrescriptionsAsync(
     DateTime? startDate, DateTime? endDate, string? status, string? cageName, int pageNumber, int pageSize);
         }
 }

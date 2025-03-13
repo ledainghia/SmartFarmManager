@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.Prescription;
 using SmartFarmManager.API.Payloads.Responses.Prescription;
+using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Prescription;
 using SmartFarmManager.Service.BusinessModels.PrescriptionMedication;
 using SmartFarmManager.Service.Helpers;
@@ -302,13 +303,14 @@ namespace SmartFarmManager.API.Controllers
             try
             {
                 var result = await _prescriptionService.GetPrescriptionsAsync(startDate, endDate, status, cageName, pageNumber, pageSize);
-                return Ok(ApiResult<PaginatedList<PrescriptionModel>>.Succeed(result));
+                return Ok(ApiResult<PagedResult<PrescriptionModel>>.Succeed(result));
             }
             catch (Exception ex)
             {
                 return StatusCode(500, ApiResult<string>.Fail($"An error occurred: {ex.Message}"));
             }
         }
+
 
 
     }
