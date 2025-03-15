@@ -1079,7 +1079,7 @@ namespace SmartFarmManager.Service.Services
         }
 
 
-        public async Task<PagedResult<PrescriptionModel>> GetPrescriptionsAsync(
+        public async Task<PagedResult<PrescriptionList>> GetPrescriptionsAsync(
     DateTime? startDate, DateTime? endDate, string? status, string? cageName, int pageNumber, int pageSize)
         {
             var query = _unitOfWork.Prescription
@@ -1124,12 +1124,12 @@ namespace SmartFarmManager.Service.Services
                 .OrderByDescending(p => p.PrescribedDate) // Sắp xếp theo ngày kê đơn mới nhất
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
-                .Select(p => new PrescriptionModel
+                .Select(p => new PrescriptionList
                 {
                     Id = p.Id,
                     RecordId = p.MedicalSymtomId,
                     CageId = p.CageId,
-                    //CageName = p.MedicalSymtom.FarmingBatch.Cage.Name,
+                    QuantityInCage = p.MedicalSymtom.QuantityInCage,
                     PrescribedDate = p.PrescribedDate,
                     EndDate = p.EndDate,
                     Notes = p.Notes,
@@ -1161,7 +1161,7 @@ namespace SmartFarmManager.Service.Services
         .ToListAsync();
 
             // 🔹 Trả về dữ liệu dạng PagedResult<T>
-            return new PagedResult<PrescriptionModel>
+            return new PagedResult<PrescriptionList>
             {
                 Items = prescriptions,
                 TotalItems = totalCount,

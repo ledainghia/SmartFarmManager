@@ -330,7 +330,7 @@ namespace SmartFarmManager.API.Controllers
             try
             {
                 var result = await _prescriptionService.GetPrescriptionsAsync(startDate, endDate, status, cageName, pageNumber, pageSize);
-                return Ok(ApiResult<PagedResult<PrescriptionModel>>.Succeed(result));
+                return Ok(ApiResult<PagedResult<PrescriptionList>>.Succeed(result));
             }
             catch (Exception ex)
             {

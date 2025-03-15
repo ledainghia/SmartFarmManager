@@ -20,7 +20,7 @@ namespace SmartFarmManager.Service.Interfaces
         Task<bool> IsLastPrescriptionSessionAsync(Guid prescriptionId);
         Task<bool> UpdatePrescriptionStatusAsync(Guid prescriptionId, UpdatePrescriptionModel request);
         Task<bool> CreateNewPrescriptionAsync(PrescriptionModel request, Guid medicalSymptomId);
-        Task<PagedResult<PrescriptionModel>> GetPrescriptionsAsync(
+        Task<PagedResult<PrescriptionList>> GetPrescriptionsAsync(
     DateTime? startDate, DateTime? endDate, string? status, string? cageName, int pageNumber, int pageSize);
         Task<List<PrescriptionModel>> GetPrescriptionsHistoryAsync(Guid medicalSymptomId);
         }
