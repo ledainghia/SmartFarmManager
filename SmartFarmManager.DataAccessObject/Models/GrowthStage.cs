@@ -14,6 +14,7 @@ public partial class GrowthStage : EntityBase
     public string Name { get; set; }
 
     public decimal? WeightAnimal { get; set; }
+    public decimal? WeightAnimalExpect { get; set; }
 
     public int? Quantity { get; set; }
     public int? AgeStart { get; set; }

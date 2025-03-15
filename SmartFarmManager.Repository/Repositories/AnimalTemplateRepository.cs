@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace SmartFarmManager.Repository.Repositories
 {
-    public class AnimalTemplateRepository : RepositoryBaseAsync<AnimalTemplate>, IAnimalTemplateRepository
+    public class AnimalTemplateRepository : RepositoryBaseAsync<ChickenTemplate>, IAnimalTemplateRepository
     {
         public AnimalTemplateRepository(SmartFarmContext dbContext) : base(dbContext)
         {

@@ -54,7 +54,7 @@ public partial class SmartFarmContext : DbContext
 
     public virtual DbSet<AnimalSale> AnimalSales { get; set; }
 
-    public virtual DbSet<AnimalTemplate> AnimalTemplates { get; set; }
+    public virtual DbSet<ChickenTemplate> AnimalTemplates { get; set; }
 
     public virtual DbSet<Cage> Cages { get; set; }
 
@@ -440,7 +440,7 @@ public partial class SmartFarmContext : DbContext
           .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<AnimalTemplate>(entity =>
+        modelBuilder.Entity<ChickenTemplate>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__AnimalTe__F87ADD27AE731EF5");
 
