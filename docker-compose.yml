@@ -14,7 +14,11 @@ services:
     deploy:
       resources:
         limits:
+          cpus: '1'
           memory: 1.5g
+        reservations:
+          cpus: '0.5'
+          memory: 1g
   backend:
     build:
       context: .
