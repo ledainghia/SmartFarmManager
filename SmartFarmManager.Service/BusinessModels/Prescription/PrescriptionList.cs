@@ -25,6 +25,7 @@ namespace SmartFarmManager.Service.BusinessModels.Prescription
         public string? CageAnimalName { get; set; }
         public string Symptoms { get; set; }
         public int? QuantityInCage { get; set; }
+        public string NameAnimal { get; set; }
         public List<PrescriptionMedicationModel> Medications { get; set; }
     }
 }

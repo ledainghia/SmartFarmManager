@@ -1141,6 +1141,7 @@ namespace SmartFarmManager.Service.Services
                     Symptoms = string.Join(", ", p.MedicalSymtom.MedicalSymptomDetails.Select(d => d.Symptom.SymptomName)),
                     CageAnimalName = p.MedicalSymtom.FarmingBatch.Cage.Name,
                     Disease = p.MedicalSymtom.Diagnosis,
+                    NameAnimal = p.MedicalSymtom.FarmingBatch.Name,
                     Medications = p.PrescriptionMedications.Select(pm => new PrescriptionMedicationModel
                     {
                         MedicationId = pm.MedicationId,
