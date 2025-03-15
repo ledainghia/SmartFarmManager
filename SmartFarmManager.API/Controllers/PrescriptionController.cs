@@ -339,6 +339,22 @@ namespace SmartFarmManager.API.Controllers
         }
 
 
+        [HttpGet("{medicalSymptomId}/prescriptions-history")]
+        public async Task<IActionResult> GetPrescriptionsHistory(Guid medicalSymptomId)
+        {
+            try
+            {
+                var result = await _prescriptionService.GetPrescriptionsHistoryAsync(medicalSymptomId);
 
+                if (result == null || !result.Any())
+                    return NotFound(ApiResult<List<PrescriptionModel>>.Fail("No prescription history found."));
+
+                return Ok(ApiResult<List<PrescriptionModel>>.Succeed(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail($"An error occurred: {ex.Message}"));
+            }
+        }
     }
 }
