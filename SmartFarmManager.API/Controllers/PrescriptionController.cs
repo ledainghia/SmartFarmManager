@@ -274,11 +274,38 @@ namespace SmartFarmManager.API.Controllers
             }
         }
         [HttpPost("{medicalSymptomId}/create-new-prescription")]
-        public async Task<IActionResult> CreateNewPrescription([FromBody] PrescriptionModel request, Guid medicalSymptomId)
+        public async Task<IActionResult> CreateNewPrescription([FromBody] CreateNewPrescriptionRequest request, Guid medicalSymptomId)
         {
             try
             {
-                var result = await _prescriptionService.CreateNewPrescriptionAsync(request, medicalSymptomId);
+                if (request == null)
+                    return BadRequest(ApiResult<object>.Fail("Invalid request data."));
+
+                // Chuyển đổi từ CreatePrescriptionRequest sang PrescriptionModel
+                var prescriptionModel = new PrescriptionModel
+                {
+                    Id = Guid.NewGuid(),
+                    RecordId = request.RecordId,
+                    CageId = request.CageId,
+                    PrescribedDate = request.PrescribedDate,
+                    Notes = request.Notes,
+                    QuantityAnimal = request.QuantityAnimal,
+                    Status = request.Status,
+                    DaysToTake = request.DaysToTake,
+                    Disease = request.Disease,
+                    CageAnimalName = request.CageAnimalName,
+                    Symptoms = request.Symptoms,
+                    Medications = request.Medications?.Select(m => new PrescriptionMedicationModel
+                    {
+                        MedicationId = m.MedicationId,
+                        Morning = m.Morning,
+                        Afternoon = m.Afternoon,
+                        Evening = m.Evening,
+                        Noon = m.Noon,
+                        Notes = m.Notes
+                    }).ToList() ?? new List<PrescriptionMedicationModel>()
+                };
+                var result = await _prescriptionService.CreateNewPrescriptionAsync(prescriptionModel, medicalSymptomId);
 
                 if (!result)
                     return BadRequest(ApiResult<object>.Fail("Failed to create new prescription."));

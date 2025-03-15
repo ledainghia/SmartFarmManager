@@ -1172,5 +1172,59 @@ namespace SmartFarmManager.Service.Services
                 HasPreviousPage = pageNumber > 1
             };
         }
+
+        public async Task<List<PrescriptionModel>> GetPrescriptionsHistoryAsync(Guid medicalSymptomId)
+        {
+            // 🔹 Lấy triệu chứng để truy xuất farmingBatchId
+            var medicalSymptom = await _unitOfWork.MedicalSymptom
+                .FindByCondition(ms => ms.Id == medicalSymptomId)
+                .Include(ms => ms.FarmingBatch)
+                .FirstOrDefaultAsync();
+
+            if (medicalSymptom == null)
+                throw new ArgumentException("Medical symptom not found.");
+
+            var farmingBatchId = medicalSymptom.FarmingBatchId;
+
+            // 🔹 Lấy tất cả các đơn thuốc từ vụ nuôi đó (ngoại trừ trạng thái Cancelled)
+            var prescriptions = await _unitOfWork.Prescription
+                .FindByCondition(p => p.MedicalSymtom.FarmingBatchId == farmingBatchId && p.Status != PrescriptionStatusEnum.Cancelled)
+                .Include(p => p.PrescriptionMedications)
+                    .ThenInclude(pm => pm.Medication)
+                .Include(p => p.MedicalSymtom)
+                    .ThenInclude(ms => ms.Disease) // Lấy bệnh liên quan
+                .ToListAsync();
+
+            // 🔹 Chuyển đổi dữ liệu sang PrescriptionModel
+            return prescriptions.Select(p => new PrescriptionModel
+            {
+                Id = p.Id,
+                PrescribedDate = p.PrescribedDate,
+                Status = p.Status,
+                QuantityAnimal = p.QuantityAnimal,
+                Notes = p.Notes,
+                Price = p.Price,
+                DaysToTake = p.DaysToTake,
+                EndDate = p.EndDate,
+                Medications = p.PrescriptionMedications.Select(pm => new PrescriptionMedicationModel
+                {
+                    MedicationId = pm.MedicationId,
+                    Morning = pm.Morning,
+                    Afternoon = pm.Afternoon,
+                    Evening = pm.Evening,
+                    Noon = pm.Noon,
+                    Notes = pm.Notes,
+                    Medication = new MedicationModel
+                    {
+                        Name = pm.Medication.Name,
+                        UsageInstructions = pm.Medication.UsageInstructions,
+                        Price = pm.Medication.Price,
+                        DoseQuantity = pm.Medication.DoseQuantity
+                    }
+                }).ToList(),
+                Disease = p.MedicalSymtom.Diagnosis
+            }).ToList();
+        }
+
     }
 }
