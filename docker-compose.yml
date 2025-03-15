@@ -15,7 +15,6 @@ services:
       resources:
         limits:
           memory: 1.5g
-
   backend:
     build:
       context: .
@@ -48,6 +47,13 @@ services:
       - MailSettings__UserName=nguyentruongthinh17022003@gmail.com
       - MailSettings__PassWord=ngsd qlcf yfli nbfw
     restart: unless-stopped
-
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4g
+        reservations:
+          cpus: '0.5'
+          memory: 1g
 volumes:
   sql_data:
