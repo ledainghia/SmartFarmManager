@@ -12,5 +12,6 @@ namespace SmartFarmManager.Service.Shared
         public const string Completed = "Completed";
         public const string Cancelled = "Cancelled";
         public const string Dead = "Dead";
+        public const string Stop = "Stop";
     }
 }
