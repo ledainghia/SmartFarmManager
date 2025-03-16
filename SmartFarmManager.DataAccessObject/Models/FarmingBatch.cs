@@ -15,7 +15,7 @@ public partial class FarmingBatch : EntityBase
     public string Name { get; set; }
     public DateTime? StartDate { get; set; } // Ngày vụ nuôi băt đầu
     public DateTime? CompleteAt { get; set; } // Ngày vụ nuôi hoàn thành
-    public DateTime? EstimatedTime { get; set; } // Thời gian dự kiến
+    public DateTime? EstimatedTimeStart { get; set; } // Thời gian dự kiến
     public DateTime? EndDate { get; set; } // Ngày kết thúc dự kiến
     public string Status { get; set; }
 
@@ -33,5 +33,5 @@ public partial class FarmingBatch : EntityBase
 
     public virtual ICollection<MedicalSymptom> MedicalSymptoms { get; set; } = new List<MedicalSymptom>();
 
-    public virtual ChickenTemplate Template { get; set; }
+    public virtual AnimalTemplate Template { get; set; }
 }

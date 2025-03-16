@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SmartFarmManager.Repository.Interfaces
 {
-    public interface IAnimalTemplateRepository:IRepositoryBaseAsync<ChickenTemplate>
+    public interface IAnimalTemplateRepository:IRepositoryBaseAsync<AnimalTemplate>
     {
     }
 }

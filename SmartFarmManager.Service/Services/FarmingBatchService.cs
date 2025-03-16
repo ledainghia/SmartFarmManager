@@ -42,24 +42,52 @@ namespace SmartFarmManager.Service.Services
                 throw new InvalidOperationException($"Chuồng này đã đạt số lượng vụ nuôi tối đa ({farmConfig.MaxFarmingBatchesPerCage}).");
             }
 
+            var animalTemplate = await _unitOfWork.AnimalTemplates
+                   .FindByCondition(a => a.Id == model.TemplateId && a.Status == "Active")
+                   .Include(a => a.GrowthStageTemplates)
+                   .ThenInclude(gst => gst.TaskDailyTemplates)
+                   .Include(a => a.GrowthStageTemplates)
+                   .ThenInclude(gst => gst.FoodTemplates)
+                   .Include(a => a.VaccineTemplates)
+                   .FirstOrDefaultAsync();
+
+            if (animalTemplate == null)
+            {
+                throw new ArgumentException($"Animal template with ID {model.TemplateId} does not exist or is inactive.");
+            }
+
+            var ageEndMax = animalTemplate.GrowthStageTemplates.Max(gst => gst.AgeEnd);
+            var estimatedTimeEnd = model.EstimatedTimeStart.Value.AddDays(ageEndMax ?? 0);  
+
+            var existingBatch = await _unitOfWork.FarmingBatches
+                .FindByCondition(fb => fb.CageId == model.CageId &&
+                                        fb.Status != FarmingBatchStatusEnum.Completed &&
+                                        fb.EstimatedTimeStart.HasValue &&
+                                        fb.EndDate.HasValue &&
+                                        (
+                                            // Vụ nuôi mới bắt đầu trước và kết thúc sau vụ nuôi cũ
+                                            (fb.EstimatedTimeStart.Value.Date <= model.EstimatedTimeStart.Value.Date && fb.EndDate.Value.Date >= estimatedTimeEnd.Date) ||
+
+                                            // Vụ nuôi mới bắt đầu trong khoảng thời gian vụ nuôi cũ
+                                            (fb.EstimatedTimeStart.Value.Date <= model.EstimatedTimeStart.Value.Date && fb.EndDate.Value.Date >= model.EstimatedTimeStart.Value.Date) ||
+
+                                            // Vụ nuôi mới kết thúc trong khoảng thời gian vụ nuôi cũ
+                                            (fb.EstimatedTimeStart.Value.Date <= estimatedTimeEnd.Date && fb.EndDate.Value.Date >= estimatedTimeEnd.Date)
+                                        ))
+                .FirstOrDefaultAsync();
+            if (existingBatch != null)
+            {
+                throw new InvalidOperationException($"Đã có vụ nuôi khác trong khoảng thời gian đã chọn.");
+            }
+
+
+
             await _unitOfWork.BeginTransactionAsync();
 
             try
             {
 
-                var animalTemplate = await _unitOfWork.AnimalTemplates
-                    .FindByCondition(a => a.Id == model.TemplateId && a.Status == "Active")
-                    .Include(a => a.GrowthStageTemplates)
-                    .ThenInclude(gst => gst.TaskDailyTemplates)
-                    .Include(a => a.GrowthStageTemplates)
-                    .ThenInclude(gst => gst.FoodTemplates)
-                    .Include(a => a.VaccineTemplates)
-                    .FirstOrDefaultAsync();
-
-                if (animalTemplate == null)
-                {
-                    throw new ArgumentException($"Animal template with ID {model.TemplateId} does not exist or is inactive.");
-                }
+               
 
                 var cage = await _unitOfWork.Cages.FindAsync(x => x.Id == model.CageId && !x.IsDeleted);
                 if (cage == null)
@@ -69,6 +97,7 @@ namespace SmartFarmManager.Service.Services
 
                 var farmingBatch = new FarmingBatch
                 {
+                    FarmingBatchCode = GenerateFarmingBatchCode(model.TemplateId,(DateTime)model.EstimatedTimeStart),
                     TemplateId = model.TemplateId,
                     CageId = model.CageId,
                     Name = model.Name,
@@ -76,6 +105,8 @@ namespace SmartFarmManager.Service.Services
                     Quantity = model.Quantity,
                     FarmId = cage.FarmId,
                     Status = FarmingBatchStatusEnum.Planning,
+                    EstimatedTimeStart = model.EstimatedTimeStart,
+                    EndDate = estimatedTimeEnd,
                     StartDate = null // StartDate sẽ được cập nhật sau khi chuyển trạng thái
                 };
 
@@ -88,6 +119,7 @@ namespace SmartFarmManager.Service.Services
                         FarmingBatchId = farmingBatch.Id,
                         Name = template.StageName,
                         WeightAnimal = template.WeightAnimal,
+                        WeightAnimalExpect = template.WeightAnimal,
                         AgeStart = template.AgeStart,
                         AgeEnd = template.AgeEnd,
                         FoodType = template.FoodTemplates.FirstOrDefault()?.FoodType,
@@ -170,6 +202,35 @@ namespace SmartFarmManager.Service.Services
         }
 
 
+        public string GenerateFarmingBatchCode(Guid templateId, DateTime estimatedTime)
+        {
+            // Lấy phần đầu của TemplateId (hoặc bạn có thể lấy tên template)
+            string templatePart = $"Template{templateId.ToString().Substring(0, 3)}"; // Lấy 3 ký tự đầu của TemplateId
+
+            // Lấy ngày dự kiến bắt đầu, định dạng: yyyyMMdd
+            string datePart = estimatedTime.ToString("yyyyMMdd");
+
+            // Sinh mã random (kết hợp chữ và số)
+            string randomPart = GenerateRandomString(6); // Sinh chuỗi random 6 ký tự (hoặc độ dài bạn muốn)
+
+            // Ghép các phần lại để tạo FarmingBatchCode
+            return $"FM-{templatePart}-{datePart}-{randomPart}";
+        }
+
+        // Phương thức sinh chuỗi ngẫu nhiên gồm 6 ký tự (chữ và số)
+        private string GenerateRandomString(int length)
+        {
+            const string validChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"; // Các ký tự hợp lệ
+            Random random = new Random();
+            char[] randomChars = new char[length];
+
+            for (int i = 0; i < length; i++)
+            {
+                randomChars[i] = validChars[random.Next(validChars.Length)];
+            }
+
+            return new string(randomChars);
+        }
 
 
         public async Task<bool> UpdateFarmingBatchStatusAsync(Guid farmingBatchId, string newStatus)

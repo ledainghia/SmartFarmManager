@@ -17,5 +17,5 @@ public partial class VaccineTemplate : EntityBase
     public int? ApplicationAge { get; set; }
     public int Session { get; set; }
 
-    public virtual ChickenTemplate Template { get; set; }
+    public virtual AnimalTemplate Template { get; set; }
 }

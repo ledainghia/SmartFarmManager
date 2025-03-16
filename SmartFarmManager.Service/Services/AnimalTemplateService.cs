@@ -38,7 +38,7 @@ namespace SmartFarmManager.Service.Services
             }
 
             // 3. Create Animal Template
-            var newTemplate = new ChickenTemplate
+            var newTemplate = new AnimalTemplate
             {
                 Name = model.Name,
                 Species = model.Species,

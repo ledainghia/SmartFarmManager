@@ -54,7 +54,7 @@ public partial class SmartFarmContext : DbContext
 
     public virtual DbSet<AnimalSale> AnimalSales { get; set; }
 
-    public virtual DbSet<ChickenTemplate> AnimalTemplates { get; set; }
+    public virtual DbSet<AnimalTemplate> AnimalTemplates { get; set; }
 
     public virtual DbSet<Cage> Cages { get; set; }
 
@@ -440,7 +440,7 @@ public partial class SmartFarmContext : DbContext
           .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<ChickenTemplate>(entity =>
+        modelBuilder.Entity<AnimalTemplate>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__AnimalTe__F87ADD27AE731EF5");
 
@@ -727,6 +727,7 @@ public partial class SmartFarmContext : DbContext
             entity.Property(e => e.AgeStartDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.WeightAnimalExpect).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.Name).HasMaxLength(50);
             entity.Property(e => e.RecommendedWeightPerSession).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.WeightAnimal).HasColumnType("decimal(10, 2)");

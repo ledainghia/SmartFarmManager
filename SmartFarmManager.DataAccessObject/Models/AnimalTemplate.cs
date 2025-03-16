@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace SmartFarmManager.DataAccessObject.Models;
 
-public partial class ChickenTemplate
+public partial class AnimalTemplate
     : EntityBase
 {
 
