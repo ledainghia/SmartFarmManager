@@ -548,6 +548,10 @@ namespace SmartFarmManager.Service.Services
                     .OrderByDescending(p => p.PrescribedDate)
                     .FirstOrDefault();
 
+                if(activePrescription.QuantityAnimal < request.Prescriptions.QuantityAnimal)
+                {
+                    return false;
+                }
                 if (activePrescription != null)
                 {
                     // 🔹 Tính lại tổng số liều đã uống
@@ -595,6 +599,10 @@ namespace SmartFarmManager.Service.Services
                     activePrescription.Price = totalCost;
                     activePrescription.RemainingQuantity = request.Prescriptions.QuantityAnimal;
                     await _unitOfWork.Prescription.UpdateAsync(activePrescription);
+
+                    medicalSymptom.Diagnosis += request.Diagnosis;
+                    medicalSymptom.Notes += request.Notes;
+                    await _unitOfWork.MedicalSymptom.UpdateAsync(medicalSymptom);
                 }
                 var tasksToUpdate = await _unitOfWork.Tasks
                 .FindByCondition(t =>
