@@ -12,11 +12,14 @@ namespace SmartFarmManager.Service.BusinessModels.FarmingBatch
     public class FarmingBatchModel
     {
         public Guid Id { get; set; }
+        public string FarmingbatchCode { get; set; }
         public string Name { get; set; }
         public string Species { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? CompleteAt { get; set; }
+        public DateTime? EstimatedTimeStart { get; set; }
         public DateTime? EndDate { get; set; }
+
         public string Status { get; set; }
         public int CleaningFrequency { get; set; }
         public int? Quantity { get; set; }

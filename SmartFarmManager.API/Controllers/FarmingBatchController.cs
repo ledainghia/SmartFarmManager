@@ -64,7 +64,35 @@ namespace SmartFarmManager.API.Controllers
             }
         }
 
+        [HttpPost("create-multi-cage")]
+        public async Task<IActionResult> CreateFarmingBatchMultiCage([FromBody] CreateFarmingBatchMultiCageRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
 
+                return BadRequest(new { Errors = errors });
+            }
+
+            try
+            {
+                var result = await _farmingBatchService.CreateFarmingBatchMultiCageAsync(request.MapToModel());
+
+                if (result)
+                {
+                    return Ok(new { Message = "Farming batches for multiple cages created successfully." });
+                }
+
+                return BadRequest(new { Message = "Failed to create farming batches." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = $"An error occurred: {ex.Message}" });
+            }
+        }
         [HttpPut("{id}/status")]
         public async Task<IActionResult> UpdateFarmingBatchStatus(Guid id, [FromBody] UpdateFarmingBatchStatusRequest request)
         {
