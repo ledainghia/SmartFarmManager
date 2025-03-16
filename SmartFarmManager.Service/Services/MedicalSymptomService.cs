@@ -96,7 +96,7 @@ namespace SmartFarmManager.Service.Services
                 Status = ms.Status,
                 AffectedQuantity = ms.AffectedQuantity,
                 Notes = ms.Notes,
-                Quantity = ms.FarmingBatch?.Quantity ?? 0,
+                Quantity = ms.QuantityInCage,
                 NameAnimal = ms.FarmingBatch.Name,
                 CreateAt = ms.CreateAt,
                 IsEmergency = ms.IsEmergency,
