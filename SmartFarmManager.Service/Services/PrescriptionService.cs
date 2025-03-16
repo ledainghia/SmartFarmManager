@@ -608,8 +608,7 @@ namespace SmartFarmManager.Service.Services
                 .FindByCondition(t =>
                     t.PrescriptionId == activePrescription.Id &&
                     t.DueDate >= serverTime.Date &&
-                    t.Session > currentSessionCheck &&
-                    t.Status == TaskStatusEnum.Pending || t.Status == TaskStatusEnum.InProgress)
+                    (t.Status == TaskStatusEnum.Pending || t.Status == TaskStatusEnum.InProgress))
                 .ToListAsync();
 
                 foreach (var task in tasksToUpdate)
@@ -617,7 +616,7 @@ namespace SmartFarmManager.Service.Services
                     task.Status = TaskStatusEnum.Done;
                 }
 
-                await _unitOfWork.Tasks.UpdateListAsync(tasksToUpdate);
+                await _unitOfWork.Tasks.UpdateListTaskAsync(tasksToUpdate);
                 var cage = await _unitOfWork.Cages.FindByCondition(c => c.IsDeleted == false && c.IsSolationCage == true).FirstOrDefaultAsync();
                 Guid? newPrescriptionId = null;
                 // 🔹 Tạo đơn thuốc mới
@@ -751,7 +750,7 @@ namespace SmartFarmManager.Service.Services
                     startTime = SessionTime.Morning.Start;
                     taskList.Add(new DataAccessObject.Models.Task
                     {
-
+                        Id = Guid.NewGuid(),
                         TaskTypeId = taskType.Id,
                         CageId = cage.Id,
                         AssignedToUserId = assignedUserTodayId.Value, // Sẽ gán sau
@@ -777,6 +776,7 @@ namespace SmartFarmManager.Service.Services
                     startTime = SessionTime.Noon.Start;
                     taskList.Add(new DataAccessObject.Models.Task
                     {
+                        Id = Guid.NewGuid(),
                         TaskTypeId = taskType.Id,
                         CageId = cage.Id,
                         AssignedToUserId = assignedUserTodayId.Value, // Sẽ gán sau
@@ -801,6 +801,7 @@ namespace SmartFarmManager.Service.Services
                     startTime = SessionTime.Afternoon.Start;
                     taskList.Add(new DataAccessObject.Models.Task
                     {
+                        Id = Guid.NewGuid(),
                         TaskTypeId = taskType.Id,
                         CageId = cage.Id,
                         AssignedToUserId = assignedUserTodayId.Value, // Sẽ gán sau
@@ -825,6 +826,7 @@ namespace SmartFarmManager.Service.Services
                     startTime = SessionTime.Evening.Start;
                     taskList.Add(new DataAccessObject.Models.Task
                     {
+                        Id = Guid.NewGuid(),
                         TaskTypeId = taskType.Id,
                         CageId = cage.Id,
                         AssignedToUserId = assignedUserTodayId.Value, // Sẽ gán sau
@@ -860,6 +862,7 @@ namespace SmartFarmManager.Service.Services
                             {
                                 taskList.Add(new DataAccessObject.Models.Task
                                 {
+                                    Id = Guid.NewGuid(),
                                     TaskTypeId = taskType.Id,
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
@@ -887,6 +890,7 @@ namespace SmartFarmManager.Service.Services
                             {
                                 taskList.Add(new DataAccessObject.Models.Task
                                 {
+                                    Id = Guid.NewGuid(),
                                     TaskTypeId = taskType.Id,
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
@@ -914,6 +918,7 @@ namespace SmartFarmManager.Service.Services
                             {
                                 taskList.Add(new DataAccessObject.Models.Task
                                 {
+                                    Id = Guid.NewGuid(),
                                     TaskTypeId = taskType.Id,
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
@@ -941,6 +946,7 @@ namespace SmartFarmManager.Service.Services
                             {
                                 taskList.Add(new DataAccessObject.Models.Task
                                 {
+                                    Id = Guid.NewGuid(),
                                     TaskTypeId = taskType.Id,
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
@@ -974,6 +980,7 @@ namespace SmartFarmManager.Service.Services
                             {
                                 taskList.Add(new DataAccessObject.Models.Task
                                 {
+                                    Id = Guid.NewGuid(),
                                     TaskTypeId = taskType.Id,
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
@@ -1001,6 +1008,7 @@ namespace SmartFarmManager.Service.Services
                             {
                                 taskList.Add(new DataAccessObject.Models.Task
                                 {
+                                    Id = Guid.NewGuid(),
                                     TaskTypeId = taskType.Id,
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
@@ -1028,6 +1036,7 @@ namespace SmartFarmManager.Service.Services
                             {
                                 taskList.Add(new DataAccessObject.Models.Task
                                 {
+                                    Id = Guid.NewGuid(),
                                     TaskTypeId = taskType.Id,
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
@@ -1055,6 +1064,7 @@ namespace SmartFarmManager.Service.Services
                             {
                                 taskList.Add(new DataAccessObject.Models.Task
                                 {
+                                    Id = Guid.NewGuid(),
                                     TaskTypeId = taskType.Id,
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
@@ -1072,6 +1082,16 @@ namespace SmartFarmManager.Service.Services
                             }
                         }
                     }
+                }
+                var duplicateIds = taskList
+    .GroupBy(t => t.Id)
+    .Where(g => g.Count() > 1)
+    .Select(g => g.Key)
+    .ToList();
+
+                if (duplicateIds.Any())
+                {
+                    throw new Exception($"Duplicate TaskIds in taskList: {string.Join(", ", duplicateIds)}");
                 }
                 // Lưu TaskDaily và Task
                 if (taskList.Any())

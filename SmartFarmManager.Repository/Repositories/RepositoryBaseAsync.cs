@@ -86,7 +86,11 @@ namespace SmartFarmManager.Repository.Repositories
         public async System.Threading.Tasks.Task UpdateListAsync(IEnumerable<T> entities)
         => await _dbContext.Set<T>().AddRangeAsync(entities);
 
-
+        public async System.Threading.Tasks.Task UpdateListTaskAsync(IEnumerable<T> entities)
+        {
+            _dbContext.Set<T>().UpdateRange(entities);
+            await _dbContext.SaveChangesAsync();
+        }
 
         public System.Threading.Tasks.Task DeleteAsync(T entity)
         {

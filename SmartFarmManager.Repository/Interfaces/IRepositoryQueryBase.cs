@@ -25,6 +25,7 @@ namespace SmartFarmManager.Repository.Interfaces
         Task<IList<Guid>> CreateListAsync(IEnumerable<T> entities);
         System.Threading.Tasks.Task UpdateAsync(T entity);
         System.Threading.Tasks.Task UpdateListAsync(IEnumerable<T> entities);
+        System.Threading.Tasks.Task UpdateListTaskAsync(IEnumerable<T> entities);
 
         System.Threading.Tasks.Task DeleteAsync(T entity);
         System.Threading.Tasks.Task DeleteListAsync(IEnumerable<T> entities);
