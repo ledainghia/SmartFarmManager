@@ -634,9 +634,9 @@ namespace SmartFarmManager.Service.Services
                     return medication.PricePerDose.HasValue ? medication.PricePerDose.Value * totalDoses : 0;
                 });
                 // Kiểm tra trạng thái đơn thuốc có hợp lệ không
-                if (request.Status != PrescriptionStatusEnum.Active)
+                if (request.Prescriptions.Status != PrescriptionStatusEnum.Active)
                 {
-                    throw new ArgumentException($"Trạng thái đơn thuốc không hợp lệ: {request.Status}");
+                    throw new ArgumentException($"Trạng thái đơn thuốc không hợp lệ: {request.Prescriptions.Status}");
                 }
                 var newPrescription = new Prescription
                 {
