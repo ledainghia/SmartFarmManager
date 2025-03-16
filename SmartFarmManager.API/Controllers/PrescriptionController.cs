@@ -276,7 +276,7 @@ namespace SmartFarmManager.API.Controllers
             }
         }
         [HttpPost("{medicalSymptomId}/create-new-prescription")]
-        public async Task<IActionResult> CreateNewPrescription([FromBody] UpdateMedicalSymptomRequest request, Guid id)
+        public async Task<IActionResult> CreateNewPrescription([FromBody] UpdateMedicalSymptomRequest request, Guid medicalSymptomId)
         {
             try
             {
@@ -286,7 +286,7 @@ namespace SmartFarmManager.API.Controllers
                 // Chuyển đổi từ CreatePrescriptionRequest sang PrescriptionModel
                 var prescriptionModel = new UpdateMedicalSymptomModel
                 {
-                    Id = id,
+                    Id = medicalSymptomId,
                     Diagnosis = request.Diagnosis,
                     Status = request.Status,
                     Notes = request.Notes,
