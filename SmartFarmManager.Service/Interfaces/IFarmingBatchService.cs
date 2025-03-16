@@ -20,5 +20,7 @@ namespace SmartFarmManager.Service.Interfaces
         Task<FarmingBatchReportResponse> GetFarmingBatchReportAsync(Guid farmingBatchId);
         Task<DetailedFarmingBatchReportResponse> GetDetailedFarmingBatchReportAsync(Guid farmingBatchId);
         Task<bool> CreateFarmingBatchMultiCageAsync(CreateFarmingBatchMultiCageModel model);
+
+        System.Threading.Tasks.Task RunUpdateFarmingBatchesStatusAsync();
     }
 }

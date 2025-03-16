@@ -133,7 +133,21 @@ namespace SmartFarmManager.API.Controllers
                 return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred. Please contact support."));
             }
         }
+        [HttpPost("update-status-today")]
+        public async Task<IActionResult> UpdateFarmingBatchStatusToday()
+        {
+            try
+            {
+                // Gọi hàm kiểm tra và cập nhật trạng thái vụ nuôi có ngày bắt đầu là hôm nay
+                await _farmingBatchService.RunUpdateFarmingBatchesStatusAsync();
 
+                return Ok(new { Message = "Farming batches status updated successfully for today." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = $"An error occurred: {ex.Message}" });
+            }
+        }
 
         [HttpGet]
         public async Task<IActionResult> GetFarmingBatches([FromQuery] FarmingBatchFilterPagingRequest request)
