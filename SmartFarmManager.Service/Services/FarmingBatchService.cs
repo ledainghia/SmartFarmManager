@@ -802,6 +802,29 @@ namespace SmartFarmManager.Service.Services
             };
         }
 
+        public async System.Threading.Tasks.Task RunUpdateFarmingBatchesStatusAsync()
+        {
+            var today =DateTimeUtils.GetServerTimeInVietnamTime().Date;
+            var farmingBatchesToUpdate = await _unitOfWork.FarmingBatches
+                .FindByCondition(fb => fb.Status == FarmingBatchStatusEnum.Planning && fb.StartDate.HasValue && fb.StartDate.Value.Date == today)
+                .ToListAsync();
+
+            // Duyệt qua từng vụ nuôi và cập nhật trạng thái của chúng
+            foreach (var farmingBatch in farmingBatchesToUpdate)
+            {
+                try
+                {
+                    // Cập nhật trạng thái từ Planning sang Active
+                    await UpdateFarmingBatchStatusAsync(farmingBatch.Id, FarmingBatchStatusEnum.Active);
+                }
+                catch (Exception ex)
+                {
+                    // Xử lý lỗi nếu có, có thể log lỗi nếu cần
+                    Console.WriteLine($"Error updating FarmingBatch {farmingBatch.Id}: {ex.Message}");
+                }
+            }
+        }
+
         public async Task<DetailedFarmingBatchReportResponse> GetDetailedFarmingBatchReportAsync(Guid farmingBatchId)
         {
             var farmingBatch = await _unitOfWork.FarmingBatches

@@ -1647,7 +1647,7 @@ namespace SmartFarmManager.Service.Services
                     foreach (var taskDaily in growthStage.TaskDailies)
                     {
 
-                        if(taskDaily.StartAt.HasValue && taskDaily.EndAt.HasValue)
+                        if (taskDaily.StartAt.HasValue && taskDaily.EndAt.HasValue)
                         {
                             if (currentTime.HasValue && date.Date < taskDaily.StartAt.Value.Date)
                             {
@@ -1663,32 +1663,32 @@ namespace SmartFarmManager.Service.Services
                             continue; // Bỏ qua các session đã qua nếu là ngày hôm nay
                         }
 
-                            var assignedStaff = await GetAssignedStaffForCage(farmingBatch.CageId, date);
+                        var assignedStaff = await GetAssignedStaffForCage(farmingBatch.CageId, date);
 
-                            if (assignedStaff == null)
-                            {
-                                throw new Exception($"No staff assigned for Cage {farmingBatch.CageId} on {date}.");
-                            }
+                        if (assignedStaff == null)
+                        {
+                            throw new Exception($"No staff assigned for Cage {farmingBatch.CageId} on {date}.");
+                        }
 
-                            var sessionEndTime = GetSessionEndTime(taskDaily.Session);
+                        var sessionEndTime = GetSessionEndTime(taskDaily.Session);
 
-                            tasks.Add(new Task
-                            {
-                                TaskTypeId = taskDaily.TaskTypeId,
-                                CageId = farmingBatch.CageId,
-                                AssignedToUserId = (Guid)assignedStaff,
-                                CreatedByUserId = (Guid)adminId,
-                                TaskName = taskDaily.TaskName,
-                                PriorityNum = taskDaily.TaskTypeId.HasValue
-                                    ? (await _unitOfWork.TaskTypes.FindByCondition(tt => tt.Id == taskDaily.TaskTypeId).FirstOrDefaultAsync())?.PriorityNum ?? 0
-                                    : 0,
-                                Description = taskDaily.Description,
-                                DueDate = date.Add(sessionEndTime),
-                                Session = taskDaily.Session,
-                                Status = TaskStatusEnum.Pending,
-                                CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
-                            });
-                        
+                        tasks.Add(new Task
+                        {
+                            TaskTypeId = taskDaily.TaskTypeId,
+                            CageId = farmingBatch.CageId,
+                            AssignedToUserId = (Guid)assignedStaff,
+                            CreatedByUserId = (Guid)adminId,
+                            TaskName = taskDaily.TaskName,
+                            PriorityNum = taskDaily.TaskTypeId.HasValue
+                                ? (await _unitOfWork.TaskTypes.FindByCondition(tt => tt.Id == taskDaily.TaskTypeId).FirstOrDefaultAsync())?.PriorityNum ?? 0
+                                : 0,
+                            Description = taskDaily.Description,
+                            DueDate = date.Add(sessionEndTime),
+                            Session = taskDaily.Session,
+                            Status = TaskStatusEnum.Pending,
+                            CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
+                        });
+
                     }
 
                     // Generate Task từ VaccineSchedule
@@ -1726,8 +1726,38 @@ namespace SmartFarmManager.Service.Services
                             await _unitOfWork.VaccineSchedules.UpdateAsync(vaccineSchedule);
                         }
                     }
+                    if (growthStage.AgeEndDate.HasValue && growthStage.AgeEndDate.Value.Date == date.Date)
+                    {
+                        var assignedStaff = await GetAssignedStaffForCage(farmingBatch.CageId, date);
+
+                        if (assignedStaff == null)
+                        {
+                            throw new Exception($"No staff assigned for Cage {farmingBatch.CageId} on {date}.");
+                        }
+
+                        var weighTaskTypeId = await GetTaskTypeIdByName("Cân");
+                        var weighTaskType = await _unitOfWork.TaskTypes.FindByCondition(tt => tt.Id == weighTaskTypeId).FirstOrDefaultAsync();
+
+                        tasks.Add(new Task
+                        {
+                            TaskTypeId = weighTaskTypeId,
+                            CageId = farmingBatch.CageId,
+                            AssignedToUserId = (Guid)assignedStaff,
+                            CreatedByUserId = (Guid)adminId,
+                            TaskName = $"Cân cho giai đoạn {growthStage.Name}",
+                            PriorityNum = (int)weighTaskType?.PriorityNum,
+                            Description = $"Cân các động vật trong giai đoạn {growthStage.Name} để kiểm tra cân nặng thực tế so với cân nặng mong muốn.",
+                            DueDate = date.Add(GetSessionEndTime(3)),  // Thêm vào session 3 của ngày cuối
+                            Session = 3,
+                            Status = TaskStatusEnum.Pending,
+                            CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
+                        });
+                    }
+
                 }
             }
+
+
 
             // Generate Cleaning Task
             if (farmingBatch.CleaningFrequency > 0 && (date - farmingBatch.StartDate.Value.Date).Days % farmingBatch.CleaningFrequency == 0 && farmingBatch.StartDate.Value.Date != date.Date)
