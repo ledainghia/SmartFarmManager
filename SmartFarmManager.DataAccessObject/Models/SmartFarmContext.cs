@@ -47,7 +47,7 @@ public partial class SmartFarmContext : DbContext
     //}
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        //optionsBuilder.UseSqlServer("Server=89.40.1.82,5053;Database=Farm;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;");
+        //optionsBuilder.UseSqlServer("Server=localhost;Database=Farm3;User Id=sa;Password=12345;Encrypt=True;TrustServerCertificate=True;");
         optionsBuilder.UseSqlServer("Server=103.48.193.165,5053;Database=Farm3;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;");
 
     }
@@ -159,6 +159,8 @@ public partial class SmartFarmContext : DbContext
     public virtual DbSet<MasterData> MasterData { get; set; }
     public virtual DbSet<WhitelistDomain> WhitelistDomains { get; set; }
     public virtual DbSet<FarmConfig> FarmConfigs { get; set; }
+
+    public virtual DbSet<TaskDailyTemplate>  TaskDailyTemplates { get; set; }
 
 
 
