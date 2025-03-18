@@ -592,13 +592,17 @@ namespace SmartFarmManager.Service.Services
         }
 
 
-        public async Task<PagedResult<FarmingBatchModel>> GetFarmingBatchesAsync(string? cageName, string? name, string? species, DateTime? startDateFrom, DateTime? startDateTo, int pageNumber, int pageSize, Guid? cageId, bool? isCancel)
+        public async Task<PagedResult<FarmingBatchModel>> GetFarmingBatchesAsync(Guid? farmId, string? cageName, string? name, string? species, DateTime? startDateFrom, DateTime? startDateTo, int pageNumber, int pageSize, Guid? cageId, bool? isCancel)
         {
             var query = _unitOfWork.FarmingBatches.FindAll()
                 .Include(fb => fb.Cage) // Include related Cage
                 .Include(fb => fb.Template)
                 .AsQueryable();
 
+            if (!farmId.HasValue)
+            {
+                query = query.Where(x => x.FarmId == farmId);
+            }
             // Apply Filters
             if (!isCancel.Value)
             {

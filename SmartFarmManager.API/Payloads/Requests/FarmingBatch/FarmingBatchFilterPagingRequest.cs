@@ -2,6 +2,7 @@
 {
     public class FarmingBatchFilterPagingRequest
     {
+        public Guid FarmId { get; set; }
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 1000;
         public bool? isCancel { get; set; } = false;
