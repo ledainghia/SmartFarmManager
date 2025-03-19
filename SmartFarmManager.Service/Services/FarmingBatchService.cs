@@ -5,6 +5,7 @@ using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Cages;
 using SmartFarmManager.Service.BusinessModels.DailyFoodUsageLog;
 using SmartFarmManager.Service.BusinessModels.FarmingBatch;
+using SmartFarmManager.Service.BusinessModels.GrowthStage;
 using SmartFarmManager.Service.BusinessModels.Prescription;
 using SmartFarmManager.Service.BusinessModels.Task;
 using SmartFarmManager.Service.BusinessModels.Vaccine;
@@ -945,6 +946,103 @@ namespace SmartFarmManager.Service.Services
             };
         }
 
+        public async Task<CageFarmingStageModel> GetCurrentFarmingStageWithCageAsync(Guid cageId)
+        {
+            // 🔹 Lấy thông tin chuồng
+            var cage = await _unitOfWork.Cages
+                .FindByCondition(c => c.Id == cageId)
+                .Include(c => c.CageStaffs)
+                .ThenInclude(cs => cs.StaffFarm)
+                .FirstOrDefaultAsync();
 
+            if (cage == null)
+                return null;
+
+            // 🔹 Lấy vụ nuôi đang hoạt động (`Active`) trong chuồng
+            var farmingBatch = await _unitOfWork.FarmingBatches
+                .FindByCondition(fb => fb.CageId == cageId && fb.Status == FarmingBatchStatusEnum.Active)
+                .Include(fb => fb.GrowthStages) // Lấy danh sách các giai đoạn phát triển
+                .Include(gs => gs.Template)
+                .FirstOrDefaultAsync();
+
+            // Nếu không có vụ nuôi active thì chỉ trả về thông tin Cage
+            if (farmingBatch == null)
+            {
+                return new CageFarmingStageModel
+                {
+                    Id = cage.Id,
+                    PenCode = cage.PenCode,
+                    FarmId = cage.FarmId,
+                    Name = cage.Name,
+                    Area = cage.Area,
+                    Location = cage.Location,
+                    Capacity = cage.Capacity,
+                    BoardCode = cage.BoardCode,
+                    BoardStatus = cage.BoardStatus,
+                    CreatedDate = cage.CreatedDate,
+                    ModifiedDate = cage.ModifiedDate,
+                    CameraUrl = cage.CameraUrl,
+                    StaffId = cage.CageStaffs.FirstOrDefault()?.StaffFarmId ?? Guid.Empty,
+                    StaffName = cage.CageStaffs.FirstOrDefault()?.StaffFarm.FullName ?? "Unknown",
+                    FarmingBatchStageModel = null
+                };
+            }
+
+            // 🔹 Tìm giai đoạn phát triển hiện tại dựa trên thời gian
+            var today = DateTimeUtils.GetServerTimeInVietnamTime().Date;
+            var currentGrowthStage = farmingBatch.GrowthStages
+                .Where(gs => gs.AgeStartDate.HasValue && gs.AgeEndDate.HasValue)
+                .FirstOrDefault(gs => gs.AgeStartDate.Value.Date <= today && gs.AgeEndDate.Value.Date >= today);
+
+            return new CageFarmingStageModel
+            {
+                Id = cage.Id,
+                PenCode = cage.PenCode,
+                FarmId = cage.FarmId,
+                Name = cage.Name,
+                Area = cage.Area,
+                Location = cage.Location,
+                Capacity = cage.Capacity,
+                BoardCode = cage.BoardCode,
+                BoardStatus = cage.BoardStatus,
+                CreatedDate = cage.CreatedDate,
+                ModifiedDate = cage.ModifiedDate,
+                CameraUrl = cage.CameraUrl,
+                StaffId = cage.CageStaffs.FirstOrDefault()?.StaffFarmId ?? Guid.Empty,
+                StaffName = cage.CageStaffs.FirstOrDefault()?.StaffFarm.FullName ?? "Unknown",
+                FarmingBatchStageModel = new FarmingBatchStageModel
+                {
+                    Id = farmingBatch.Id,
+                    FarmingbatchCode = farmingBatch.Name,
+                    Name = farmingBatch.Name,
+                    Species = farmingBatch.Template.Species,
+                    StartDate = farmingBatch.StartDate,
+                    CompleteAt = farmingBatch.CompleteAt,
+                    EstimatedTimeStart = farmingBatch.StartDate,
+                    EndDate = farmingBatch.EndDate,
+                    Status = farmingBatch.Status,
+                    CleaningFrequency = farmingBatch.CleaningFrequency,
+                    Quantity = farmingBatch.Quantity,
+                    AffectedQuantity = farmingBatch.AffectedQuantity,
+                    GrowthStageDetails = currentGrowthStage == null ? null : new GrowthStageDetailModel
+                    {
+                        Id = currentGrowthStage.Id,
+                        FarmingBatchId = farmingBatch.Id,
+                        Name = currentGrowthStage.Name,
+                        WeightAnimal = currentGrowthStage.WeightAnimal,
+                        Quantity = currentGrowthStage.Quantity,
+                        AgeStart = currentGrowthStage.AgeStart,
+                        AgeEnd = currentGrowthStage.AgeEnd,
+                        FoodType = currentGrowthStage.FoodType,
+                        AgeStartDate = currentGrowthStage.AgeStartDate,
+                        AgeEndDate = currentGrowthStage.AgeEndDate,
+                        Status = currentGrowthStage.Status,
+                        AffectQuantity = currentGrowthStage.Quantity,
+                        RecommendedWeightPerSession = currentGrowthStage.RecommendedWeightPerSession,
+                        WeightBasedOnBodyMass = currentGrowthStage.WeightBasedOnBodyMass,
+                    }
+                }
+            };
+        }
     }
 }
