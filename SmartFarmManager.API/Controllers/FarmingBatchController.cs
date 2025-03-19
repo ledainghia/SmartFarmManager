@@ -7,6 +7,7 @@ using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.Interfaces;
 using Sprache;
 using SmartFarmManager.Service.BusinessModels.FarmingBatch;
+using SmartFarmManager.Service.BusinessModels.Cages;
 
 namespace SmartFarmManager.API.Controllers
 {
@@ -251,6 +252,25 @@ namespace SmartFarmManager.API.Controllers
 
             return Ok(ApiResult<DetailedFarmingBatchReportResponse>.Succeed(report));
         }
+
+        [HttpGet("{cageId}/current-farming-stage")]
+        public async Task<IActionResult> GetCurrentFarmingStage(Guid cageId)
+        {
+            try
+            {
+                var result = await _farmingBatchService.GetCurrentFarmingStageWithCageAsync(cageId);
+
+                if (result == null)
+                    return NotFound(ApiResult<object>.Fail("No active farming batch found for this cage."));
+
+                return Ok(ApiResult<CageFarmingStageModel>.Succeed(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail($"An error occurred: {ex.Message}"));
+            }
+        }
+
 
         [HttpPost("check-upcoming-farming-batches")]
         public async Task<IActionResult> CheckAndNotifyAdminForUpcomingFarmingBatches()
