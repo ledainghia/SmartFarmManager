@@ -27,24 +27,24 @@ namespace SmartFarmManager.API.Controllers
             return Ok(response);
         }
 
-        [HttpPost("notification-body")]
-        [AllowAnonymous]
-        public async Task<IActionResult> PushNotification(string Token, string Title)
-        {
-            // Tạo mẫu dữ liệu Notification
-            var sampleNotification = new Notification
-            {
-                UserId = Guid.NewGuid(),
-                NotiTypeId = Guid.NewGuid(),
-                Content = "This is a sample notification",
-                CreatedAt = DateTime.UtcNow,
-                IsRead = false,
-                //FarmId = 1,
-                CageId = Guid.NewGuid()
-            };
+        //[HttpPost("notification-body")]
+        //[AllowAnonymous]
+        //public async Task<IActionResult> PushNotification(string Token, string Title)
+        //{
+        //    // Tạo mẫu dữ liệu Notification
+        //    var sampleNotification = new Notification
+        //    {
+        //        UserId = Guid.NewGuid(),
+        //        NotiTypeId = Guid.NewGuid(),
+        //        Content = "This is a sample notification",
+        //        CreatedAt = DateTime.UtcNow,
+        //        IsRead = false,
+        //        //FarmId = 1,
+        //        CageId = Guid.NewGuid()
+        //    };
 
-            var response = await _notificationService.SendNotification(Token, Title, sampleNotification);
-            return Ok(new { MessageId = response });
-        }
+        //    var response = await _notificationService.SendNotification(Token, Title, sampleNotification);
+        //    return Ok(new { MessageId = response });
+        //}
     }
 }
