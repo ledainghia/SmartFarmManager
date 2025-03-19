@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SmartFarmManager.DataAccessObject.Models;
+using SmartFarmManager.Service.Helpers;
 
 namespace SmartFarmManager.API.Controllers
 {
@@ -259,11 +260,11 @@ namespace SmartFarmManager.API.Controllers
 
 
 
-                var notificationTypes = new List<NotificationType>
+                var notificationTypes = new List<DataAccessObject.Models.NotificationType>
                 {
-                    new NotificationType { Id = Guid.Parse("800bd31c-4fcb-4d4d-a462-55c4a70c1e7d"), NotiTypeName = "Alert" },
-                    new NotificationType { Id = Guid.Parse("4245669d-361d-4c8b-bc76-cfbd1961505b"), NotiTypeName = "MedicalSymptom" },
-                    new NotificationType { Id = Guid.Parse("05904def-aedc-421a-86cb-93226c2e08ad"), NotiTypeName = "Task" }
+                    new DataAccessObject.Models.NotificationType { Id = Guid.Parse("800bd31c-4fcb-4d4d-a462-55c4a70c1e7d"), NotiTypeName = "Alert" },
+                    new DataAccessObject.Models.NotificationType { Id = Guid.Parse("4245669d-361d-4c8b-bc76-cfbd1961505b"), NotiTypeName = "MedicalSymptom" },
+                    new DataAccessObject.Models.NotificationType { Id = Guid.Parse("05904def-aedc-421a-86cb-93226c2e08ad"), NotiTypeName = "Task" }
                 };
 
                 _context.NotificationTypes.AddRange(notificationTypes);
@@ -297,6 +298,33 @@ namespace SmartFarmManager.API.Controllers
                 _context.FarmAdmins.Add(farmAdminEntry);
                 _context.SaveChanges();
 
+                // Thêm dữ liệu thức ăn
+                var foodStacks = new List<FoodStack>
+                {
+                    new FoodStack
+                    {
+                        Id = Guid.NewGuid(),
+                        FarmId = Guid.Parse("7b0ad5a5-ca3e-45b1-9519-d42135d5bea4"),
+                        FoodType = "Dạng mảnh",
+                        Quantity = 10000000m,
+                        CostPerKg = 15000m,
+                        CurrentStock = 10000000m
+                    },
+                    new FoodStack
+                    {
+                        Id = Guid.NewGuid(),
+                        FarmId = Guid.Parse("7b0ad5a5-ca3e-45b1-9519-d42135d5bea4"),
+                        FoodType = "Dạng viên",
+                        Quantity = 20000000m,
+                        CostPerKg = 17000m,
+                        CurrentStock = 20000000m
+                    }
+                };
+
+                _context.FoodStacks.AddRange(foodStacks);
+                _context.SaveChanges();
+
+
                 var cages = new List<Cage>
                 {
                     new Cage { Id = Guid.Parse("f37f0727-435d-4d80-9c29-ae2f41b49c9d"), PenCode = "Pen_01", FarmId = Guid.Parse("7b0ad5a5-ca3e-45b1-9519-d42135d5bea4"), Name = "Cage 1", Area = 10, Location = "Location 1", Capacity = 500, BoardCode = "Board_01", BoardStatus = true, CreatedDate = DateTime.Parse("2024-12-16T03:01:38.5500000"), CameraUrl = "http://camera_1.example.com", ChannelId = 1, IsSolationCage = false },
@@ -324,6 +352,17 @@ namespace SmartFarmManager.API.Controllers
 
                 _context.CageStaffs.AddRange(cageStaffEntries);
                 _context.SaveChanges();
+
+                // Tạo bản ghi FarmConfig
+                var farmConfig = new FarmConfig
+                {
+                    Id = Guid.NewGuid(),
+                    FarmId = Guid.Parse("7B0AD5A5-CA3E-45B1-9519-D42135D5BEA4"),
+                    MaxCagesPerStaff = 5,
+                    MaxFarmingBatchesPerCage = 5,
+                    LastTimeUpdated = DateTimeUtils.GetServerTimeInVietnamTime(),
+                    TimeDifferenceInMinutes = 0
+                };
 
                 return Ok("Dữ liệu đã được nhập vào thành công!");
             }
@@ -412,9 +451,9 @@ namespace SmartFarmManager.API.Controllers
                             FoodType = _context.FoodTemplates.FirstOrDefault(f => f.StageTemplateId == stageTemplate.Id)?.FoodType ?? "Không xác định",
                             AgeStartDate = stageStartDate,
                             AgeEndDate = stageEndDate,
-                            Status = stageTemplate.StageName == "Gà trưởng thành"? "Active": "Completed",
+                            Status = stageTemplate.StageName == "Gà trưởng thành" ? "Active" : "Completed",
                             WeightBasedOnBodyMass = _context.FoodTemplates.FirstOrDefault(f => f.StageTemplateId == stageTemplate.Id)?.WeightBasedOnBodyMass,
-                            RecommendedWeightPerSession = 200*stageTemplate.WeightAnimal
+                            RecommendedWeightPerSession = 200 * stageTemplate.WeightAnimal
                         };
 
                         growthStage.RecommendedWeightPerSession = growthStage.WeightAnimal * growthStage.WeightBasedOnBodyMass;
@@ -428,19 +467,19 @@ namespace SmartFarmManager.API.Controllers
                         var taskDailyTemplates = _context.TaskDailyTemplates.Where(t => t.GrowthStageTemplateId == stageTemplate.Id).ToList();
                         foreach (var taskTemplate in taskDailyTemplates)
                         {
-                            
-                                taskDailies.Add(new TaskDaily
-                                {
-                                    Id = Guid.NewGuid(),
-                                    GrowthStageId = growthStage.Id,
-                                    TaskTypeId = taskTemplate.TaskTypeId,
-                                    TaskName = taskTemplate.TaskName,
-                                    Description = taskTemplate.Description,
-                                    Session = taskTemplate.Session,
-                                    StartAt = stageStartDate,
-                                    EndAt = stageEndDate
-                                });
-                            
+
+                            taskDailies.Add(new TaskDaily
+                            {
+                                Id = Guid.NewGuid(),
+                                GrowthStageId = growthStage.Id,
+                                TaskTypeId = taskTemplate.TaskTypeId,
+                                TaskName = taskTemplate.TaskName,
+                                Description = taskTemplate.Description,
+                                Session = taskTemplate.Session,
+                                StartAt = stageStartDate,
+                                EndAt = stageEndDate
+                            });
+
                         }
 
 
@@ -521,7 +560,11 @@ namespace SmartFarmManager.API.Controllers
                         // Task "Cho ăn"
                         List<int> sessionNumbers = stage.Name == "Gà con" ? new List<int> { 1, 2, 3, 4 } : new List<int> { 1, 2, 4 };
                         var feedingTaskType = taskTypes.FirstOrDefault(t => t.TaskTypeName == "Cho ăn");
-
+                        var dateNow = DateTimeUtils.GetServerTimeInVietnamTime();
+                        if (dateNow.Date == stageEndDate.Date)
+                        {
+                            stageEndDate = stageEndDate.AddDays(1);
+                        }
                         for (DateTime date = stageStartDate; date <= stageEndDate; date = date.AddDays(1))
                         {
                             foreach (var session in sessionNumbers)
@@ -538,7 +581,7 @@ namespace SmartFarmManager.API.Controllers
                                     DueDate = date,
                                     Status = "Done",
                                     Session = session,
-                                    CreatedAt = date
+                                    CreatedAt = date.AddDays(-1)
                                 });
                             }
                         }
@@ -558,7 +601,8 @@ namespace SmartFarmManager.API.Controllers
                                 Description = $"Dọn chuồng tại {batch.Name} - {batch.CageId}",
                                 DueDate = date,
                                 Status = "Done",
-                                CreatedAt = date
+                                Session = 1,
+                                CreatedAt = date.AddDays(-1)
                             });
                         }
 
@@ -574,8 +618,9 @@ namespace SmartFarmManager.API.Controllers
                             PriorityNum = weighingTaskType.PriorityNum.Value,
                             Description = $"Cân gà vào cuối giai đoạn {stage.Name} tại {batch.Name} - {batch.CageId}",
                             DueDate = stageEndDate,
+                            Session = 1,
                             Status = "Done",
-                            CreatedAt = stageEndDate
+                            CreatedAt = stageEndDate.AddDays(-1)
                         });
 
                         // Task "Tiêm vắc xin" - Dựa trên VaccineSchedule
@@ -597,7 +642,7 @@ namespace SmartFarmManager.API.Controllers
                                 DueDate = vaccineSchedule.Date.Value,
                                 Status = "Done",
                                 Session = vaccineSchedule.Session,
-                                CreatedAt = vaccineSchedule.Date.Value
+                                CreatedAt = vaccineSchedule.Date.Value.AddDays(-1)
                             });
                         }
                     }
@@ -639,7 +684,11 @@ namespace SmartFarmManager.API.Controllers
 
                         // Tạo DailyFoodUsageLog (Cho ăn)
                         List<int> sessionNumbers = stage.Name == "Gà con" ? new List<int> { 1, 2, 3, 4 } : new List<int> { 1, 2, 4 };
-
+                        var dateNow = DateTimeUtils.GetServerTimeInVietnamTime();
+                        if (dateNow.Date == stageEndDate.Date)
+                        {
+                            stageEndDate = stageEndDate.AddDays(-1);
+                        }
                         for (DateTime date = stageStartDate; date <= stageEndDate; date = date.AddDays(1))
                         {
                             foreach (var session in sessionNumbers)
@@ -703,6 +752,104 @@ namespace SmartFarmManager.API.Controllers
                 return StatusCode(500, $"Lỗi nhập dữ liệu Logs: {ex.Message}");
             }
         }
+
+
+        [HttpGet("tasks/status/update")]
+        public IActionResult GetAndUpdateTaskStatus()
+        {
+            try
+            {
+                DateTime vietnamNow = DateTimeUtils.GetServerTimeInVietnamTime();
+                int currentSession = SessionTime.GetCurrentSession(vietnamNow.TimeOfDay);
+
+                // Lấy danh sách task cần xử lý
+                var tasks = _context.Tasks
+                    .Where(t => t.DueDate >= vietnamNow.Date) // Chỉ lấy task hôm nay trở đi
+                    .ToList();
+
+                var foodLogs = new List<DailyFoodUsageLog>();
+                var vaccineLogs = new List<VaccineScheduleLog>();
+
+                foreach (var task in tasks)
+                {
+                    // Xác định trạng thái task
+                    if (task.DueDate.Value.Date == vietnamNow.Date)
+                    {
+                        if (task.Session < currentSession)
+                        {
+                            task.Status = "Done";
+                            GenerateLogForTask(task, foodLogs, vaccineLogs);
+                        }
+                        else if (task.Session == currentSession)
+                        {
+                            task.Status = "InProgress";
+                        }
+                        else
+                        {
+                            task.Status = "Pending";
+                        }
+                    }
+                    else // Task có DueDate > ngày hiện tại
+                    {
+                        task.Status = "Pending";
+                    }
+                }
+
+                // Lưu thay đổi Task
+                _context.SaveChanges();
+
+                // Thêm log nếu cần
+                _context.DailyFoodUsageLogs.AddRange(foodLogs);
+                _context.VaccineScheduleLogs.AddRange(vaccineLogs);
+                _context.SaveChanges();
+
+                return Ok(new { Message = "Tasks updated successfully", UpdatedTasks = tasks });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi cập nhật Task: {ex.Message}");
+            }
+        }
+
+        private void GenerateLogForTask(DataAccessObject.Models.Task task, List<DailyFoodUsageLog> foodLogs, List<VaccineScheduleLog> vaccineLogs)
+        {
+            if (task.TaskName == "Cho ăn")
+            {
+                var growthStage = _context.GrowthStages.FirstOrDefault(gs => gs.FarmingBatch.CageId == task.CageId && gs.AgeStartDate <= task.DueDate && gs.AgeEndDate >= task.DueDate);
+                if (growthStage != null)
+                {
+                    foodLogs.Add(new DailyFoodUsageLog
+                    {
+                        Id = Guid.NewGuid(),
+                        StageId = growthStage.Id,
+                        RecommendedWeight = growthStage.Quantity * growthStage.RecommendedWeightPerSession,
+                        ActualWeight = growthStage.Quantity * growthStage.RecommendedWeightPerSession,
+                        Notes = "Ghi nhận lượng thức ăn tiêu thụ",
+                        LogTime = task.DueDate,
+                        UnitPrice = 15000,
+                        Photo = "food_log.jpg",
+                        TaskId = task.Id
+                    });
+                }
+            }
+            else if (task.TaskName == "Tiêm vắc xin")
+            {
+                var vaccineSchedule = _context.VaccineSchedules.FirstOrDefault(vs => vs.Stage.FarmingBatch.CageId == task.CageId && vs.Date == task.DueDate);
+                if (vaccineSchedule != null)
+                {
+                    vaccineLogs.Add(new VaccineScheduleLog
+                    {
+                        Id = Guid.NewGuid(),
+                        ScheduleId = vaccineSchedule.Id,
+                        Date = DateOnly.FromDateTime(task.DueDate.Value),
+                        Notes = "Ghi nhận lịch tiêm vaccine",
+                        Photo = "vaccine_log.jpg",
+                        TaskId = task.Id
+                    });
+                }
+            }
+        }
+
 
         [HttpPost("seed/Standard")]
         public IActionResult SeedStandards()

@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 
 namespace SmartFarmManager.Service.Services
 {
-    public class NotificationService 
+    public class NotificationService
     {
         private readonly IHubContext<NotificationHub> _hubContext;
 
@@ -105,6 +105,11 @@ namespace SmartFarmManager.Service.Services
 
         public async System.Threading.Tasks.Task SendNotification(string token, string title, object customData)
         {
+            if (string.IsNullOrEmpty(token))
+            {
+                Console.WriteLine("⚠️ Token rỗng , bỏ qua gửi thông báo.");
+                await System.Threading.Tasks.Task.CompletedTask;
+            }
             try
             {
 
@@ -114,13 +119,13 @@ namespace SmartFarmManager.Service.Services
                 {
                     Token = token,
                     Data = new Dictionary<string, string>()
-            {
-                { "title", title },
-                { "customData", jsonData }
-            }
+    {
+        { "title", title },
+        { "customData", jsonData }
+    }
                 };
 
-                string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);             
+                string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
             }
             catch (FirebaseException ex)
             {

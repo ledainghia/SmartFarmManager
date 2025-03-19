@@ -600,8 +600,13 @@ namespace SmartFarmManager.Service.Services
                     activePrescription.RemainingQuantity = request.Prescriptions.QuantityAnimal;
                     await _unitOfWork.Prescription.UpdateAsync(activePrescription);
 
-                    medicalSymptom.Diagnosis += request.Diagnosis;
-                    medicalSymptom.Notes += request.Notes;
+                    medicalSymptom.Diagnosis = string.IsNullOrEmpty(medicalSymptom.Diagnosis)
+                                ? request.Diagnosis
+                                : medicalSymptom.Diagnosis + " -> " + request.Diagnosis;
+
+                    medicalSymptom.Notes = string.IsNullOrEmpty(medicalSymptom.Notes)
+                                ? request.Notes
+                                : medicalSymptom.Notes + " -> " + request.Notes;
                     await _unitOfWork.MedicalSymptom.UpdateAsync(medicalSymptom);
                 }
                 var tasksToUpdate = await _unitOfWork.Tasks
@@ -613,7 +618,7 @@ namespace SmartFarmManager.Service.Services
 
                 foreach (var task in tasksToUpdate)
                 {
-                    task.Status = TaskStatusEnum.Done;
+                    task.Status = TaskStatusEnum.Cancelled;
                 }
 
                 await _unitOfWork.Tasks.UpdateListTaskAsync(tasksToUpdate);
@@ -645,7 +650,7 @@ namespace SmartFarmManager.Service.Services
                     PrescribedDate = DateTimeUtils.GetServerTimeInVietnamTime(),
                     Notes = request.Notes,
                     DaysToTake = request.Prescriptions.DaysToTake,
-                    Status = request.Status,
+                    Status = PrescriptionStatusEnum.Active,
                     QuantityAnimal = request.Prescriptions.QuantityAnimal.Value,
                     //EndDate = updatedModel.Prescriptions.PrescribedDate.Value.AddDays((double)updatedModel.Prescriptions.DaysToTake),
                     EndDate = DateTimeUtils.GetServerTimeInVietnamTime().AddDays((double)request.Prescriptions.DaysToTake),
