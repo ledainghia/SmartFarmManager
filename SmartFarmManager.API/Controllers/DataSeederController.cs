@@ -412,7 +412,7 @@ namespace SmartFarmManager.API.Controllers
                             FoodType = _context.FoodTemplates.FirstOrDefault(f => f.StageTemplateId == stageTemplate.Id)?.FoodType ?? "Không xác định",
                             AgeStartDate = stageStartDate,
                             AgeEndDate = stageEndDate,
-                            Status = "Active",
+                            Status = stageTemplate.StageName == "Gà trưởng thành"? "Active": "Completed",
                             WeightBasedOnBodyMass = _context.FoodTemplates.FirstOrDefault(f => f.StageTemplateId == stageTemplate.Id)?.WeightBasedOnBodyMass,
                             RecommendedWeightPerSession = 200*stageTemplate.WeightAnimal
                         };
