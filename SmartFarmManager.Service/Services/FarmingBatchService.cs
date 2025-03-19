@@ -1136,5 +1136,47 @@ namespace SmartFarmManager.Service.Services
                 }
             };
         }
+
+        public async Task<bool> UpdateStartDateAsync(Guid farmingBatchId, DateTime newStartDate)
+        {
+            var farmingBatch = await _unitOfWork.FarmingBatches
+                .FindByCondition(fb => fb.Id == farmingBatchId)
+                .Include(fb => fb.GrowthStages)
+                .FirstOrDefaultAsync();
+            if (farmingBatch == null)
+            {
+                throw new ArgumentException("FarmingBatch không tồn tại.");
+            }
+            if (farmingBatch.Status != FarmingBatchStatusEnum.Planning)
+            {
+                throw new InvalidOperationException("Chỉ có vụ nuôi đang ở trạng thái 'Planning' mới có thể thay đổi ngày bắt đầu.");
+            }
+            if (newStartDate <= farmingBatch.EstimatedTimeStart)
+            {
+                throw new InvalidOperationException("Ngày bắt đầu mới phải lớn hơn ngày dự kiến bắt đầu.");
+            }
+            var conflictingBatch = await _unitOfWork.FarmingBatches
+                .FindByCondition(fb => fb.CageId == farmingBatch.CageId &&
+                                        fb.Status == FarmingBatchStatusEnum.Active && 
+                                        fb.EstimatedTimeStart.HasValue &&
+                                        fb.EstimatedTimeStart.Value.Date == newStartDate.Date) 
+                .FirstOrDefaultAsync();
+
+            if (conflictingBatch != null)
+            {
+                throw new InvalidOperationException($"Chuồng này đã có vụ nuôi đang hoạt động vào ngày {newStartDate.ToString("yyyy-MM-dd")}. Cần điều chỉnh ngày bắt đầu.");
+            }
+            farmingBatch.StartDate = newStartDate;  // Cập nhật EstimatedTimeStart (ngày dự kiến)
+
+            var ageEndMax = farmingBatch.GrowthStages.Max(gs => gs.AgeEnd);
+            farmingBatch.EndDate = newStartDate.AddDays(ageEndMax ?? 0);
+
+            await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatch);
+            await _unitOfWork.CommitAsync();
+
+            // Trả về true nếu cập nhật thành công
+            return true;
+        }
+
     }
 }

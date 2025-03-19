@@ -26,5 +26,7 @@ namespace SmartFarmManager.Service.Interfaces
 
         System.Threading.Tasks.Task RunUpdateFarmingBatchesStatusAsync();
         System.Threading.Tasks.Task CheckAndNotifyAdminForUpcomingFarmingBatchesAsync();
+
+        Task<bool> UpdateStartDateAsync(Guid farmingBatchId, DateTime newStartDate);
     }
 }

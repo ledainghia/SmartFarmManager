@@ -169,7 +169,7 @@ namespace SmartFarmManager.API.Controllers
 
             try
             {
-                var response = await _farmingBatchService.GetFarmingBatchesAsync(request.KeySearch ,request.FarmId,request.CageName, request.Name, request.Name, request.StartDateFrom, request.StartDateTo, request.PageNumber, request.PageSize, request.CageId, request.isCancel);
+                var response = await _farmingBatchService.GetFarmingBatchesAsync(request.KeySearch, request.FarmId, request.CageName, request.Name, request.Name, request.StartDateFrom, request.StartDateTo, request.PageNumber, request.PageSize, request.CageId, request.isCancel);
 
                 return Ok(ApiResult<PagedResult<FarmingBatchModel>>.Succeed(response));
             }
@@ -276,7 +276,7 @@ namespace SmartFarmManager.API.Controllers
         public async Task<IActionResult> CheckAndNotifyAdminForUpcomingFarmingBatches()
         {
             try
-            {               
+            {
                 await _farmingBatchService.CheckAndNotifyAdminForUpcomingFarmingBatchesAsync();
 
                 return Ok(new { Message = "Checked and notified admins about upcoming farming batches." });
@@ -284,6 +284,20 @@ namespace SmartFarmManager.API.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { Message = $"An error occurred: {ex.Message}" });
+            }
+        }
+
+        [HttpPut("{farmingBatchId}/update-start-date")]
+        public async Task<IActionResult> UpdateStartDate(Guid farmingBatchId, DateTime newStartDate)
+        {
+            try
+            {
+                var result = await _farmingBatchService.UpdateStartDateAsync(farmingBatchId, newStartDate);
+                return Ok(new { Message = "Start date updated successfully." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
             }
         }
     }
