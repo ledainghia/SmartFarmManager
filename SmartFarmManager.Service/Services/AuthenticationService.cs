@@ -35,7 +35,7 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<LoginResult> Login(string username, string password)
         {
-            var user = await _unitOfWork.Users.FindByCondition(x=>x.Username==username,false,x=>x.Role).FirstOrDefaultAsync();
+            var user = await _unitOfWork.Users.FindByCondition(x => x.Username == username, false, x => x.Role).FirstOrDefaultAsync();
             if (user == null)
             {
                 throw new Exception("Username not found.");
@@ -50,6 +50,20 @@ namespace SmartFarmManager.Service.Services
                 Token = CreateJwtToken(user),
                 RefreshToken = CreateJwtRefreshToken(user)
             };
+        }
+
+        public async System.Threading.Tasks.Task Logout(Guid userId)
+        {
+            var user = await _unitOfWork.Users.FindByCondition(u => u.Id == userId).FirstOrDefaultAsync();
+
+            if (user == null)
+            {
+                throw new Exception("User not found.");
+            }
+            user.DeviceId = null;
+
+            await _unitOfWork.Users.UpdateAsync(user);
+            await _unitOfWork.CommitAsync();
         }
 
         public SecurityToken CreateJwtToken(User user)
@@ -79,6 +93,7 @@ namespace SmartFarmManager.Service.Services
 
             return token;
         }
+
 
         private SecurityToken CreateJwtRefreshToken(User user)
         {
