@@ -110,30 +110,33 @@ namespace SmartFarmManager.Service.Services
                 Console.WriteLine("⚠️ Token rỗng , bỏ qua gửi thông báo.");
                 await System.Threading.Tasks.Task.CompletedTask;
             }
-            try
+            else
             {
-
-                var jsonData = Newtonsoft.Json.JsonConvert.SerializeObject(customData);
-
-                var message = new Message()
+                try
                 {
-                    Token = token,
-                    Data = new Dictionary<string, string>()
+
+                    var jsonData = Newtonsoft.Json.JsonConvert.SerializeObject(customData);
+
+                    var message = new Message()
+                    {
+                        Token = token,
+                        Data = new Dictionary<string, string>()
     {
         { "title", title },
         { "customData", jsonData }
     }
-                };
+                    };
 
-                string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
-            }
-            catch (FirebaseException ex)
-            {
-                Console.WriteLine($"⛔ Lỗi gửi Notification: {ex.Message}");
-            }
-            finally
-            {
-                await System.Threading.Tasks.Task.CompletedTask;
+                    string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
+                }
+                catch (FirebaseException ex)
+                {
+                    Console.WriteLine($"⛔ Lỗi gửi Notification: {ex.Message}");
+                }
+                finally
+                {
+                    await System.Threading.Tasks.Task.CompletedTask;
+                }
             }
         }
 
