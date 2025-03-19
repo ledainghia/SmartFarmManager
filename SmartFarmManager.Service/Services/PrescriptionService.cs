@@ -600,8 +600,13 @@ namespace SmartFarmManager.Service.Services
                     activePrescription.RemainingQuantity = request.Prescriptions.QuantityAnimal;
                     await _unitOfWork.Prescription.UpdateAsync(activePrescription);
 
-                    medicalSymptom.Diagnosis += request.Diagnosis;
-                    medicalSymptom.Notes += request.Notes;
+                    medicalSymptom.Diagnosis = string.IsNullOrEmpty(medicalSymptom.Diagnosis)
+                                ? request.Diagnosis
+                                : medicalSymptom.Diagnosis + " -> " + request.Diagnosis;
+
+                    medicalSymptom.Notes = string.IsNullOrEmpty(medicalSymptom.Notes)
+                                ? request.Notes
+                                : medicalSymptom.Notes + " -> " + request.Notes;
                     await _unitOfWork.MedicalSymptom.UpdateAsync(medicalSymptom);
                 }
                 var tasksToUpdate = await _unitOfWork.Tasks

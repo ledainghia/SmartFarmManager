@@ -353,6 +353,17 @@ namespace SmartFarmManager.API.Controllers
                 _context.CageStaffs.AddRange(cageStaffEntries);
                 _context.SaveChanges();
 
+                // Tạo bản ghi FarmConfig
+                var farmConfig = new FarmConfig
+                {
+                    Id = Guid.NewGuid(),
+                    FarmId = Guid.Parse("7B0AD5A5-CA3E-45B1-9519-D42135D5BEA4"),
+                    MaxCagesPerStaff = 5,
+                    MaxFarmingBatchesPerCage = 5,
+                    LastTimeUpdated = DateTimeUtils.GetServerTimeInVietnamTime(),
+                    TimeDifferenceInMinutes = 0
+                };
+
                 return Ok("Dữ liệu đã được nhập vào thành công!");
             }
             catch (Exception ex)
