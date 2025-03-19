@@ -168,7 +168,7 @@ namespace SmartFarmManager.API.Controllers
 
             try
             {
-                var response = await _farmingBatchService.GetFarmingBatchesAsync(request.FarmId,request.CageName, request.Name, request.Name, request.StartDateFrom, request.StartDateTo, request.PageNumber, request.PageSize, request.CageId, request.isCancel);
+                var response = await _farmingBatchService.GetFarmingBatchesAsync(request.KeySearch ,request.FarmId,request.CageName, request.Name, request.Name, request.StartDateFrom, request.StartDateTo, request.PageNumber, request.PageSize, request.CageId, request.isCancel);
 
                 return Ok(ApiResult<PagedResult<FarmingBatchModel>>.Succeed(response));
             }
@@ -250,6 +250,21 @@ namespace SmartFarmManager.API.Controllers
                 return NotFound(ApiResult<object>.Fail("Farming batch not found."));
 
             return Ok(ApiResult<DetailedFarmingBatchReportResponse>.Succeed(report));
+        }
+
+        [HttpPost("check-upcoming-farming-batches")]
+        public async Task<IActionResult> CheckAndNotifyAdminForUpcomingFarmingBatches()
+        {
+            try
+            {               
+                await _farmingBatchService.CheckAndNotifyAdminForUpcomingFarmingBatchesAsync();
+
+                return Ok(new { Message = "Checked and notified admins about upcoming farming batches." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = $"An error occurred: {ex.Message}" });
+            }
         }
     }
 }

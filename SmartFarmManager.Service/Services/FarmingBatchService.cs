@@ -20,11 +20,17 @@ namespace SmartFarmManager.Service.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ITaskService _taskService;
+        private readonly NotificationService _notificationService;
+        private readonly INotificationService _notificationUserService;
+        private readonly EmailService _emailService;
 
-        public FarmingBatchService(IUnitOfWork unitOfWork, ITaskService taskService)
+        public FarmingBatchService(IUnitOfWork unitOfWork, ITaskService taskService, EmailService emailService,NotificationService notificationService, INotificationService notificationUserService)
         {
             _unitOfWork = unitOfWork;
             _taskService = taskService;
+            _emailService = emailService;
+            _notificationService = notificationService;
+            _notificationUserService = notificationUserService;
         }
 
         public async Task<bool> CreateFarmingBatchAsync(CreateFarmingBatchModel model)
@@ -592,12 +598,20 @@ namespace SmartFarmManager.Service.Services
         }
 
 
-        public async Task<PagedResult<FarmingBatchModel>> GetFarmingBatchesAsync(Guid? farmId, string? cageName, string? name, string? species, DateTime? startDateFrom, DateTime? startDateTo, int pageNumber, int pageSize, Guid? cageId, bool? isCancel)
+        public async Task<PagedResult<FarmingBatchModel>> GetFarmingBatchesAsync(string? keySearch,Guid? farmId, string? cageName, string? name, string? species, DateTime? startDateFrom, DateTime? startDateTo, int pageNumber, int pageSize, Guid? cageId, bool? isCancel)
         {
             var query = _unitOfWork.FarmingBatches.FindAll()
                 .Include(fb => fb.Cage) // Include related Cage
                 .Include(fb => fb.Template)
                 .AsQueryable();
+
+            if (!string.IsNullOrEmpty(keySearch))
+            {
+                query = query.Where(fb =>
+                    fb.Name.Contains(keySearch) ||                    
+                    fb.Status.Contains(keySearch)
+                    || fb.Cage.Name.Contains(keySearch));
+            }
 
             if (!farmId.HasValue)
             {
@@ -944,7 +958,85 @@ namespace SmartFarmManager.Service.Services
                 FoodUsageDetails = foodUsageDetails
             };
         }
+        public async System.Threading.Tasks.Task CheckAndNotifyAdminForUpcomingFarmingBatchesAsync()
+        {
 
+            var today = DateTimeUtils.GetServerTimeInVietnamTime().Date;
+            var twoDaysLater = today.AddDays(2);
+
+            var farmingBatches = await _unitOfWork.FarmingBatches           
+                .FindByCondition(fb=>fb.StartDate.HasValue &&
+                                     fb.StartDate.Value.Date >=today.Date &&
+                                     fb.StartDate.Value.Date <= twoDaysLater.Date &&
+                                     fb.Status == FarmingBatchStatusEnum.Planning)
+                .Include(fb=>fb.Cage)
+                .ToListAsync();
+
+            foreach(var farmingBatch in farmingBatches)
+            {
+                var activeBatchExists = await _unitOfWork.FarmingBatches
+                    .FindByCondition(fb => fb.CageId == farmingBatch.CageId && fb.Status == FarmingBatchStatusEnum.Active)
+                    .AnyAsync();
+
+                if (activeBatchExists)
+                {
+                    var admin = await _unitOfWork.Users
+               .FindByCondition(u => u.Role.RoleName == "Admin Farm")
+               .Include(u => u.Role)
+               .FirstOrDefaultAsync();
+
+                    var notiType = await _unitOfWork.NotificationsTypes
+                        .FindByCondition(nt => nt.NotiTypeName == "FarmingBatchSchedule")
+                        .FirstOrDefaultAsync();
+
+                    var notification = new DataAccessObject.Models.Notification
+                    {
+                        UserId = admin.Id,
+                        NotiTypeId = (Guid)notiType?.Id,
+                        Content = $"Sắp tới có vụ nuôi {farmingBatch.Name} trong chuồng {farmingBatch.Cage.Name} bắt đầu vào ngày {farmingBatch.EstimatedTimeStart.Value.ToString("yyyy-MM-dd")}. Vui lòng xem xét và điều chỉnh lịch cho vụ nuôi nếu có xung đột.",
+                        CreatedAt = DateTime.UtcNow,
+                        MedicalSymptomId = null,  
+                        IsRead = false
+                    };
+                    await _notificationUserService.CreateNotificationAsync(notification);
+                    await _notificationService.SendNotification(admin.DeviceId, "Thông báo về vụ nuôi sắp tới", notification);
+
+                    // Gửi email nhắc nhở admin
+                    await _emailService.SendReminderEmailAsync(admin.Email, admin.FullName, "Cảnh báo từ hệ thống",
+                        $"Sắp tới có vụ nuôi {farmingBatch.Name} trong chuồng {farmingBatch.CageId} bắt đầu vào ngày {farmingBatch.EstimatedTimeStart.Value.ToString("yyyy-MM-dd")}. Vui lòng kiểm tra và điều chỉnh lịch vụ nuôi nếu có trùng lặp.");
+                }
+                else
+                {
+                    var admin = await _unitOfWork.Users
+               .FindByCondition(u => u.Role.RoleName == "Admin Farm")
+               .Include(u => u.Role)
+               .FirstOrDefaultAsync();
+
+                    var notiType = await _unitOfWork.NotificationsTypes
+                        .FindByCondition(nt => nt.NotiTypeName == "FarmingBatchSchedule")
+                        .FirstOrDefaultAsync();
+
+                    var notification = new DataAccessObject.Models.Notification
+                    {
+                        UserId = admin.Id,
+                        NotiTypeId = (Guid)notiType?.Id,
+                        Content = $"Sắp tới có vụ nuôi {farmingBatch.Name} trong chuồng {farmingBatch.Cage.Name} bắt đầu vào ngày {farmingBatch.EstimatedTimeStart.Value.ToString("yyyy-MM-dd")}.",
+                        CreatedAt = DateTime.UtcNow,
+                        MedicalSymptomId = null,  // Không phải là triệu chứng y tế
+                        IsRead = false
+                    };
+
+                    // Gửi thông báo cho admin
+                    await _notificationUserService.CreateNotificationAsync(notification);
+                    await _notificationService.SendNotification(admin.DeviceId, "Thông báo về vụ nuôi sắp tới", notification);
+
+                    // Gửi email nhắc nhở admin
+                    await _emailService.SendReminderEmailAsync(admin.Email, admin.FullName, "Cảnh báo từ hệ thống",
+                        $"Sắp tới có vụ nuôi {farmingBatch.Name} trong chuồng {farmingBatch.CageId} bắt đầu vào ngày {farmingBatch.EstimatedTimeStart.Value.ToString("yyyy-MM-dd")}. Vui lòng kiểm tra và đảm bảo không có xung đột lịch.");
+                }
+            }
+
+        }
 
     }
 }

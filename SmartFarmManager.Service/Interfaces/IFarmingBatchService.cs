@@ -14,7 +14,7 @@ namespace SmartFarmManager.Service.Interfaces
     {
         Task<bool> CreateFarmingBatchAsync(CreateFarmingBatchModel model);
         Task<bool> UpdateFarmingBatchStatusAsync(Guid farmingBatchId, string newStatus);
-        Task<PagedResult<FarmingBatchModel>> GetFarmingBatchesAsync(Guid? farmId ,string? cageName, string? name, string? species, DateTime? startDateFrom, DateTime? startDateTo, int pageNumber, int pageSize, Guid? cageId, bool? isCancel);
+        Task<PagedResult<FarmingBatchModel>> GetFarmingBatchesAsync(string? keySearch ,Guid? farmId ,string? cageName, string? name, string? species, DateTime? startDateFrom, DateTime? startDateTo, int pageNumber, int pageSize, Guid? cageId, bool? isCancel);
         Task<FarmingBatchModel> GetActiveFarmingBatchByCageIdAsync(Guid cageId);
         Task<List<FarmingBatchModel>> GetActiveFarmingBatchesByUserAsync(Guid userId);
         Task<FarmingBatchReportResponse> GetFarmingBatchReportAsync(Guid farmingBatchId);
@@ -22,5 +22,6 @@ namespace SmartFarmManager.Service.Interfaces
         Task<bool> CreateFarmingBatchMultiCageAsync(CreateFarmingBatchMultiCageModel model);
 
         System.Threading.Tasks.Task RunUpdateFarmingBatchesStatusAsync();
+        System.Threading.Tasks.Task CheckAndNotifyAdminForUpcomingFarmingBatchesAsync();
     }
 }
