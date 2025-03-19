@@ -126,7 +126,7 @@ namespace SmartFarmManager.Service.Services
             catch (FirebaseException ex)
             {
                 Console.WriteLine($"⛔ Lỗi gửi Notification: {ex.Message}");
-                throw;
+                return null;
             }
         }
 
