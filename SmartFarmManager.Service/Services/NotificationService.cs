@@ -103,7 +103,7 @@ namespace SmartFarmManager.Service.Services
         //    return response; // Trả về ID của message đã gửi
         //}
 
-        public async Task<string> SendNotification(string token, string title, object customData)
+        public async System.Threading.Tasks.Task SendNotification(string token, string title, object customData)
         {
             try
             {
@@ -120,13 +120,15 @@ namespace SmartFarmManager.Service.Services
             }
                 };
 
-                string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
-                return response;
+                string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);             
             }
             catch (FirebaseException ex)
             {
                 Console.WriteLine($"⛔ Lỗi gửi Notification: {ex.Message}");
-                throw;
+            }
+            finally
+            {
+                await System.Threading.Tasks.Task.CompletedTask;
             }
         }
 

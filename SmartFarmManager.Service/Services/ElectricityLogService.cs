@@ -137,7 +137,7 @@ namespace SmartFarmManager.Service.Services
                         TotalConsumption = log.TotalConsumption
                     }).ToList()
                 });
-            }
+            } 
 
             return logs;
         }

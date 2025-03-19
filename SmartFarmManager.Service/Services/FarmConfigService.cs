@@ -31,7 +31,7 @@ namespace SmartFarmManager.Service.Services
                 throw new Exception("Farm configuration not found.");
             }
 
-            DateTime currentTime = DateTimeUtils.GetServerTimeInVietnamTime();
+            DateTime currentTime = DateTimeUtils.VietnamNow();
 
             TimeSpan timeDifference = newTime - currentTime;
 
