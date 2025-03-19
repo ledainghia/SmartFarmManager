@@ -298,6 +298,33 @@ namespace SmartFarmManager.API.Controllers
                 _context.FarmAdmins.Add(farmAdminEntry);
                 _context.SaveChanges();
 
+                // Thêm dữ liệu thức ăn
+                var foodStacks = new List<FoodStack>
+                {
+                    new FoodStack
+                    {
+                        Id = Guid.NewGuid(),
+                        FarmId = Guid.Parse("7b0ad5a5-ca3e-45b1-9519-d42135d5bea4"),
+                        FoodType = "Dạng mảnh",
+                        Quantity = 10000000m,
+                        CostPerKg = 15000m,
+                        CurrentStock = 10000000m
+                    },
+                    new FoodStack
+                    {
+                        Id = Guid.NewGuid(),
+                        FarmId = Guid.Parse("7b0ad5a5-ca3e-45b1-9519-d42135d5bea4"),
+                        FoodType = "Dạng viên",
+                        Quantity = 20000000m,
+                        CostPerKg = 17000m,
+                        CurrentStock = 20000000m
+                    }
+                };
+
+                _context.FoodStacks.AddRange(foodStacks);
+                _context.SaveChanges();
+
+
                 var cages = new List<Cage>
                 {
                     new Cage { Id = Guid.Parse("f37f0727-435d-4d80-9c29-ae2f41b49c9d"), PenCode = "Pen_01", FarmId = Guid.Parse("7b0ad5a5-ca3e-45b1-9519-d42135d5bea4"), Name = "Cage 1", Area = 10, Location = "Location 1", Capacity = 500, BoardCode = "Board_01", BoardStatus = true, CreatedDate = DateTime.Parse("2024-12-16T03:01:38.5500000"), CameraUrl = "http://camera_1.example.com", ChannelId = 1, IsSolationCage = false },

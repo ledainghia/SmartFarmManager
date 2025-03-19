@@ -613,7 +613,7 @@ namespace SmartFarmManager.Service.Services
 
                 foreach (var task in tasksToUpdate)
                 {
-                    task.Status = TaskStatusEnum.Done;
+                    task.Status = TaskStatusEnum.Cancelled;
                 }
 
                 await _unitOfWork.Tasks.UpdateListTaskAsync(tasksToUpdate);
@@ -645,7 +645,7 @@ namespace SmartFarmManager.Service.Services
                     PrescribedDate = DateTimeUtils.GetServerTimeInVietnamTime(),
                     Notes = request.Notes,
                     DaysToTake = request.Prescriptions.DaysToTake,
-                    Status = request.Status,
+                    Status = PrescriptionStatusEnum.Active,
                     QuantityAnimal = request.Prescriptions.QuantityAnimal.Value,
                     //EndDate = updatedModel.Prescriptions.PrescribedDate.Value.AddDays((double)updatedModel.Prescriptions.DaysToTake),
                     EndDate = DateTimeUtils.GetServerTimeInVietnamTime().AddDays((double)request.Prescriptions.DaysToTake),

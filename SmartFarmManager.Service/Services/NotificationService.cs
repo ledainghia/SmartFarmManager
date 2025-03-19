@@ -105,6 +105,11 @@ namespace SmartFarmManager.Service.Services
 
         public async System.Threading.Tasks.Task SendNotification(string token, string title, object customData)
         {
+            if (string.IsNullOrEmpty(token))
+            {
+                Console.WriteLine("⚠️ Token rỗng , bỏ qua gửi thông báo.");
+                await System.Threading.Tasks.Task.CompletedTask;
+            }
             try
             {
 
