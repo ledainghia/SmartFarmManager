@@ -20,7 +20,7 @@ public partial class FarmingBatch : EntityBase
     public string Status { get; set; }
 
     public int CleaningFrequency { get; set; }
-    public int DeadQuantity { get; set; } = 0;
+    public int AffectedQuantity { get; set; } = 0;
 
     public int? Quantity { get; set; }
     public Guid FarmId { get; set; }

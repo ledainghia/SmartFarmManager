@@ -22,8 +22,7 @@ public partial class GrowthStage : EntityBase
 
     public int? AgeEnd { get; set; }
     public Guid? SaleTypeId { get;set; }
-    public int? DeadQuantity { get; set; } = 0;
-    public int? AffectedQuantity { get; set; } = 0;
+
     public DateTime? AgeStartDate { get; set; }
 
     public DateTime? AgeEndDate { get; set; }

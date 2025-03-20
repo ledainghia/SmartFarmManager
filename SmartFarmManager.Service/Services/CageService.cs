@@ -111,7 +111,7 @@ namespace SmartFarmManager.Service.Services
                     Status = fb.Status,
                     CleaningFrequency = fb.CleaningFrequency,
                     Quantity = fb.Quantity,
-                    AffectedQuantity = fb.DeadQuantity,
+                    AffectedQuantity = fb.AffectedQuantity,
                     GrowthStageDetails = fb.GrowthStages.Where(gs =>
                         gs.AgeStartDate.HasValue &&
                         gs.AgeEndDate.HasValue &&
