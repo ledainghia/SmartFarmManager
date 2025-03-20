@@ -725,7 +725,7 @@ namespace SmartFarmManager.Service.Services
                 Status = farmingBatch.Status,
                 CleaningFrequency = farmingBatch.CleaningFrequency,
                 Quantity = farmingBatch.Quantity,
-                AffectedQuantity = farmingBatch?.AffectedQuantity,
+                DeadQuantity = farmingBatch?.DeadQuantity
             };
         }
 
@@ -754,7 +754,7 @@ namespace SmartFarmManager.Service.Services
                 Status = fb.Status,
                 CleaningFrequency = fb.CleaningFrequency,
                 Quantity = fb.Quantity,
-                AffectedQuantity = fb.AffectedQuantity,
+                DeadQuantity = fb.DeadQuantity,
             }).ToList();
         }
 
@@ -1115,7 +1115,7 @@ namespace SmartFarmManager.Service.Services
                     Status = farmingBatch.Status,
                     CleaningFrequency = farmingBatch.CleaningFrequency,
                     Quantity = farmingBatch.Quantity,
-                    AffectedQuantity = farmingBatch.AffectedQuantity,
+                    DeadQuantity = farmingBatch.DeadQuantity,
                     GrowthStageDetails = currentGrowthStage == null ? null : new GrowthStageDetailModel
                     {
                         Id = currentGrowthStage.Id,
@@ -1129,7 +1129,8 @@ namespace SmartFarmManager.Service.Services
                         AgeStartDate = currentGrowthStage.AgeStartDate,
                         AgeEndDate = currentGrowthStage.AgeEndDate,
                         Status = currentGrowthStage.Status,
-                        AffectQuantity = currentGrowthStage.Quantity,
+                        AffectQuantity = currentGrowthStage.AffectedQuantity,
+                        DeadQuantity = currentGrowthStage.DeadQuantity,
                         RecommendedWeightPerSession = currentGrowthStage.RecommendedWeightPerSession,
                         WeightBasedOnBodyMass = currentGrowthStage.WeightBasedOnBodyMass,
                     }

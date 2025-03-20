@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Service.Helpers;
 
@@ -240,7 +241,8 @@ namespace SmartFarmManager.API.Controllers
                     new Role { Id = Guid.Parse("544865bf-c00d-4e6f-9d05-f32f9d9cc468"), RoleName = "Admin Farm" },
                     new Role { Id = Guid.Parse("70702de9-89bc-48e5-861e-f4c1a5ac01d8"), RoleName = "Staff" },
                     new Role { Id = Guid.Parse("63f38a5f-6a4c-4006-9e20-73a89c1d3940"), RoleName = "Staff Farm" },
-                    new Role { Id = Guid.Parse("b833e6cd-6c06-4daa-aa6e-b5ed5f64dda0"), RoleName = "Vet" }
+                    new Role { Id = Guid.Parse("b833e6cd-6c06-4daa-aa6e-b5ed5f64dda0"), RoleName = "Vet" },
+                    new Role { Id = Guid.Parse("E8C551C1-F509-4191-91CE-764370E86278"), RoleName = "GOD" }
                 };
                 _context.Roles.AddRange(roles);
                 _context.SaveChanges();
@@ -249,10 +251,12 @@ namespace SmartFarmManager.API.Controllers
                 {
                     new User { Id = Guid.Parse("babc4332-d7d8-457b-af12-765a992c4314"), Username = "admin", PasswordHash = "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5", FullName = "Admin User", Email = "admin@farm.com", PhoneNumber = "0123456789", Address = "Admin Address", IsActive = true, CreatedAt = DateTime.UtcNow, RoleId = Guid.Parse("3c1ef196-e428-4951-83e1-b640a08d3bfb") }, // Admin
                     new User { Id = Guid.Parse("8dac47e4-58b6-43ef-aac8-c9c4315bd4e0"), Username = "staff", PasswordHash = "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5", FullName = "Farm Staff", Email = "staff@farm.com", PhoneNumber = "0987654321", Address = "Staff Address", IsActive = true, CreatedAt = DateTime.UtcNow, RoleId = Guid.Parse("70702de9-89bc-48e5-861e-f4c1a5ac01d8") }, // Staff
-                    new User { Id = Guid.Parse("ad28b5ad-e1f4-4bf8-b7de-00859235a3f8"), Username = "vet", PasswordHash = "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5", FullName = "Veterinary Doctor", Email = "vet@farm.com", PhoneNumber = "0123987654", Address = "Vet Address", IsActive = true, CreatedAt = DateTime.UtcNow, RoleId = Guid.Parse("b833e6cd-6c06-4daa-aa6e-b5ed5f64dda0") }, // Vet
+                    new User { Id = Guid.Parse("ad28b5ad-e1f4-4bf8-b7de-00859235a3f8"), Username = "vet_farm", PasswordHash = "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5", FullName = "Veterinary Doctor", Email = "vet@farm.com", PhoneNumber = "0123987654", Address = "Vet Address", IsActive = true, CreatedAt = DateTime.UtcNow, RoleId = Guid.Parse("b833e6cd-6c06-4daa-aa6e-b5ed5f64dda0") }, // Vet
                     new User { Id = Guid.Parse("a406f2a5-f7f7-4701-9c21-339b16c06f76"), Username = "admin_farm", PasswordHash = "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5", FullName = "Farm Admin", Email = "adminfarm@farm.com", PhoneNumber = "0123567890", Address = "Farm Admin Address", IsActive = true, CreatedAt = DateTime.UtcNow, RoleId = Guid.Parse("544865bf-c00d-4e6f-9d05-f32f9d9cc468") }, // Admin Farm
                     new User { Id = Guid.Parse("b8a28787-9d97-4849-949a-56ebfc6d5de0"), Username = "staff_farm_1", PasswordHash = "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5", FullName = "Farm Staff 1", Email = "stafffarm1@farm.com", PhoneNumber = "0987123456", Address = "Staff Farm Address 1", IsActive = true, CreatedAt = DateTime.UtcNow, RoleId = Guid.Parse("63f38a5f-6a4c-4006-9e20-73a89c1d3940") }, // Staff Farm 1
-                    new User { Id = Guid.Parse("54da1a44-d865-4d41-bf65-f8fc3e939d25"), Username = "staff_farm_2", PasswordHash = "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5", FullName = "Farm Staff 2", Email = "stafffarm2@farm.com", PhoneNumber = "0978123456", Address = "Staff Farm Address 2", IsActive = true, CreatedAt = DateTime.UtcNow, RoleId = Guid.Parse("63f38a5f-6a4c-4006-9e20-73a89c1d3940") } // Staff Farm 2
+                    new User { Id = Guid.Parse("54da1a44-d865-4d41-bf65-f8fc3e939d25"), Username = "staff_farm_2", PasswordHash = "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5", FullName = "Farm Staff 2", Email = "stafffarm2@farm.com", PhoneNumber = "0978123456", Address = "Staff Farm Address 2", IsActive = true, CreatedAt = DateTime.UtcNow, RoleId = Guid.Parse("63f38a5f-6a4c-4006-9e20-73a89c1d3940") }, // Staff Farm 2
+                    new User { Id = Guid.NewGuid(), Username = "GOD_farm", PasswordHash = "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5", FullName = "GOD", Email = "GOD@farm.com", PhoneNumber = "09781245634", Address = "GOD Address", IsActive = true, CreatedAt = DateTime.UtcNow, RoleId = Guid.Parse("E8C551C1-F509-4191-91CE-764370E86278") } // God
+                
                 };
 
                 _context.Users.AddRange(users);
@@ -414,6 +418,7 @@ namespace SmartFarmManager.API.Controllers
                         Status = "Active",
                         CleaningFrequency = 2,
                         Quantity = 200,
+                        DeadQuantity = 0,
                         FarmId = Guid.Parse("7b0ad5a5-ca3e-45b1-9519-d42135d5bea4")
                     };
 
@@ -453,6 +458,8 @@ namespace SmartFarmManager.API.Controllers
                             AgeStartDate = stageStartDate,
                             AgeEndDate = stageEndDate,
                             Status = stageTemplate.StageName == "Gà trưởng thành" ? "Active" : "Completed",
+                            DeadQuantity = 0,
+                            AffectedQuantity = 0,
                             WeightBasedOnBodyMass = _context.FoodTemplates.FirstOrDefault(f => f.StageTemplateId == stageTemplate.Id)?.WeightBasedOnBodyMass,
                             RecommendedWeightPerSession = 200 * stageTemplate.WeightAnimal
                         };
@@ -582,6 +589,7 @@ namespace SmartFarmManager.API.Controllers
                                     DueDate = date,
                                     Status = "Done",
                                     Session = session,
+                                    IsTreatmentTask = false,
                                     CreatedAt = date.AddDays(-1)
                                 });
                             }
@@ -603,6 +611,7 @@ namespace SmartFarmManager.API.Controllers
                                 DueDate = date,
                                 Status = "Done",
                                 Session = 1,
+                                IsTreatmentTask = false,
                                 CreatedAt = date.AddDays(-1)
                             });
                         }
@@ -620,6 +629,7 @@ namespace SmartFarmManager.API.Controllers
                             Description = $"Cân gà vào cuối giai đoạn {stage.Name} tại {batch.Name} - {batch.CageId}",
                             DueDate = stageEndDate,
                             Session = 1,
+                            IsTreatmentTask = false,
                             Status = "Done",
                             CreatedAt = stageEndDate.AddDays(-1)
                         });
