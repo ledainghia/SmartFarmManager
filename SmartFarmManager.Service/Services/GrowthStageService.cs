@@ -281,7 +281,7 @@ namespace SmartFarmManager.Service.Services
                 Name = growthStage.Name,
                 WeightAnimal = growthStage.WeightAnimal,
                 Quantity = growthStage.Quantity,
-                AffectQuantity = farmingBatch.AffectedQuantity,
+                AffectQuantity = farmingBatch.DeadQuantity,
                 AgeStart = growthStage.AgeStart,
                 AgeEnd = growthStage.AgeEnd,
                 AgeStartDate = growthStage.AgeStartDate,

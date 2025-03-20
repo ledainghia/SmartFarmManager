@@ -261,7 +261,7 @@ namespace SmartFarmManager.Service.Services
                     //update affectedQuantity in farmingBatch
                     var symtom = await _unitOfWork.MedicalSymptom.FindByCondition(ms => ms.Id == updatedModel.Id).Include(ms => ms.FarmingBatch).FirstOrDefaultAsync();
                     var farmingBatch = await _unitOfWork.FarmingBatches.FindByCondition(c => c.Id == symtom.FarmingBatch.Id).FirstOrDefaultAsync();
-                    farmingBatch.AffectedQuantity += updatedModel.Prescriptions.QuantityAnimal.Value;
+                    farmingBatch.DeadQuantity += updatedModel.Prescriptions.QuantityAnimal.Value;
                     await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatch);
 
 

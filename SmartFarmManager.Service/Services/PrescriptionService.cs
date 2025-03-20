@@ -513,7 +513,7 @@ namespace SmartFarmManager.Service.Services
             var farmingBatch = prescription.MedicalSymtom?.FarmingBatch;
             if (farmingBatch != null)
             {
-                farmingBatch.AffectedQuantity -= prescription.RemainingQuantity ?? 0;
+                farmingBatch.DeadQuantity -= prescription.RemainingQuantity ?? 0;
                 await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatch);
             }
 
@@ -673,7 +673,7 @@ namespace SmartFarmManager.Service.Services
                 //update affectedQuantity in farmingBatch
                 var symtom = await _unitOfWork.MedicalSymptom.FindByCondition(ms => ms.Id == request.Id).Include(ms => ms.FarmingBatch).FirstOrDefaultAsync();
                 var farmingBatch = await _unitOfWork.FarmingBatches.FindByCondition(c => c.Id == symtom.FarmingBatch.Id).FirstOrDefaultAsync();
-                farmingBatch.AffectedQuantity += request.Prescriptions.QuantityAnimal.Value;
+                farmingBatch.DeadQuantity += request.Prescriptions.QuantityAnimal.Value;
                 await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatch);
 
                 

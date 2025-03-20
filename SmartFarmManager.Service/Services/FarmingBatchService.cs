@@ -725,7 +725,7 @@ namespace SmartFarmManager.Service.Services
                 Status = farmingBatch.Status,
                 CleaningFrequency = farmingBatch.CleaningFrequency,
                 Quantity = farmingBatch.Quantity,
-                AffectedQuantity = farmingBatch?.AffectedQuantity,
+                AffectedQuantity = farmingBatch?.DeadQuantity,
             };
         }
 
@@ -754,7 +754,7 @@ namespace SmartFarmManager.Service.Services
                 Status = fb.Status,
                 CleaningFrequency = fb.CleaningFrequency,
                 Quantity = fb.Quantity,
-                AffectedQuantity = fb.AffectedQuantity,
+                AffectedQuantity = fb.DeadQuantity,
             }).ToList();
         }
 
@@ -1115,7 +1115,7 @@ namespace SmartFarmManager.Service.Services
                     Status = farmingBatch.Status,
                     CleaningFrequency = farmingBatch.CleaningFrequency,
                     Quantity = farmingBatch.Quantity,
-                    AffectedQuantity = farmingBatch.AffectedQuantity,
+                    AffectedQuantity = farmingBatch.DeadQuantity,
                     GrowthStageDetails = currentGrowthStage == null ? null : new GrowthStageDetailModel
                     {
                         Id = currentGrowthStage.Id,
