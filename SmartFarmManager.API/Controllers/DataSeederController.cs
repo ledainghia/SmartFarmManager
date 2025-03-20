@@ -363,7 +363,8 @@ namespace SmartFarmManager.API.Controllers
                     LastTimeUpdated = DateTimeUtils.GetServerTimeInVietnamTime(),
                     TimeDifferenceInMinutes = 0
                 };
-
+                _context.FarmConfigs.Add(farmConfig);
+                _context.SaveChanges();
                 return Ok("Dữ liệu đã được nhập vào thành công!");
             }
             catch (Exception ex)
