@@ -479,7 +479,7 @@ namespace SmartFarmManager.Service.Services
                 .FindByCondition(p => p.Id == prescriptionId && p.Status == PrescriptionStatusEnum.Active)
                 .Include(p => p.PrescriptionMedications)
                 .Include(p => p.MedicalSymtom)
-                .ThenInclude(ms => ms.FarmingBatch)
+                .ThenInclude(ms => ms.FarmingBatch).ThenInclude(fb => fb.GrowthStages)
                 .FirstOrDefaultAsync();
 
             // ❌ Kiểm tra nếu đơn thuốc không tồn tại
@@ -511,10 +511,21 @@ namespace SmartFarmManager.Service.Services
 
             // 🔹 Cập nhật số lượng bị ảnh hưởng trong **FarmingBatch**
             var farmingBatch = prescription.MedicalSymtom?.FarmingBatch;
+            var growStageActive = prescription.MedicalSymtom?.FarmingBatch?.GrowthStages.FirstOrDefault(gs => gs.Status == GrowthStageStatusEnum.Active);
             if (farmingBatch != null)
             {
-                farmingBatch.AffectedQuantity -= prescription.RemainingQuantity ?? 0;
+                int remainingQuantity = prescription.RemainingQuantity ?? 0;
+                if (growStageActive != null)
+                {
+                    growStageActive.DeadQuantity = growStageActive.DeadQuantity +  prescription.QuantityAnimal - remainingQuantity;
+                    growStageActive.AffectedQuantity = growStageActive.AffectedQuantity - prescription.RemainingQuantity;
+                }
+
+                farmingBatch.DeadQuantity = farmingBatch.DeadQuantity + prescription.QuantityAnimal - remainingQuantity;
+
+
                 await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatch);
+                await _unitOfWork.GrowthStages.UpdateAsync(growStageActive);
             }
 
             // ✅ Lưu thay đổi
@@ -672,10 +683,6 @@ namespace SmartFarmManager.Service.Services
                 newPrescriptionId = newPrescription.Id;
                 //update affectedQuantity in farmingBatch
                 var symtom = await _unitOfWork.MedicalSymptom.FindByCondition(ms => ms.Id == request.Id).Include(ms => ms.FarmingBatch).FirstOrDefaultAsync();
-                var farmingBatch = await _unitOfWork.FarmingBatches.FindByCondition(c => c.Id == symtom.FarmingBatch.Id).FirstOrDefaultAsync();
-                farmingBatch.AffectedQuantity += request.Prescriptions.QuantityAnimal.Value;
-                await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatch);
-
                 
 
                 //create task in today and tomorow
