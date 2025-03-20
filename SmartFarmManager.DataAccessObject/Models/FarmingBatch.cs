@@ -18,7 +18,6 @@ public partial class FarmingBatch : EntityBase
     public DateTime? EstimatedTimeStart { get; set; } // Thời gian dự kiến
     public DateTime? EndDate { get; set; } // Ngày kết thúc dự kiến
     public string Status { get; set; }
-
     public int CleaningFrequency { get; set; }
     public int DeadQuantity { get; set; } = 0;
 
