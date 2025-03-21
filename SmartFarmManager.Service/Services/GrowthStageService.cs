@@ -281,7 +281,8 @@ namespace SmartFarmManager.Service.Services
                 Name = growthStage.Name,
                 WeightAnimal = growthStage.WeightAnimal,
                 Quantity = growthStage.Quantity,
-                AffectQuantity = farmingBatch.AffectedQuantity,
+                AffectQuantity = growthStage.AffectedQuantity,
+                DeadQuantity = growthStage.DeadQuantity,
                 AgeStart = growthStage.AgeStart,
                 AgeEnd = growthStage.AgeEnd,
                 AgeStartDate = growthStage.AgeStartDate,
@@ -317,6 +318,72 @@ namespace SmartFarmManager.Service.Services
             return true; // Cập nhật thành công
         }
 
+        public async Task UpdateGrowthStagesStatusAsync()
+        {
+            var activeFarmingBatches = await _unitOfWork.FarmingBatches
+           .FindByCondition(fb => fb.Status == FarmingBatchStatusEnum.Active)
+           .ToListAsync();
+
+            if (!activeFarmingBatches.Any())
+            {
+                throw new Exception("No active farming batches found.");
+            }
+
+            // Lấy ngày hôm nay
+            var today = DateTimeUtils.GetServerTimeInVietnamTime().Date;
+            foreach (var farmingBatch in activeFarmingBatches)
+            {
+                // Lấy tất cả các GrowthStage của FarmingBatch này
+                var growthStages = await _unitOfWork.GrowthStages
+                    .FindByCondition(gs => gs.FarmingBatchId == farmingBatch.Id)
+                    .OrderBy(gs => gs.AgeStartDate)  // Sắp xếp theo AgeStartDate
+                    .ToListAsync();
+
+                if (!growthStages.Any())
+                {
+                    throw new Exception($"No growth stages found for farming batch {farmingBatch.Id}.");
+                }
+
+                for (int i = 0; i < growthStages.Count; i++)
+                {
+                    var currentGrowthStage = growthStages[i];
+
+                    // Kiểm tra nếu hôm nay là ngày kết thúc của giai đoạn này
+                    if (currentGrowthStage.Status==GrowthStageStatusEnum.Active && currentGrowthStage.AgeEndDate.HasValue && currentGrowthStage.AgeEndDate.Value.Date == today)
+                    {
+                        // Cập nhật trạng thái của giai đoạn hiện tại thành Completed
+                        currentGrowthStage.Status = "Completed";
+                        await _unitOfWork.GrowthStages.UpdateAsync(currentGrowthStage);
+                    }
+                    else
+                    {
+                        // Nếu chưa tới ngày kết thúc, bỏ qua giai đoạn này
+                        continue;
+                    }
+
+                    if (i + 1 < growthStages.Count)
+                    {
+                        var nextGrowthStage = growthStages[i + 1];
+
+                        // Nếu giai đoạn tiếp theo có trạng thái "Upcoming" và AgeStart = AgeEnd của giai đoạn hiện tại + 1
+                        if (nextGrowthStage.Status == GrowthStageStatusEnum.Upcoming &&                 
+                            nextGrowthStage.AgeStart == currentGrowthStage.AgeEnd+1)
+                        {
+                            // Cập nhật trạng thái của giai đoạn tiếp theo thành Active
+                            nextGrowthStage.Status = GrowthStageStatusEnum.Active;
+
+                            // Cập nhật Quantity và AffectedQuantity cho giai đoạn mới
+                            nextGrowthStage.Quantity = currentGrowthStage.Quantity.GetValueOrDefault() - currentGrowthStage.DeadQuantity.GetValueOrDefault();
+                            nextGrowthStage.AffectedQuantity = 0;
+                            // Cập nhật giai đoạn phát triển tiếp theo
+                            await _unitOfWork.GrowthStages.UpdateAsync(nextGrowthStage);
+                        }
+                    }
+
+                    await _unitOfWork.CommitAsync();
+                }
+            }
+        }
 
     }
 }

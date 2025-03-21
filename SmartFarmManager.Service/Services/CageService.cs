@@ -111,7 +111,7 @@ namespace SmartFarmManager.Service.Services
                     Status = fb.Status,
                     CleaningFrequency = fb.CleaningFrequency,
                     Quantity = fb.Quantity,
-                    AffectedQuantity = fb.AffectedQuantity,
+                    DeadQuantity = fb.DeadQuantity,
                     GrowthStageDetails = fb.GrowthStages.Where(gs =>
                         gs.AgeStartDate.HasValue &&
                         gs.AgeEndDate.HasValue &&
@@ -128,6 +128,8 @@ namespace SmartFarmManager.Service.Services
                             AgeStartDate = gs.AgeStartDate,
                             AgeEndDate = gs.AgeEndDate,
                             Status = gs.Status,
+                            AffectQuantity = gs.AffectedQuantity,
+                            DeadQuantity = gs.DeadQuantity,
                             RecommendedWeightPerSession = gs.RecommendedWeightPerSession,
                             WeightBasedOnBodyMass = gs.WeightBasedOnBodyMass,
                         })
