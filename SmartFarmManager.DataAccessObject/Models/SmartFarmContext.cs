@@ -48,7 +48,7 @@ public partial class SmartFarmContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         //optionsBuilder.UseSqlServer("Server=localhost;Database=Farm3;User Id=sa;Password=12345;Encrypt=True;TrustServerCertificate=True;");
-        optionsBuilder.UseSqlServer("Server=103.48.193.165,5053;Database=Farm3;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;");
+        optionsBuilder.UseSqlServer("Server=103.48.193.165,5053;Database=Farm4;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;");
 
     }
 

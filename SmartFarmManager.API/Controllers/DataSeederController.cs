@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using SmartFarmManager.DataAccessObject.Models;
+using SmartFarmManager.Service.BusinessModels.SensorDataLog;
+using SmartFarmManager.Service.BusinessModels.Webhook;
 using SmartFarmManager.Service.Helpers;
 
 namespace SmartFarmManager.API.Controllers
@@ -268,7 +271,8 @@ namespace SmartFarmManager.API.Controllers
                 {
                     new DataAccessObject.Models.NotificationType { Id = Guid.Parse("800bd31c-4fcb-4d4d-a462-55c4a70c1e7d"), NotiTypeName = "Alert" },
                     new DataAccessObject.Models.NotificationType { Id = Guid.Parse("4245669d-361d-4c8b-bc76-cfbd1961505b"), NotiTypeName = "MedicalSymptom" },
-                    new DataAccessObject.Models.NotificationType { Id = Guid.Parse("05904def-aedc-421a-86cb-93226c2e08ad"), NotiTypeName = "Task" }
+                    new DataAccessObject.Models.NotificationType { Id = Guid.Parse("05904def-aedc-421a-86cb-93226c2e08ad"), NotiTypeName = "Task" },
+                    new DataAccessObject.Models.NotificationType { Id = Guid.NewGuid(), NotiTypeName = "FarmingBatchSchedule" }
                 };
 
                 _context.NotificationTypes.AddRange(notificationTypes);
@@ -1080,5 +1084,300 @@ namespace SmartFarmManager.API.Controllers
                 return StatusCode(500, $"Lỗi nhập dữ liệu Logs: {ex.Message}");
             }
         }
+
+        [HttpPost("seed/SensorData")]
+        public IActionResult SeedSensorData()
+        {
+            try
+            {
+                // Kiểm tra nếu đã có dữ liệu thì không thêm nữa
+                if (_context.Sensors.Any())
+                {
+                    return BadRequest("Dữ liệu cảm biến đã tồn tại trong hệ thống.");
+                }
+
+                // Danh sách các loại cảm biến (SensorType)
+                var sensorTypes = new List<SensorType>
+        {
+            new SensorType { Id = Guid.NewGuid(), Name = "Cảm biến nhiệt độ", Description = "Cảm biến đo nhiệt độ", FieldName = "Temperature", Unit = "°C", DefaultPinCode = 1 },
+            new SensorType { Id = Guid.NewGuid(), Name = "Cảm biến H2S", Description = "Cảm biến đo nồng độ H2S", FieldName = "H2S", Unit = "%", DefaultPinCode = 2 },
+            new SensorType { Id = Guid.NewGuid(), Name = "Cảm biến NH3", Description = "Cảm biến đo nồng độ NH3", FieldName = "NH3", Unit = "%", DefaultPinCode = 3 },
+            new SensorType { Id = Guid.NewGuid(), Name = "Cảm biến độ ẩm", Description = "Cảm biến đo độ ẩm", FieldName = "Humidity", Unit = "%", DefaultPinCode = 4 }
+        };
+
+                _context.SensorTypes.AddRange(sensorTypes);
+                _context.SaveChanges();
+
+                // Lấy danh sách các chuồng (Cage)
+                var cages = _context.Cages.ToList();
+
+                foreach (var cage in cages)
+                {
+                    foreach (var sensorType in sensorTypes)
+                    {
+                        // Tạo dữ liệu cảm biến cho mỗi chuồng
+                        var sensor = new Sensor
+                        {
+                            Id = Guid.NewGuid(),
+                            SensorTypeId = sensorType.Id,
+                            CageId = cage.Id,
+                            SensorCode = $"Sensor_{cage.PenCode}_{sensorType.FieldName}",
+                            Name = sensorType.Name,
+                            PinCode = sensorType.DefaultPinCode, // Gán PinCode theo mặc định của SensorType
+                            Status = true, // Giả sử cảm biến luôn hoạt động
+                            CreatedDate = DateTime.UtcNow,
+                            ModifiedDate = DateTime.UtcNow,
+                            IsDeleted = false,
+                            NodeId = 1 // Gán NodeId mặc định (có thể thay đổi nếu có yêu cầu thêm về NodeId)
+                        };
+
+                        _context.Sensors.Add(sensor);
+                    }
+                }
+
+                _context.SaveChanges();
+
+                return Ok("Dữ liệu cảm biến đã được nhập vào thành công!");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi khi nhập dữ liệu cảm biến: {ex.Message}");
+            }
+        }
+        [HttpPost("seed/ElectricityData")]
+        public IActionResult SeedElectricityData()
+        {
+            try
+            {
+                // Kiểm tra nếu đã có dữ liệu điện thì không thêm nữa
+                if (_context.ElectricityLogs.Any())
+                {
+                    return BadRequest("Dữ liệu điện đã tồn tại trong hệ thống.");
+                }
+
+                // Lấy danh sách các farm
+                var farms = _context.Farms.ToList();
+
+                // Tạo dữ liệu điện giả cho mỗi farm
+                foreach (var farm in farms)
+                {
+                    var fakeElectricData = new ElectricDataOfFarmModel
+                    {
+                        FarmCode = farm.FarmCode,
+                        Data = new List<ElectricRecordModel>(), // Danh sách các record điện cho từng giờ
+                        CreatedDate = DateTime.UtcNow.Date  // Tạo dữ liệu cho ngày hôm nay
+                    };
+
+                    // Tạo dữ liệu điện giả cho 24 giờ trong ngày
+                    var random = new Random();
+                    for (int hour = 0; hour < 24; hour++)
+                    {
+                        var beginTime = DateTime.UtcNow.Date.AddHours(hour);  // Thời gian bắt đầu của mỗi giờ
+                        var endTime = beginTime.AddHours(1);  // Thời gian kết thúc sau 1 giờ
+
+                        // Tạo record cho mỗi giờ
+                        var electricityRecord = new ElectricRecordModel
+                        {
+                            BeginTime = beginTime,  // Thời gian bắt đầu của mỗi giờ
+                            EndTime = endTime,      // Thời gian kết thúc của mỗi giờ
+                            Value = Math.Round(random.NextDouble() * 500, 2),  // Giá trị random cho điện tiêu thụ (từ 0 - 500)
+                            Date = DateTime.UtcNow.Date.AddHours(hour)  // Ngày và giờ ghi nhận (cùng ngày)
+                        };
+
+                        fakeElectricData.Data.Add(electricityRecord); // Thêm vào dữ liệu cho farm
+                    }
+
+
+                    // Lưu dữ liệu vào cơ sở dữ liệu
+                    var electricityLog = new ElectricityLog
+                    {
+                        Id = Guid.NewGuid(),
+                        FarmId = farm.Id,
+                        Data = JsonConvert.SerializeObject(fakeElectricData.Data),  // Lưu dữ liệu dưới dạng JSON
+                        TotalConsumption = (decimal)fakeElectricData.Data.Sum(record => record.Value),
+                        CreatedDate = DateTime.UtcNow,
+                        ModifiedDate = DateTime.UtcNow
+                    };
+
+                    _context.ElectricityLogs.Add(electricityLog);
+                }
+
+                _context.SaveChanges();
+
+                return Ok("Dữ liệu điện đã được nhập vào thành công!");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi khi nhập dữ liệu điện: {ex.Message}");
+            }
+        }
+         
+        [HttpPost("seed/WaterData")]
+        public IActionResult SeedWaterData()
+        {
+            try
+            {
+                // Kiểm tra nếu đã có dữ liệu nước thì không thêm nữa
+                if (_context.WaterLogs.Any())
+                {
+                    return BadRequest("Dữ liệu nước đã tồn tại trong hệ thống.");
+                }
+
+                // Lấy danh sách các farm
+                var farms = _context.Farms.ToList();
+
+                // Tạo dữ liệu nước giả cho mỗi farm
+                foreach (var farm in farms)
+                {
+                    var fakeWaterData = new WaterDataOfFarmModel
+                    {
+                        FarmCode = farm.FarmCode,
+                        Data = new List<WaterRecordModel>(), // Danh sách các record nước cho từng giờ
+                        CreatedDate = DateTime.UtcNow.Date  // Tạo dữ liệu cho ngày hôm nay
+                    };
+
+                    // Tạo dữ liệu nước giả cho 24 giờ trong ngày
+                    var random = new Random();
+                    for (int hour = 0; hour < 24; hour++)
+                    {
+                        var beginTime = DateTime.UtcNow.Date.AddHours(hour);  // Thời gian bắt đầu của mỗi giờ
+                        var endTime = beginTime.AddHours(1);  // Thời gian kết thúc sau 1 giờ
+
+                        // Tạo record cho mỗi giờ
+                        var waterRecord = new WaterRecordModel
+                        {
+                            BeginTime = beginTime,  // Thời gian bắt đầu của mỗi giờ
+                            EndTime = endTime,      // Thời gian kết thúc của mỗi giờ
+                            Value = Math.Round(random.NextDouble() * 1000, 2),  // Giá trị random cho nước tiêu thụ (từ 0 - 1000)
+                            Date = DateTime.UtcNow.Date.AddHours(hour)  // Ngày và giờ ghi nhận (cùng ngày)
+                        };
+
+                        fakeWaterData.Data.Add(waterRecord); // Thêm vào dữ liệu cho farm
+                    }
+
+                    // Lưu dữ liệu vào cơ sở dữ liệu
+                    var waterLog = new WaterLog
+                    {
+                        Id = Guid.NewGuid(),
+                        FarmId = farm.Id,
+                        Data = JsonConvert.SerializeObject(fakeWaterData.Data),  // Lưu dữ liệu dưới dạng JSON
+                        TotalConsumption = (decimal)fakeWaterData.Data.Sum(record => record.Value),
+                        CreatedDate = DateTime.UtcNow,
+                        ModifiedDate = DateTime.UtcNow
+                    };
+
+                    _context.WaterLogs.Add(waterLog);
+                }
+
+                _context.SaveChanges();
+
+                return Ok("Dữ liệu nước đã được nhập vào thành công!");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi khi nhập dữ liệu nước: {ex.Message}");
+            }
+        }
+
+        [HttpPost("seed/SensorDataLogs")]
+        public IActionResult SeedSensorDataLogs()
+        {
+            try
+            {
+                // Kiểm tra nếu đã có dữ liệu cảm biến thì không thêm nữa
+                if (_context.SensorDataLogs.Any())
+                {
+                    return BadRequest("Dữ liệu cảm biến đã tồn tại trong hệ thống.");
+                }
+
+                // Lấy danh sách các cảm biến (Sensor) đã tạo ở bước trước
+                var sensors = _context.Sensors.Include(s=>s.SensorType).ToList();
+
+                // Tạo dữ liệu cảm biến giả cho mỗi cảm biến
+                foreach (var sensor in sensors)
+                {
+                    // Tạo dữ liệu cảm biến giả cho mỗi cảm biến trong từng chuồng
+                    var fakeSensorData = new SensorDataLog
+                    {
+                        Id = Guid.NewGuid(),
+                        SensorId = sensor.Id,
+                        Data = GenerateFakeSensorData(sensor.SensorType),  // Dữ liệu cảm biến giả (tạo cho mỗi sensor)
+                        CreatedDate = DateTime.UtcNow,
+                        IsWarning = false // Mặc định là không có cảnh báo
+                    };
+
+                    _context.SensorDataLogs.Add(fakeSensorData);
+                }
+
+                _context.SaveChanges();
+
+                return Ok("Dữ liệu cảm biến đã được nhập vào thành công!");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi khi nhập dữ liệu cảm biến: {ex.Message}");
+            }
+        }
+
+        private string GenerateFakeSensorData(SensorType sensorType)
+        {
+            var random = new Random();
+            var sensorRecords = new List<SensorRecordModel>();
+
+            // Tạo dữ liệu cảm biến giả cho 24 giờ trong ngày
+            for (int hour = 0; hour < 24; hour++)
+            {
+                var beginTime = DateTime.UtcNow.Date.AddHours(hour);  // Thời gian bắt đầu của mỗi giờ
+                var endTime = beginTime.AddHours(1);  // Thời gian kết thúc sau 1 giờ
+
+                double sensorValue = 0;
+
+                // Cập nhật giá trị cảm biến tùy theo loại cảm biến
+                switch (sensorType.Name)
+                {
+                    case "Cảm biến nhiệt độ":
+                        // Nhiệt độ trong khoảng 18°C - 30°C
+                        sensorValue = Math.Round(random.NextDouble() * (30 - 18) + 18, 2);
+                        break;
+
+                    case "Cảm biến H2S":
+                        // Nồng độ H2S trong khoảng 0% - 1%
+                        sensorValue = Math.Round(random.NextDouble() * (1 - 0) + 0, 2);
+                        break;
+
+                    case "Cảm biến NH3":
+                        // Nồng độ NH3 trong khoảng 0.001% - 0.02%
+                        sensorValue = Math.Round(random.NextDouble() * (0.02 - 0.001) + 0.001, 5);
+                        break;
+
+                    case "Cảm biến độ ẩm":
+                        // Độ ẩm trong khoảng 50% - 70%
+                        sensorValue = Math.Round(random.NextDouble() * (70 - 50) + 50, 2);
+                        break;
+
+                    default:
+                        sensorValue = 0;
+                        break;
+                }
+
+                // Tạo record cho mỗi giờ
+                var sensorRecord = new SensorRecordModel
+                {
+                    BeginTime = beginTime,  // Thời gian bắt đầu của mỗi giờ
+                    EndTime = endTime,      // Thời gian kết thúc của mỗi giờ
+                    Value = sensorValue,    // Giá trị của cảm biến
+                    Date = DateTime.UtcNow.Date.AddHours(hour)  // Ngày và giờ ghi nhận (cùng ngày)
+                };
+
+                sensorRecords.Add(sensorRecord); // Thêm record vào danh sách
+            }
+
+            // Chuyển đổi list các SensorRecordModel thành JSON
+            return JsonConvert.SerializeObject(sensorRecords);
+        }
+
+
+
+
     }
 }
