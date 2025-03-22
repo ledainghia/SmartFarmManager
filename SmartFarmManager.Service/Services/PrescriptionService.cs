@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
+using SmartFarmManager.Service.BusinessModels;
+using SmartFarmManager.Service.BusinessModels.MedicalSymptom;
 using SmartFarmManager.Service.BusinessModels.Medication;
 using SmartFarmManager.Service.BusinessModels.Prescription;
 using SmartFarmManager.Service.BusinessModels.PrescriptionMedication;
@@ -172,7 +174,7 @@ namespace SmartFarmManager.Service.Services
                 }
 
                 var lastDate = startDate.AddDays((model.DaysToTake.Value - 1));
-                
+
 
                 // Tạo task cho ngày mai nếu có thuốc kê cho buổi sáng, trưa, chiều, tối
                 var tomorrow = startDate.AddDays(1);
@@ -298,6 +300,7 @@ namespace SmartFarmManager.Service.Services
                 .FindByCondition(p => p.Id == id)
                 .Include(p => p.PrescriptionMedications)
                 .ThenInclude(pm => pm.Medication)
+                .Include(p => p.MedicalSymtom).ThenInclude(ms => ms.MedicalSymptomDetails).ThenInclude(msd => msd.Symptom)
                 .FirstOrDefaultAsync();
 
             if (prescription == null)
@@ -315,6 +318,8 @@ namespace SmartFarmManager.Service.Services
                 Price = prescription.Price,
                 CageId = prescription.CageId,
                 DaysToTake = prescription.DaysToTake,
+                Symptoms = string.Join(", ", prescription.MedicalSymtom?.MedicalSymptomDetails?.Where(d => d.Symptom != null)
+                            .Select(d => d.Symptom.SymptomName) ?? new List<string>()),
                 Medications = prescription.PrescriptionMedications.Select(pm => new PrescriptionMedicationModel
                 {
                     MedicationId = pm.MedicationId,
@@ -460,7 +465,7 @@ namespace SmartFarmManager.Service.Services
             if (isLastSession)
             {
                 var checkListPrescription = await _unitOfWork.Prescription.FindByCondition(p => p.MedicalSymtomId == prescription.MedicalSymtomId && p.Status == PrescriptionStatusEnum.Active).CountAsync();
-                if(checkListPrescription > 1)
+                if (checkListPrescription > 1)
                 {
                     return false;
                 }
@@ -474,7 +479,7 @@ namespace SmartFarmManager.Service.Services
                 .FindByCondition(p => p.Id == prescriptionId && p.Status == PrescriptionStatusEnum.Active)
                 .Include(p => p.PrescriptionMedications)
                 .Include(p => p.MedicalSymtom)
-                .ThenInclude(ms => ms.FarmingBatch)
+                .ThenInclude(ms => ms.FarmingBatch).ThenInclude(fb => fb.GrowthStages)
                 .FirstOrDefaultAsync();
 
             // ❌ Kiểm tra nếu đơn thuốc không tồn tại
@@ -482,7 +487,7 @@ namespace SmartFarmManager.Service.Services
                 throw new ArgumentException("Prescription not found or not active.");
 
             // ❌ Kiểm tra nếu trạng thái không hợp lệ
-            if (request.Status != PrescriptionStatusEnum.Completed && request.Status != PrescriptionStatusEnum.Dead)
+            if (request.Status != PrescriptionStatusEnum.Completed && request.Status != PrescriptionStatusEnum.Stop)
                 throw new ArgumentException("Invalid status. Only 'Completed' or 'Dead' are allowed.");
 
             // ✅ Kiểm tra số lượng vật nuôi bị ảnh hưởng
@@ -506,10 +511,21 @@ namespace SmartFarmManager.Service.Services
 
             // 🔹 Cập nhật số lượng bị ảnh hưởng trong **FarmingBatch**
             var farmingBatch = prescription.MedicalSymtom?.FarmingBatch;
+            var growStageActive = prescription.MedicalSymtom?.FarmingBatch?.GrowthStages.FirstOrDefault(gs => gs.Status == GrowthStageStatusEnum.Active);
             if (farmingBatch != null)
             {
-                farmingBatch.AffectedQuantity -= prescription.RemainingQuantity ?? 0;
+                int remainingQuantity = prescription.RemainingQuantity ?? 0;
+                if (growStageActive != null)
+                {
+                    growStageActive.DeadQuantity = growStageActive.DeadQuantity +  prescription.QuantityAnimal - remainingQuantity;
+                    growStageActive.AffectedQuantity = growStageActive.AffectedQuantity - prescription.RemainingQuantity;
+                }
+
+                farmingBatch.DeadQuantity = farmingBatch.DeadQuantity + prescription.QuantityAnimal - remainingQuantity;
+
+
                 await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatch);
+                await _unitOfWork.GrowthStages.UpdateAsync(growStageActive);
             }
 
             // ✅ Lưu thay đổi
@@ -518,7 +534,7 @@ namespace SmartFarmManager.Service.Services
 
             return true;
         }
-        public async Task<bool> CreateNewPrescriptionAsync(PrescriptionModel request, Guid medicalSymptomId)
+        public async Task<bool> CreateNewPrescriptionAsync(UpdateMedicalSymptomModel request)
         {
             await _unitOfWork.BeginTransactionAsync();
 
@@ -529,7 +545,7 @@ namespace SmartFarmManager.Service.Services
 
                 // 🔹 Lấy triệu chứng đang điều trị
                 var medicalSymptom = await _unitOfWork.MedicalSymptom
-                    .FindByCondition(ms => ms.Id == medicalSymptomId)
+                    .FindByCondition(ms => ms.Id == request.Id)
                     .Include(ms => ms.Prescriptions)
                     .ThenInclude(p => p.PrescriptionMedications)
                     .FirstOrDefaultAsync();
@@ -543,6 +559,10 @@ namespace SmartFarmManager.Service.Services
                     .OrderByDescending(p => p.PrescribedDate)
                     .FirstOrDefault();
 
+                if(activePrescription.QuantityAnimal < request.Prescriptions.QuantityAnimal)
+                {
+                    return false;
+                }
                 if (activePrescription != null)
                 {
                     // 🔹 Tính lại tổng số liều đã uống
@@ -585,29 +605,38 @@ namespace SmartFarmManager.Service.Services
                     }
 
                     // 🔹 Cập nhật giá trị cho đơn thuốc cũ
-                    activePrescription.Status = PrescriptionStatusEnum.Completed;
+                    activePrescription.Status = PrescriptionStatusEnum.Stop;
                     activePrescription.EndDate = serverTime;
                     activePrescription.Price = totalCost;
+                    activePrescription.RemainingQuantity = request.Prescriptions.QuantityAnimal;
                     await _unitOfWork.Prescription.UpdateAsync(activePrescription);
+
+                    medicalSymptom.Diagnosis = string.IsNullOrEmpty(medicalSymptom.Diagnosis)
+                                ? request.Diagnosis
+                                : medicalSymptom.Diagnosis + " -> " + request.Diagnosis;
+
+                    medicalSymptom.Notes = string.IsNullOrEmpty(medicalSymptom.Notes)
+                                ? request.Notes
+                                : medicalSymptom.Notes + " -> " + request.Notes;
+                    await _unitOfWork.MedicalSymptom.UpdateAsync(medicalSymptom);
                 }
                 var tasksToUpdate = await _unitOfWork.Tasks
                 .FindByCondition(t =>
                     t.PrescriptionId == activePrescription.Id &&
                     t.DueDate >= serverTime.Date &&
-                    t.Session > currentSessionCheck &&
-                    t.Status == TaskStatusEnum.Pending || t.Status == TaskStatusEnum.InProgress)
+                    (t.Status == TaskStatusEnum.Pending || t.Status == TaskStatusEnum.InProgress))
                 .ToListAsync();
 
                 foreach (var task in tasksToUpdate)
                 {
-                    task.Status = TaskStatusEnum.Done;
+                    task.Status = TaskStatusEnum.Cancelled;
                 }
 
-                await _unitOfWork.Tasks.UpdateListAsync(tasksToUpdate);
+                await _unitOfWork.Tasks.UpdateListTaskAsync(tasksToUpdate);
                 var cage = await _unitOfWork.Cages.FindByCondition(c => c.IsDeleted == false && c.IsSolationCage == true).FirstOrDefaultAsync();
                 Guid? newPrescriptionId = null;
                 // 🔹 Tạo đơn thuốc mới
-                var medications = request.Medications;
+                var medications = request.Prescriptions.Medications;
 
                 var totalPrice = medications.Sum(m =>
                 {
@@ -620,27 +649,27 @@ namespace SmartFarmManager.Service.Services
                     return medication.PricePerDose.HasValue ? medication.PricePerDose.Value * totalDoses : 0;
                 });
                 // Kiểm tra trạng thái đơn thuốc có hợp lệ không
-                if (request.Status != PrescriptionStatusEnum.Active)
+                if (request.Prescriptions.Status != PrescriptionStatusEnum.Active)
                 {
-                    throw new ArgumentException($"Trạng thái đơn thuốc không hợp lệ: {request.Status}");
+                    throw new ArgumentException($"Trạng thái đơn thuốc không hợp lệ: {request.Prescriptions.Status}");
                 }
                 var newPrescription = new Prescription
                 {
-                    MedicalSymtomId = medicalSymptomId,
+                    MedicalSymtomId = request.Id,
                     CageId = cage.Id,
                     //PrescribedDate = updatedModel.Prescriptions.PrescribedDate,
                     PrescribedDate = DateTimeUtils.GetServerTimeInVietnamTime(),
                     Notes = request.Notes,
-                    DaysToTake = request.DaysToTake,
-                    Status = request.Status,
-                    QuantityAnimal = request.QuantityAnimal.Value,
+                    DaysToTake = request.Prescriptions.DaysToTake,
+                    Status = PrescriptionStatusEnum.Active,
+                    QuantityAnimal = request.Prescriptions.QuantityAnimal.Value,
                     //EndDate = updatedModel.Prescriptions.PrescribedDate.Value.AddDays((double)updatedModel.Prescriptions.DaysToTake),
-                    EndDate = DateTimeUtils.GetServerTimeInVietnamTime().AddDays((double)request.DaysToTake),
-                    Price = totalPrice * request.DaysToTake * request.QuantityAnimal.Value
+                    EndDate = DateTimeUtils.GetServerTimeInVietnamTime().AddDays((double)request.Prescriptions.DaysToTake),
+                    Price = totalPrice * request.Prescriptions.DaysToTake * request.Prescriptions.QuantityAnimal.Value
                 };
 
                 await _unitOfWork.Prescription.CreateAsync(newPrescription);
-                var newPrescriptionMedication = request.Medications.Select(m => new PrescriptionMedication
+                var newPrescriptionMedication = request.Prescriptions.Medications.Select(m => new PrescriptionMedication
                 {
                     PrescriptionId = newPrescription.Id,
                     Notes = m.Notes,
@@ -653,12 +682,8 @@ namespace SmartFarmManager.Service.Services
                 await _unitOfWork.PrescriptionMedications.CreateListAsync(newPrescriptionMedication);
                 newPrescriptionId = newPrescription.Id;
                 //update affectedQuantity in farmingBatch
-                var symtom = await _unitOfWork.MedicalSymptom.FindByCondition(ms => ms.Id ==medicalSymptomId).Include(ms => ms.FarmingBatch).FirstOrDefaultAsync();
-                var farmingBatch = await _unitOfWork.FarmingBatches.FindByCondition(c => c.Id == symtom.FarmingBatch.Id).FirstOrDefaultAsync();
-                farmingBatch.AffectedQuantity += request.QuantityAnimal.Value;
-                await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatch);
-
-
+                var symtom = await _unitOfWork.MedicalSymptom.FindByCondition(ms => ms.Id == request.Id).Include(ms => ms.FarmingBatch).FirstOrDefaultAsync();
+                
 
                 //create task in today and tomorow
                 // Lấy thời gian hiện tại và buổi hiện tại
@@ -666,10 +691,10 @@ namespace SmartFarmManager.Service.Services
                 var currentSession = SessionTime.GetCurrentSession(currentTime);
 
                 // Kiểm tra đơn thuốc có thuốc kê cho các buổi sáng, trưa, chiều, tối hay không
-                var hasMorningMedication = request.Medications.Any(m => m.Morning > 0);
-                var hasNoonMedication = request.Medications.Any(m => m.Noon > 0);
-                var hasAfternoonMedication = request.Medications.Any(m => m.Afternoon > 0);
-                var hasEveningMedication = request.Medications.Any(m => m.Evening > 0);
+                var hasMorningMedication = request.Prescriptions.Medications.Any(m => m.Morning > 0);
+                var hasNoonMedication = request.Prescriptions.Medications.Any(m => m.Noon > 0);
+                var hasAfternoonMedication = request.Prescriptions.Medications.Any(m => m.Afternoon > 0);
+                var hasEveningMedication = request.Prescriptions.Medications.Any(m => m.Evening > 0);
 
                 // Tạo danh sách TaskDaily và Task
                 var taskList = new List<DataAccessObject.Models.Task>();
@@ -680,7 +705,7 @@ namespace SmartFarmManager.Service.Services
                 TimeSpan startTime = TimeSpan.Zero;
                 var assignedUserTodayId = await _userService.GetAssignedUserForCageAsync(cage.Id, startDate);
 
-                var medicationIds = request.Medications.Select(m => m.MedicationId).ToList();
+                var medicationIds = request.Prescriptions.Medications.Select(m => m.MedicationId).ToList();
 
                 // Truy vấn từ cơ sở dữ liệu để lấy MedicationName dựa trên MedicationId
                 var medicationList = await _unitOfWork.Medication
@@ -737,7 +762,7 @@ namespace SmartFarmManager.Service.Services
                     startTime = SessionTime.Morning.Start;
                     taskList.Add(new DataAccessObject.Models.Task
                     {
-
+                        Id = Guid.NewGuid(),
                         TaskTypeId = taskType.Id,
                         CageId = cage.Id,
                         AssignedToUserId = assignedUserTodayId.Value, // Sẽ gán sau
@@ -763,6 +788,7 @@ namespace SmartFarmManager.Service.Services
                     startTime = SessionTime.Noon.Start;
                     taskList.Add(new DataAccessObject.Models.Task
                     {
+                        Id = Guid.NewGuid(),
                         TaskTypeId = taskType.Id,
                         CageId = cage.Id,
                         AssignedToUserId = assignedUserTodayId.Value, // Sẽ gán sau
@@ -787,6 +813,7 @@ namespace SmartFarmManager.Service.Services
                     startTime = SessionTime.Afternoon.Start;
                     taskList.Add(new DataAccessObject.Models.Task
                     {
+                        Id = Guid.NewGuid(),
                         TaskTypeId = taskType.Id,
                         CageId = cage.Id,
                         AssignedToUserId = assignedUserTodayId.Value, // Sẽ gán sau
@@ -811,6 +838,7 @@ namespace SmartFarmManager.Service.Services
                     startTime = SessionTime.Evening.Start;
                     taskList.Add(new DataAccessObject.Models.Task
                     {
+                        Id = Guid.NewGuid(),
                         TaskTypeId = taskType.Id,
                         CageId = cage.Id,
                         AssignedToUserId = assignedUserTodayId.Value, // Sẽ gán sau
@@ -827,10 +855,10 @@ namespace SmartFarmManager.Service.Services
                     });
                 }
 
-                var lastDate = startDate.AddDays((request.DaysToTake.Value - 1));
+                var lastDate = startDate.AddDays((request.Prescriptions.DaysToTake.Value - 1));
                 // Tạo task cho ngày mai nếu có thuốc kê cho buổi sáng, trưa, chiều, tối
                 var tomorrow = startDate.AddDays(1);
-                if (request.DaysToTake == 1)
+                if (request.Prescriptions.DaysToTake == 1)
                 {
                     lastDate = lastDate.AddDays(1); // Thêm ngày mai nếu kê đơn vào buổi trưa, chiều, tối
                                                     // Kiểm tra có thuốc kê cho buổi sáng, trưa, chiều, tối ngày mai
@@ -846,6 +874,7 @@ namespace SmartFarmManager.Service.Services
                             {
                                 taskList.Add(new DataAccessObject.Models.Task
                                 {
+                                    Id = Guid.NewGuid(),
                                     TaskTypeId = taskType.Id,
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
@@ -873,6 +902,7 @@ namespace SmartFarmManager.Service.Services
                             {
                                 taskList.Add(new DataAccessObject.Models.Task
                                 {
+                                    Id = Guid.NewGuid(),
                                     TaskTypeId = taskType.Id,
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
@@ -900,6 +930,7 @@ namespace SmartFarmManager.Service.Services
                             {
                                 taskList.Add(new DataAccessObject.Models.Task
                                 {
+                                    Id = Guid.NewGuid(),
                                     TaskTypeId = taskType.Id,
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
@@ -927,6 +958,7 @@ namespace SmartFarmManager.Service.Services
                             {
                                 taskList.Add(new DataAccessObject.Models.Task
                                 {
+                                    Id = Guid.NewGuid(),
                                     TaskTypeId = taskType.Id,
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
@@ -960,6 +992,7 @@ namespace SmartFarmManager.Service.Services
                             {
                                 taskList.Add(new DataAccessObject.Models.Task
                                 {
+                                    Id = Guid.NewGuid(),
                                     TaskTypeId = taskType.Id,
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
@@ -987,6 +1020,7 @@ namespace SmartFarmManager.Service.Services
                             {
                                 taskList.Add(new DataAccessObject.Models.Task
                                 {
+                                    Id = Guid.NewGuid(),
                                     TaskTypeId = taskType.Id,
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
@@ -1014,6 +1048,7 @@ namespace SmartFarmManager.Service.Services
                             {
                                 taskList.Add(new DataAccessObject.Models.Task
                                 {
+                                    Id = Guid.NewGuid(),
                                     TaskTypeId = taskType.Id,
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
@@ -1041,6 +1076,7 @@ namespace SmartFarmManager.Service.Services
                             {
                                 taskList.Add(new DataAccessObject.Models.Task
                                 {
+                                    Id = Guid.NewGuid(),
                                     TaskTypeId = taskType.Id,
                                     CageId = cage.Id,
                                     AssignedToUserId = assignedUserId.Value,
@@ -1059,6 +1095,16 @@ namespace SmartFarmManager.Service.Services
                         }
                     }
                 }
+                var duplicateIds = taskList
+    .GroupBy(t => t.Id)
+    .Where(g => g.Count() > 1)
+    .Select(g => g.Key)
+    .ToList();
+
+                if (duplicateIds.Any())
+                {
+                    throw new Exception($"Duplicate TaskIds in taskList: {string.Join(", ", duplicateIds)}");
+                }
                 // Lưu TaskDaily và Task
                 if (taskList.Any())
                 {
@@ -1074,6 +1120,154 @@ namespace SmartFarmManager.Service.Services
             }
         }
 
+
+        public async Task<PagedResult<PrescriptionList>> GetPrescriptionsAsync(
+    DateTime? startDate, DateTime? endDate, string? status, string? cageName, int pageNumber, int pageSize)
+        {
+            var query = _unitOfWork.Prescription
+                .FindAll()
+                .Include(p => p.MedicalSymtom).ThenInclude(ms => ms.FarmingBatch).ThenInclude(fb => fb.Cage)
+                .Include(p => p.MedicalSymtom).ThenInclude(ms => ms.Disease)
+                .Include(p => p.PrescriptionMedications)
+                    .ThenInclude(pm => pm.Medication)
+                .AsQueryable();
+
+            // 🔹 Lọc theo ngày kê đơn (PrescribedDate)
+            if (startDate.HasValue)
+            {
+                query = query.Where(p => p.PrescribedDate >= startDate.Value);
+            }
+
+            if (endDate.HasValue)
+            {
+                query = query.Where(p => p.PrescribedDate <= endDate.Value);
+            }
+
+            // 🔹 Lọc theo trạng thái đơn thuốc
+            if (!string.IsNullOrEmpty(status))
+            {
+                query = query.Where(p => p.Status == status);
+            }
+
+            // 🔹 Lọc theo tên chuồng
+            if (!string.IsNullOrEmpty(cageName))
+            {
+                query = query.Where(p => p.MedicalSymtom.FarmingBatch.Cage.Name.Contains(cageName));
+            }
+
+            // 🔹 Đếm tổng số đơn thuốc
+            int totalCount = await query.CountAsync();
+
+            // 🔹 Tính toán số trang
+            int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            // 🔹 Phân trang và lấy dữ liệu
+            var prescriptions = await query
+                .OrderByDescending(p => p.PrescribedDate) // Sắp xếp theo ngày kê đơn mới nhất
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(p => new PrescriptionList
+                {
+                    Id = p.Id,
+                    RecordId = p.MedicalSymtomId,
+                    CageId = p.CageId,
+                    QuantityInCage = p.MedicalSymtom.QuantityInCage,
+                    PrescribedDate = p.PrescribedDate,
+                    EndDate = p.EndDate,
+                    Notes = p.Notes,
+                    QuantityAnimal = p.QuantityAnimal,
+                    RemainingQuantity = p.RemainingQuantity,
+                    Status = p.Status,
+                    DaysToTake = p.DaysToTake,
+                    Price = p.Price,
+                    Symptoms = string.Join(", ", p.MedicalSymtom.MedicalSymptomDetails.Select(d => d.Symptom.SymptomName)),
+                    CageAnimalName = p.MedicalSymtom.FarmingBatch.Cage.Name,
+                    Disease = p.MedicalSymtom.Diagnosis,
+                    NameAnimal = p.MedicalSymtom.FarmingBatch.Name,
+                    Medications = p.PrescriptionMedications.Select(pm => new PrescriptionMedicationModel
+                    {
+                        MedicationId = pm.MedicationId,
+                        Medication = new MedicationModel
+                        {
+                            Name = pm.Medication.Name,
+                            UsageInstructions = pm.Medication.UsageInstructions,
+                            Price = pm.Medication.Price,
+                            DoseQuantity = pm.Medication.DoseQuantity
+                        },
+                        Morning = pm.Morning,
+                        Noon = pm.Noon,
+                        Afternoon = pm.Afternoon,
+                        Evening = pm.Evening,
+                        Notes = pm.Notes
+                    }).ToList()
+                })
+        .ToListAsync();
+
+            // 🔹 Trả về dữ liệu dạng PagedResult<T>
+            return new PagedResult<PrescriptionList>
+            {
+                Items = prescriptions,
+                TotalItems = totalCount,
+                TotalPages = totalPages,
+                CurrentPage = pageNumber,
+                PageSize = pageSize,
+                HasNextPage = pageNumber < totalPages,
+                HasPreviousPage = pageNumber > 1
+            };
+        }
+
+        public async Task<List<PrescriptionModel>> GetPrescriptionsHistoryAsync(Guid medicalSymptomId)
+        {
+            // 🔹 Lấy triệu chứng để truy xuất farmingBatchId
+            var medicalSymptom = await _unitOfWork.MedicalSymptom
+                .FindByCondition(ms => ms.Id == medicalSymptomId)
+                .Include(ms => ms.FarmingBatch)
+                .FirstOrDefaultAsync();
+
+            if (medicalSymptom == null)
+                throw new ArgumentException("Medical symptom not found.");
+
+            var farmingBatchId = medicalSymptom.FarmingBatchId;
+
+            // 🔹 Lấy tất cả các đơn thuốc từ vụ nuôi đó (ngoại trừ trạng thái Cancelled)
+            var prescriptions = await _unitOfWork.Prescription
+                .FindByCondition(p => p.MedicalSymtom.FarmingBatchId == farmingBatchId && p.Status != PrescriptionStatusEnum.Cancelled)
+                .Include(p => p.PrescriptionMedications)
+                    .ThenInclude(pm => pm.Medication)
+                .Include(p => p.MedicalSymtom)
+                    .ThenInclude(ms => ms.Disease) // Lấy bệnh liên quan
+                .ToListAsync();
+
+            // 🔹 Chuyển đổi dữ liệu sang PrescriptionModel
+            return prescriptions.Select(p => new PrescriptionModel
+            {
+                Id = p.Id,
+                PrescribedDate = p.PrescribedDate,
+                Status = p.Status,
+                QuantityAnimal = p.QuantityAnimal,
+                Notes = p.Notes,
+                Price = p.Price,
+                DaysToTake = p.DaysToTake,
+                EndDate = p.EndDate,
+                Medications = p.PrescriptionMedications.Select(pm => new PrescriptionMedicationModel
+                {
+                    MedicationId = pm.MedicationId,
+                    Morning = pm.Morning,
+                    Afternoon = pm.Afternoon,
+                    Evening = pm.Evening,
+                    Noon = pm.Noon,
+                    Notes = pm.Notes,
+                    Medication = new MedicationModel
+                    {
+                        Name = pm.Medication.Name,
+                        UsageInstructions = pm.Medication.UsageInstructions,
+                        Price = pm.Medication.Price,
+                        DoseQuantity = pm.Medication.DoseQuantity
+                    }
+                }).ToList(),
+                Disease = p.MedicalSymtom.Diagnosis
+            }).ToList();
+        }
 
     }
 }

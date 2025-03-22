@@ -16,10 +16,12 @@ namespace SmartFarmManager.Service.Services
     public class FarmConfigService:IFarmConfigService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ITaskService _taskService; 
 
-        public FarmConfigService(IUnitOfWork unitOfWork)
+        public FarmConfigService(IUnitOfWork unitOfWork, ITaskService taskService)
         {
             _unitOfWork = unitOfWork;
+            _taskService = taskService;
         }
 
         public async Task UpdateFarmTimeDifferenceAsync(Guid farmId, DateTime newTime)
@@ -31,7 +33,7 @@ namespace SmartFarmManager.Service.Services
                 throw new Exception("Farm configuration not found.");
             }
 
-            DateTime currentTime = DateTimeUtils.GetServerTimeInVietnamTime();
+            DateTime currentTime = DateTimeUtils.VietnamNow();
 
             TimeSpan timeDifference = newTime - currentTime;
 
@@ -42,6 +44,7 @@ namespace SmartFarmManager.Service.Services
             await _unitOfWork.CommitAsync();
 
             DateTimeUtils.SetTimeDifference(farmConfig.TimeDifferenceInMinutes);
+            
         }
 
         public async Task ResetTimeDifferenceAsync(Guid farmId)
@@ -56,6 +59,7 @@ namespace SmartFarmManager.Service.Services
             await _unitOfWork.FarmConfigs.UpdateAsync(farmConfig);
             await _unitOfWork.CommitAsync();
             DateTimeUtils.SetTimeDifference(farmConfig.TimeDifferenceInMinutes);
+            _taskService.UpdateAllTaskStatusesAsync();
         }
 
         public async Task<bool> UpdateFarmConfigAsync(Guid farmId, FarmConfigUpdateModel model)

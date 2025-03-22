@@ -31,12 +31,28 @@ namespace SmartFarmManager.API.Controllers
 
             var apiKey = Request.Headers["x-api-key"].ToString();
             //var domain = Request.Headers["Origin"].ToString() ?? Request.Headers["Referer"].ToString();
-            var domain = Request.Host.Host;
-
+            var domain = Request.Headers["Origin"].ToString() ?? Request.Headers["Referer"].ToString();
             if (string.IsNullOrEmpty(domain))
             {
-                _logger.LogWarning("❌ Thiếu domain trong header.");
-                return BadRequest("Thiếu domain.");
+                domain = Request.Headers["x-origin-domain"].ToString(); // Nếu không có Origin hoặc Referer, kiểm tra header tùy chỉnh
+            }
+            if (string.IsNullOrEmpty(domain))
+            {
+                domain = Request.Host.Host; // Nếu vẫn không có, lấy host từ request
+            }
+
+            // Chuẩn hóa domain
+            if (!string.IsNullOrEmpty(domain))
+            {
+                try
+                {
+                    domain = new Uri(domain).Host;
+                }
+                catch (UriFormatException ex)
+                {
+                    _logger.LogWarning("❌ Domain không hợp lệ: {Domain}, lỗi: {Error}", domain, ex.Message);
+                    return BadRequest("Domain không hợp lệ.");
+                }
             }
 
             // Validate `x-api-key` và `domain` qua service

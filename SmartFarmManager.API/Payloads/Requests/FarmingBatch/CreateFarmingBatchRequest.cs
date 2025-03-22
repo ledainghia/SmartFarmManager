@@ -10,6 +10,8 @@ namespace SmartFarmManager.API.Payloads.Requests.FarmingBatch
 
         [Required]
         public Guid CageId { get; set; }
+        [Required]
+        public DateTime? EstimatedTimeStart { get; set; }
 
         [Required]
         [MaxLength(100)]
@@ -30,6 +32,7 @@ namespace SmartFarmManager.API.Payloads.Requests.FarmingBatch
                 Name = this.Name,
                 CleaningFrequency = this.CleaningFrequency,
                 Quantity = this.Quantity,
+                EstimatedTimeStart = this.EstimatedTimeStart,
             };
         }
     }

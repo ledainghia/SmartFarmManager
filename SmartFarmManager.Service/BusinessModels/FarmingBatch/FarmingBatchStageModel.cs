@@ -1,6 +1,4 @@
-﻿using SmartFarmManager.Service.BusinessModels.AnimalTemplate;
-using SmartFarmManager.Service.BusinessModels.Cages;
-using SmartFarmManager.Service.BusinessModels.GrowthStage;
+﻿using SmartFarmManager.Service.BusinessModels.GrowthStage;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SmartFarmManager.Service.BusinessModels.FarmingBatch
 {
-    public class FarmingBatchModel
+    public class FarmingBatchStageModel
     {
         public Guid Id { get; set; }
         public string FarmingbatchCode { get; set; }
@@ -24,8 +22,7 @@ namespace SmartFarmManager.Service.BusinessModels.FarmingBatch
         public int CleaningFrequency { get; set; }
         public int? Quantity { get; set; }
         public int? DeadQuantity { get; set; }
-        public GrowthStageDetailModel GrowthStageDetails { get; set; }
-        public CageModel Cage { get; set; }
-        public AnimalTemplateItemModel Template { get; set; }
+
+        public GrowthStageDetailModel? GrowthStageDetails { get; set; }
     }
 }

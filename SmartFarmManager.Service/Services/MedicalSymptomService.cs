@@ -96,7 +96,7 @@ namespace SmartFarmManager.Service.Services
                 Status = ms.Status,
                 AffectedQuantity = ms.AffectedQuantity,
                 Notes = ms.Notes,
-                Quantity = ms.FarmingBatch?.Quantity ?? 0,
+                Quantity = ms.QuantityInCage,
                 NameAnimal = ms.FarmingBatch.Name,
                 CreateAt = ms.CreateAt,
                 IsEmergency = ms.IsEmergency,
@@ -207,6 +207,7 @@ namespace SmartFarmManager.Service.Services
                 existingSymptom.Diagnosis = updatedModel.Diagnosis;
                 existingSymptom.Status = updatedModel.Status;
                 existingSymptom.Notes = updatedModel.Notes;
+                existingSymptom.IsEmergency = false;
                 var cage = await _unitOfWork.Cages.FindByCondition(c => c.IsDeleted == false && c.IsSolationCage == true).FirstOrDefaultAsync();
                 Guid? newPrescriptionId = null;
                 // Tạo mới Prescription nếu có
@@ -259,9 +260,14 @@ namespace SmartFarmManager.Service.Services
                     newPrescriptionId = newPrescription.Id;
                     //update affectedQuantity in farmingBatch
                     var symtom = await _unitOfWork.MedicalSymptom.FindByCondition(ms => ms.Id == updatedModel.Id).Include(ms => ms.FarmingBatch).FirstOrDefaultAsync();
-                    var farmingBatch = await _unitOfWork.FarmingBatches.FindByCondition(c => c.Id == symtom.FarmingBatch.Id).FirstOrDefaultAsync();
-                    farmingBatch.AffectedQuantity += updatedModel.Prescriptions.QuantityAnimal.Value;
+                    var farmingBatch = await _unitOfWork.FarmingBatches.FindByCondition(c => c.Id == symtom.FarmingBatch.Id).Include(fb => fb.GrowthStages).FirstOrDefaultAsync();
+                    var growthStageActive = farmingBatch?.GrowthStages.FirstOrDefault(gs => gs.Status == GrowthStageStatusEnum.Active);
+                    if (growthStageActive != null)
+                    {
+                        growthStageActive.AffectedQuantity += updatedModel.Prescriptions.QuantityAnimal.Value;
+                    }
                     await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatch);
+                    await _unitOfWork.GrowthStages.UpdateAsync(growthStageActive);
 
 
 
@@ -697,7 +703,7 @@ namespace SmartFarmManager.Service.Services
                         TaskId = firstTask.Id,
                         CageId = cage.Id
                     };
-                    //await notificationService.SendNotification(staffFarm.DeviceId, "Bạn nhận được công việc mới!", notificationStaff);
+                    await notificationService.SendNotification(staffFarm.DeviceId, "Bạn nhận được công việc mới!", notificationStaff);
                     await _unitOfWork.Notifications.CreateAsync(notificationStaff);
                 }
                 return true;
@@ -926,14 +932,14 @@ namespace SmartFarmManager.Service.Services
                     CageId = farmingBatches.CageId
                 };
                 Console.WriteLine($"✅ Tạo noti cho Admin");
-                //await notificationService.SendNotification(vetFarm.DeviceId, "Có báo cáo triệu chứng mới", notificationVet);
-                //Console.WriteLine("✅ Đã gửi thông báo cho Vet.");
+                await notificationService.SendNotification(vetFarm.DeviceId, "Có báo cáo triệu chứng mới", notificationVet);
+                Console.WriteLine("✅ Đã gửi thông báo cho Vet.");
 
-                //await _unitOfWork.Notifications.CreateAsync(notificationVet);
+                await _unitOfWork.Notifications.CreateAsync(notificationVet);
 
 
-                //await notificationService.SendNotification(adminFarm.DeviceId, "Có báo cáo triệu chứng mới", notificationAdmin);
-                //Console.WriteLine("✅ Đã gửi thông báo cho Admin.");
+                await notificationService.SendNotification(adminFarm.DeviceId, "Có báo cáo triệu chứng mới", notificationAdmin);
+                Console.WriteLine("✅ Đã gửi thông báo cho Admin.");
 
                 await _unitOfWork.Notifications.CreateAsync(notificationAdmin);
 

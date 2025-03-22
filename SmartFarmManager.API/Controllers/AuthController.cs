@@ -59,6 +59,43 @@ namespace SmartFarmManager.API.Controllers
                 return BadRequest(ApiResult<string>.Fail(ex.Message));
             }
         }
+        [Authorize]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            Request.Headers.TryGetValue("Authorization", out var token);
+            token = token.ToString().Split()[1];
+            // Here goes your token validation logic
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                return BadRequest(ApiResult<string>.Fail("Authorization header is missing or invalid."));
+            }
+            // Decode the JWT token
+            var handler = new JwtSecurityTokenHandler();
+            var jwtToken = handler.ReadJwtToken(token);
+
+            // Check if the token is expired
+            if (jwtToken.ValidTo < DateTime.UtcNow)
+            {
+                return BadRequest(ApiResult<string>.Fail("Token has expired."));
+            }
+
+            string id = jwtToken.Claims.FirstOrDefault(c => c.Type == "nameid")?.Value;          
+
+            try
+            {
+                // Gọi service Logout
+                await _authenticationService.Logout(Guid.Parse(id));
+
+                return Ok(ApiResult<string>.Succeed("User logged out successfully."));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+        }
+
+
 
         // POST: api/auth/create
         //[Authorize(Roles = "Admin")]

@@ -5,6 +5,7 @@ using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Cages;
 using SmartFarmManager.Service.BusinessModels.DailyFoodUsageLog;
 using SmartFarmManager.Service.BusinessModels.FarmingBatch;
+using SmartFarmManager.Service.BusinessModels.GrowthStage;
 using SmartFarmManager.Service.BusinessModels.Prescription;
 using SmartFarmManager.Service.BusinessModels.Task;
 using SmartFarmManager.Service.BusinessModels.Vaccine;
@@ -20,11 +21,17 @@ namespace SmartFarmManager.Service.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ITaskService _taskService;
+        private readonly NotificationService _notificationService;
+        private readonly INotificationService _notificationUserService;
+        private readonly EmailService _emailService;
 
-        public FarmingBatchService(IUnitOfWork unitOfWork, ITaskService taskService)
+        public FarmingBatchService(IUnitOfWork unitOfWork, ITaskService taskService, EmailService emailService,NotificationService notificationService, INotificationService notificationUserService)
         {
             _unitOfWork = unitOfWork;
             _taskService = taskService;
+            _emailService = emailService;
+            _notificationService = notificationService;
+            _notificationUserService = notificationUserService;
         }
 
         public async Task<bool> CreateFarmingBatchAsync(CreateFarmingBatchModel model)
@@ -42,24 +49,52 @@ namespace SmartFarmManager.Service.Services
                 throw new InvalidOperationException($"Chuồng này đã đạt số lượng vụ nuôi tối đa ({farmConfig.MaxFarmingBatchesPerCage}).");
             }
 
+            var animalTemplate = await _unitOfWork.AnimalTemplates
+                   .FindByCondition(a => a.Id == model.TemplateId && a.Status == "Active")
+                   .Include(a => a.GrowthStageTemplates)
+                   .ThenInclude(gst => gst.TaskDailyTemplates)
+                   .Include(a => a.GrowthStageTemplates)
+                   .ThenInclude(gst => gst.FoodTemplates)
+                   .Include(a => a.VaccineTemplates)
+                   .FirstOrDefaultAsync();
+
+            if (animalTemplate == null)
+            {
+                throw new ArgumentException($"Animal template with ID {model.TemplateId} does not exist or is inactive.");
+            }
+
+            var ageEndMax = animalTemplate.GrowthStageTemplates.Max(gst => gst.AgeEnd);
+            var estimatedTimeEnd = model.EstimatedTimeStart.Value.AddDays(ageEndMax ?? 0);  
+
+            var existingBatch = await _unitOfWork.FarmingBatches
+                .FindByCondition(fb => fb.CageId == model.CageId &&
+                                        fb.Status != FarmingBatchStatusEnum.Completed &&
+                                        fb.EstimatedTimeStart.HasValue &&
+                                        fb.EndDate.HasValue &&
+                                        (
+                                            // Vụ nuôi mới bắt đầu trước và kết thúc sau vụ nuôi cũ
+                                            (fb.EstimatedTimeStart.Value.Date <= model.EstimatedTimeStart.Value.Date && fb.EndDate.Value.Date >= estimatedTimeEnd.Date) ||
+
+                                            // Vụ nuôi mới bắt đầu trong khoảng thời gian vụ nuôi cũ
+                                            (fb.EstimatedTimeStart.Value.Date <= model.EstimatedTimeStart.Value.Date && fb.EndDate.Value.Date >= model.EstimatedTimeStart.Value.Date) ||
+
+                                            // Vụ nuôi mới kết thúc trong khoảng thời gian vụ nuôi cũ
+                                            (fb.EstimatedTimeStart.Value.Date <= estimatedTimeEnd.Date && fb.EndDate.Value.Date >= estimatedTimeEnd.Date)
+                                        ))
+                .FirstOrDefaultAsync();
+            if (existingBatch != null)
+            {
+                throw new InvalidOperationException($"Đã có vụ nuôi khác trong khoảng thời gian đã chọn.");
+            }
+
+
+
             await _unitOfWork.BeginTransactionAsync();
 
             try
             {
 
-                var animalTemplate = await _unitOfWork.AnimalTemplates
-                    .FindByCondition(a => a.Id == model.TemplateId && a.Status == "Active")
-                    .Include(a => a.GrowthStageTemplates)
-                    .ThenInclude(gst => gst.TaskDailyTemplates)
-                    .Include(a => a.GrowthStageTemplates)
-                    .ThenInclude(gst => gst.FoodTemplates)
-                    .Include(a => a.VaccineTemplates)
-                    .FirstOrDefaultAsync();
-
-                if (animalTemplate == null)
-                {
-                    throw new ArgumentException($"Animal template with ID {model.TemplateId} does not exist or is inactive.");
-                }
+               
 
                 var cage = await _unitOfWork.Cages.FindAsync(x => x.Id == model.CageId && !x.IsDeleted);
                 if (cage == null)
@@ -69,6 +104,7 @@ namespace SmartFarmManager.Service.Services
 
                 var farmingBatch = new FarmingBatch
                 {
+                    FarmingBatchCode = GenerateFarmingBatchCode(model.TemplateId,(DateTime)model.EstimatedTimeStart),
                     TemplateId = model.TemplateId,
                     CageId = model.CageId,
                     Name = model.Name,
@@ -76,7 +112,9 @@ namespace SmartFarmManager.Service.Services
                     Quantity = model.Quantity,
                     FarmId = cage.FarmId,
                     Status = FarmingBatchStatusEnum.Planning,
-                    StartDate = null // StartDate sẽ được cập nhật sau khi chuyển trạng thái
+                    EstimatedTimeStart = model.EstimatedTimeStart,
+                    EndDate = estimatedTimeEnd,
+                    StartDate = model.EstimatedTimeStart // StartDate sẽ được cập nhật sau khi chuyển trạng thái
                 };
 
                 await _unitOfWork.FarmingBatches.CreateAsync(farmingBatch);
@@ -88,6 +126,7 @@ namespace SmartFarmManager.Service.Services
                         FarmingBatchId = farmingBatch.Id,
                         Name = template.StageName,
                         WeightAnimal = template.WeightAnimal,
+                        WeightAnimalExpect = template.WeightAnimal,
                         AgeStart = template.AgeStart,
                         AgeEnd = template.AgeEnd,
                         FoodType = template.FoodTemplates.FirstOrDefault()?.FoodType,
@@ -168,8 +207,219 @@ namespace SmartFarmManager.Service.Services
                 throw new Exception("Failed to create Farming Batch. Details: " + ex.Message);
             }
         }
+        public async Task<bool> CreateFarmingBatchMultiCageAsync(CreateFarmingBatchMultiCageModel model)
+        {
+            var farmConfig = await _unitOfWork.FarmConfigs.FindAll().FirstOrDefaultAsync();
+
+            var animalTemplate = await _unitOfWork.AnimalTemplates
+                .FindByCondition(a => a.Id == model.TemplateId && a.Status == "Active")
+                .Include(a => a.GrowthStageTemplates)
+                .ThenInclude(gst => gst.TaskDailyTemplates)
+                .Include(a => a.GrowthStageTemplates)
+                .ThenInclude(gst => gst.FoodTemplates)
+                .Include(a => a.VaccineTemplates)
+                .FirstOrDefaultAsync();
+            if (animalTemplate == null)
+            {
+                throw new ArgumentException($"Animal template with ID {model.TemplateId} does not exist or is inactive.");
+            }
+            var ageEndMax = animalTemplate.GrowthStageTemplates.Max(gst => gst.AgeEnd);
+            var estimatedTimeEnd = model.EstimatedTimeStart.Value.AddDays(ageEndMax ?? 0);
+            
+            // Kiểm tra số lần tạo vụ nuôi trong chuồng cho từng chuồng
+            foreach (var cageItem in model.FarmingBatchItems)
+            {
+                var batchCount = await _unitOfWork.FarmingBatches
+                    .FindByCondition(fb => fb.CageId == cageItem.CageId &&
+                                            (fb.Status == FarmingBatchStatusEnum.Planning ||
+                                             fb.Status == FarmingBatchStatusEnum.Active))
+                    .CountAsync();
+                if (batchCount >= farmConfig.MaxFarmingBatchesPerCage)
+                {
+                    throw new InvalidOperationException($"Chuồng {cageItem.CageId} đã đạt số lượng vụ nuôi tối đa ({farmConfig.MaxFarmingBatchesPerCage}).");
+                }
 
 
+               
+
+                var existingBatch = await _unitOfWork.FarmingBatches
+                    .FindByCondition(fb => fb.CageId == cageItem.CageId &&
+                                            fb.Status != FarmingBatchStatusEnum.Completed &&
+                                            fb.EstimatedTimeStart.HasValue &&
+                                            fb.EndDate.HasValue &&
+                                            (
+                                                // Vụ nuôi mới bắt đầu trước và kết thúc sau vụ nuôi cũ
+                                                (fb.EstimatedTimeStart.Value.Date <= model.EstimatedTimeStart.Value.Date && fb.EndDate.Value.Date >= estimatedTimeEnd.Date) ||
+
+                                                // Vụ nuôi mới bắt đầu trong khoảng thời gian vụ nuôi cũ
+                                                (fb.EstimatedTimeStart.Value.Date <= model.EstimatedTimeStart.Value.Date && fb.EndDate.Value.Date >= model.EstimatedTimeStart.Value.Date) ||
+
+                                                // Vụ nuôi mới kết thúc trong khoảng thời gian vụ nuôi cũ
+                                                (fb.EstimatedTimeStart.Value.Date <= estimatedTimeEnd.Date && fb.EndDate.Value.Date >= estimatedTimeEnd.Date)
+                                            ))
+                    .FirstOrDefaultAsync();
+
+                if (existingBatch != null)
+                {
+                    throw new InvalidOperationException($"Đã có vụ nuôi khác trong khoảng thời gian đã chọn cho chuồng {cageItem.CageId}.");
+                }
+            }
+
+            // Bắt đầu giao dịch
+            await _unitOfWork.BeginTransactionAsync();
+
+            try
+            {
+               
+                // Lặp qua tất cả các chuồng để tạo vụ nuôi cho từng chuồng
+                foreach (var cageItem in model.FarmingBatchItems)
+                {
+                    var cage = await _unitOfWork.Cages.FindAsync(x => x.Id == cageItem.CageId && !x.IsDeleted);
+                    if (cage == null)
+                    {
+                        throw new ArgumentException($"Cage with ID {cageItem.CageId} does not exist or is inactive.");
+                    }
+
+                    var farmingBatch = new FarmingBatch
+                    {
+                        FarmingBatchCode = GenerateFarmingBatchCode(model.TemplateId, (DateTime)model.EstimatedTimeStart),
+                        TemplateId = model.TemplateId,
+                        CageId = cageItem.CageId,
+                        Name = model.Name,
+                        CleaningFrequency = model.CleaningFrequency,
+                        Quantity = cageItem.Quantity,  // Sử dụng số lượng riêng cho mỗi chuồng
+                        FarmId = cage.FarmId,
+                        Status = FarmingBatchStatusEnum.Planning,
+                        EstimatedTimeStart = model.EstimatedTimeStart,
+                        EndDate = estimatedTimeEnd,
+                        StartDate = model.EstimatedTimeStart // StartDate sẽ được cập nhật sau khi chuyển trạng thái
+                    };
+
+                    await _unitOfWork.FarmingBatches.CreateAsync(farmingBatch);
+                    await _unitOfWork.CommitAsync();
+
+                    // Tạo các GrowthStage cho từng chuồng
+                    var growthStages = animalTemplate.GrowthStageTemplates
+                        .Select(template => new GrowthStage
+                        {
+                            FarmingBatchId = farmingBatch.Id,
+                            Name = template.StageName,
+                            WeightAnimal = template.WeightAnimal,
+                            WeightAnimalExpect = template.WeightAnimal,
+                            AgeStart = template.AgeStart,
+                            AgeEnd = template.AgeEnd,
+                            FoodType = template.FoodTemplates.FirstOrDefault()?.FoodType,
+                            Status = GrowthStageStatusEnum.Planning,
+                            Quantity = cageItem.Quantity,  // Sử dụng số lượng chuồng của từng chuồng
+                            AgeStartDate = null,
+                            AgeEndDate = null,
+                            SaleTypeId = template.SaleTypeId,
+                            RecommendedWeightPerSession = farmingBatch.Quantity * (template.WeightAnimal ?? 0) * (template.FoodTemplates.Sum(f => f.WeightBasedOnBodyMass) ?? 0),
+                            WeightBasedOnBodyMass = template.FoodTemplates.Sum(f => f.WeightBasedOnBodyMass)
+                        }).ToList();
+
+                    await _unitOfWork.GrowthStages.CreateListAsync(growthStages);
+                    await _unitOfWork.CommitAsync();
+
+                    // Tạo các TaskDaily cho từng GrowthStage
+                    var taskDailyList = growthStages
+                        .SelectMany(stage => animalTemplate.GrowthStageTemplates
+                            .Where(template =>
+                                template.StageName == stage.Name &&
+                                template.AgeStart == stage.AgeStart &&
+                                template.AgeEnd == stage.AgeEnd)
+                            .SelectMany(template => template.TaskDailyTemplates.Select(taskTemplate => new TaskDaily
+                            {
+                                GrowthStageId = stage.Id,
+                                TaskTypeId = taskTemplate.TaskTypeId,
+                                TaskName = taskTemplate.TaskName,
+                                Description = taskTemplate.Description,
+                                Session = taskTemplate.Session,
+                                StartAt = null,
+                                EndAt = null
+                            })))
+                        .ToList();
+
+                    await _unitOfWork.TaskDailies.CreateListAsync(taskDailyList);
+
+                    // Tạo lịch tiêm phòng cho từng chuồng
+                    var vaccines = await _unitOfWork.Vaccines
+                        .FindByCondition(v => animalTemplate.VaccineTemplates.Select(vt => vt.VaccineName).Contains(v.Name))
+                        .ToListAsync();
+
+                    var vaccineSchedules = new List<VaccineSchedule>();
+                    foreach (var vaccineTemplate in animalTemplate.VaccineTemplates)
+                    {
+                        var vaccine = vaccines.FirstOrDefault(v => v.Name == vaccineTemplate.VaccineName);
+
+                        if (vaccine == null)
+                        {
+                            throw new ArgumentException($"Vaccine with name '{vaccineTemplate.VaccineName}' does not exist.");
+                        }
+
+                        var applicableGrowthStage = growthStages.FirstOrDefault(gs =>
+                            gs.AgeStart <= vaccineTemplate.ApplicationAge && gs.AgeEnd >= vaccineTemplate.ApplicationAge);
+
+                        if (applicableGrowthStage != null)
+                        {
+                            vaccineSchedules.Add(new VaccineSchedule
+                            {
+                                StageId = applicableGrowthStage.Id,
+                                VaccineId = vaccine.Id,
+                                Quantity = farmingBatch.Quantity,
+                                ApplicationAge = vaccineTemplate.ApplicationAge,
+                                Session = vaccineTemplate.Session,
+                                Status = VaccineScheduleStatusEnum.Upcoming,
+                                Date = null
+                            });
+                        }
+                    }
+
+                    await _unitOfWork.VaccineSchedules.CreateListAsync(vaccineSchedules);
+                }
+
+                await _unitOfWork.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackAsync();
+                Console.WriteLine($"Error in CreateFarmingBatchMultiCageAsync: {ex.Message}");
+                throw new Exception("Failed to create Farming Batches. Details: " + ex.Message);
+            }
+        }
+
+
+
+        public string GenerateFarmingBatchCode(Guid templateId, DateTime estimatedTime)
+        {
+            // Lấy phần đầu của TemplateId (hoặc bạn có thể lấy tên template)
+            string templatePart = $"Template{templateId.ToString().Substring(0, 3)}"; // Lấy 3 ký tự đầu của TemplateId
+
+            // Lấy ngày dự kiến bắt đầu, định dạng: yyyyMMdd
+            string datePart = estimatedTime.ToString("yyyyMMdd");
+
+            // Sinh mã random (kết hợp chữ và số)
+            string randomPart = GenerateRandomString(6); // Sinh chuỗi random 6 ký tự (hoặc độ dài bạn muốn)
+
+            // Ghép các phần lại để tạo FarmingBatchCode
+            return $"FM-{templatePart}-{datePart}-{randomPart}";
+        }
+
+        // Phương thức sinh chuỗi ngẫu nhiên gồm 6 ký tự (chữ và số)
+        private string GenerateRandomString(int length)
+        {
+            const string validChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"; // Các ký tự hợp lệ
+            Random random = new Random();
+            char[] randomChars = new char[length];
+
+            for (int i = 0; i < length; i++)
+            {
+                randomChars[i] = validChars[random.Next(validChars.Length)];
+            }
+
+            return new string(randomChars);
+        }
 
 
         public async Task<bool> UpdateFarmingBatchStatusAsync(Guid farmingBatchId, string newStatus)
@@ -349,13 +599,25 @@ namespace SmartFarmManager.Service.Services
         }
 
 
-        public async Task<PagedResult<FarmingBatchModel>> GetFarmingBatchesAsync(string? cageName, string? name, string? species, DateTime? startDateFrom, DateTime? startDateTo, int pageNumber, int pageSize, Guid? cageId, bool? isCancel)
+        public async Task<PagedResult<FarmingBatchModel>> GetFarmingBatchesAsync(string? keySearch,Guid? farmId, string? cageName, string? name, string? species, DateTime? startDateFrom, DateTime? startDateTo, int pageNumber, int pageSize, Guid? cageId, bool? isCancel)
         {
             var query = _unitOfWork.FarmingBatches.FindAll()
                 .Include(fb => fb.Cage) // Include related Cage
                 .Include(fb => fb.Template)
                 .AsQueryable();
 
+            if (!string.IsNullOrEmpty(keySearch))
+            {
+                query = query.Where(fb =>
+                    fb.Name.Contains(keySearch) ||                    
+                    fb.Status.Contains(keySearch)
+                    || fb.Cage.Name.Contains(keySearch));
+            }
+
+            if (!farmId.HasValue)
+            {
+                query = query.Where(x => x.FarmId == farmId);
+            }
             // Apply Filters
             if (!isCancel.Value)
             {
@@ -394,11 +656,13 @@ namespace SmartFarmManager.Service.Services
                 .Select(fb => new FarmingBatchModel
                 {
                     Id = fb.Id,
+                    FarmingbatchCode=fb.FarmingBatchCode,
                     Name = fb.Name,
                     StartDate = fb.StartDate,
                     CompleteAt = fb.CompleteAt,
                     Status = fb.Status,
                     EndDate=fb.EndDate,
+                    EstimatedTimeStart = fb.EstimatedTimeStart,
                     CleaningFrequency = fb.CleaningFrequency,
                     Quantity = fb.Quantity,
                     Cage = fb.Cage == null ? null : new CageModel
@@ -461,7 +725,7 @@ namespace SmartFarmManager.Service.Services
                 Status = farmingBatch.Status,
                 CleaningFrequency = farmingBatch.CleaningFrequency,
                 Quantity = farmingBatch.Quantity,
-                AffectedQuantity = farmingBatch?.AffectedQuantity,
+                DeadQuantity = farmingBatch?.DeadQuantity
             };
         }
 
@@ -490,7 +754,7 @@ namespace SmartFarmManager.Service.Services
                 Status = fb.Status,
                 CleaningFrequency = fb.CleaningFrequency,
                 Quantity = fb.Quantity,
-                AffectedQuantity = fb.AffectedQuantity,
+                DeadQuantity = fb.DeadQuantity,
             }).ToList();
         }
 
@@ -555,6 +819,29 @@ namespace SmartFarmManager.Service.Services
                 TotalMedicineCost = totalMedicineCost,
                 NetProfit = netProfit
             };
+        }
+
+        public async System.Threading.Tasks.Task RunUpdateFarmingBatchesStatusAsync()
+        {
+            var today =DateTimeUtils.GetServerTimeInVietnamTime().Date;
+            var farmingBatchesToUpdate = await _unitOfWork.FarmingBatches
+                .FindByCondition(fb => fb.Status == FarmingBatchStatusEnum.Planning && fb.StartDate.HasValue && fb.StartDate.Value.Date == today)
+                .ToListAsync();
+
+            // Duyệt qua từng vụ nuôi và cập nhật trạng thái của chúng
+            foreach (var farmingBatch in farmingBatchesToUpdate)
+            {
+                try
+                {
+                    // Cập nhật trạng thái từ Planning sang Active
+                    await UpdateFarmingBatchStatusAsync(farmingBatch.Id, FarmingBatchStatusEnum.Active);
+                }
+                catch (Exception ex)
+                {
+                    // Xử lý lỗi nếu có, có thể log lỗi nếu cần
+                    Console.WriteLine($"Error updating FarmingBatch {farmingBatch.Id}: {ex.Message}");
+                }
+            }
         }
 
         public async Task<DetailedFarmingBatchReportResponse> GetDetailedFarmingBatchReportAsync(Guid farmingBatchId)
@@ -625,6 +912,45 @@ namespace SmartFarmManager.Service.Services
                 })
                 .ToList();
 
+            var growthStageReports = farmingBatch.GrowthStages.Select(gs => new GrowthStageReportModel
+            {
+                StageId = gs.Id,
+                StageName = gs.Name,
+                AgeStartDate = gs.AgeStartDate,
+                AgeEndDate = gs.AgeEndDate,
+                WeightAnimal = gs.WeightAnimal,
+                WeightAnimalExpect = gs.WeightAnimalExpect,
+                Quantity = gs.Quantity,
+                DeadQuantity = gs.DeadQuantity,
+
+                Vaccines = gs.VaccineSchedules.Select(vs => new VaccineDetail
+                {
+                    VaccineName = vs.Vaccine.Name,
+                    Quantity = vs.Quantity,
+                    TotalPrice = vs.ToltalPrice ?? 0,
+                    DateAdministered = vs.Date
+                }).ToList(),
+
+                Foods = gs.DailyFoodUsageLogs.GroupBy(f => f.Stage.FoodType).Select(group => new FoodUsageDetail
+                {
+                    FoodType = group.Key,
+                    TotalWeightUsed = group.Sum(log => log.ActualWeight ?? 0)
+                }).ToList(),
+
+                Prescriptions = farmingBatch.MedicalSymptoms
+            .Where(ms => ms.CreateAt >= gs.AgeStartDate && ms.CreateAt <= gs.AgeEndDate)
+            .Select(ms => new PrescriptionDetail
+            {
+                PrescriptionId = ms.Prescriptions.FirstOrDefault()?.Id ?? Guid.Empty,
+                Diagnosis = ms.Diagnosis,
+                AffectedQuantity = ms.AffectedQuantity ?? 0,
+                PrescriptionPrice = ms.Prescriptions.Sum(p => p.Price ?? 0),
+                DiseaseName = ms.Disease?.Name ?? "Unknown",
+                DiseaseDescription = ms.Disease?.Description ?? "N/A",
+                Symptoms = ms.MedicalSymptomDetails.Select(d => d.Symptom.SymptomName).ToList()
+            }).ToList()
+            }).ToList();
+
             // Chi tiết đơn thuốc trong quá trình nuôi
             var prescriptionDetails = farmingBatch.MedicalSymptoms
                 .Select(ms => new PrescriptionDetail
@@ -657,6 +983,8 @@ namespace SmartFarmManager.Service.Services
             {
                 FarmingBatchId = farmingBatch.Id,
                 FarmingBatchName = farmingBatch.Name,
+                QuantityAnimal = farmingBatch.Quantity,
+                DeadQuantity = farmingBatch.DeadQuantity,
                 CageName = farmingBatch.Cage.Name,
                 StartDate = farmingBatch.StartDate,
                 EndDate = farmingBatch.CompleteAt,
@@ -669,10 +997,229 @@ namespace SmartFarmManager.Service.Services
                 NetProfit = netProfit,
                 VaccineDetails = vaccineDetails,
                 PrescriptionDetails = prescriptionDetails,
-                FoodUsageDetails = foodUsageDetails
+                FoodUsageDetails = foodUsageDetails,
+                GrowthStageReports = growthStageReports
+            };
+        }
+        public async System.Threading.Tasks.Task CheckAndNotifyAdminForUpcomingFarmingBatchesAsync()
+        {
+
+            var today = DateTimeUtils.GetServerTimeInVietnamTime().Date;
+            var twoDaysLater = today.AddDays(2);
+
+            var farmingBatches = await _unitOfWork.FarmingBatches           
+                .FindByCondition(fb=>fb.StartDate.HasValue &&
+                                     fb.StartDate.Value.Date >=today.Date &&
+                                     fb.StartDate.Value.Date <= twoDaysLater.Date &&
+                                     fb.Status == FarmingBatchStatusEnum.Planning)
+                .Include(fb=>fb.Cage)
+                .ToListAsync();
+
+            foreach(var farmingBatch in farmingBatches)
+            {
+                var activeBatchExists = await _unitOfWork.FarmingBatches
+                    .FindByCondition(fb => fb.CageId == farmingBatch.CageId && fb.Status == FarmingBatchStatusEnum.Active)
+                    .AnyAsync();
+
+                if (activeBatchExists)
+                {
+                    var admin = await _unitOfWork.Users
+               .FindByCondition(u => u.Role.RoleName == "Admin Farm")
+               .Include(u => u.Role)
+               .FirstOrDefaultAsync();
+
+                    var notiType = await _unitOfWork.NotificationsTypes
+                        .FindByCondition(nt => nt.NotiTypeName == "FarmingBatchSchedule")
+                        .FirstOrDefaultAsync();
+
+                    var notification = new DataAccessObject.Models.Notification
+                    {
+                        UserId = admin.Id,
+                        NotiTypeId = (Guid)notiType?.Id,
+                        Content = $"Sắp tới có vụ nuôi {farmingBatch.Name} trong chuồng {farmingBatch.Cage.Name} bắt đầu vào ngày {farmingBatch.EstimatedTimeStart.Value.ToString("yyyy-MM-dd")}. Vui lòng xem xét và điều chỉnh lịch cho vụ nuôi nếu có xung đột.",
+                        CreatedAt = DateTime.UtcNow,
+                        MedicalSymptomId = null,  
+                        IsRead = false
+                    };
+                    await _notificationUserService.CreateNotificationAsync(notification);
+                    await _notificationService.SendNotification(admin.DeviceId, "Thông báo về vụ nuôi sắp tới", notification);
+
+                    // Gửi email nhắc nhở admin
+                    await _emailService.SendReminderEmailAsync(admin.Email, admin.FullName, "Cảnh báo từ hệ thống",
+                        $"Sắp tới có vụ nuôi {farmingBatch.Name} trong chuồng {farmingBatch.CageId} bắt đầu vào ngày {farmingBatch.EstimatedTimeStart.Value.ToString("yyyy-MM-dd")}. Vui lòng kiểm tra và điều chỉnh lịch vụ nuôi nếu có trùng lặp.");
+                }
+                else
+                {
+                    var admin = await _unitOfWork.Users
+               .FindByCondition(u => u.Role.RoleName == "Admin Farm")
+               .Include(u => u.Role)
+               .FirstOrDefaultAsync();
+
+                    var notiType = await _unitOfWork.NotificationsTypes
+                        .FindByCondition(nt => nt.NotiTypeName == "FarmingBatchSchedule")
+                        .FirstOrDefaultAsync();
+
+                    var notification = new DataAccessObject.Models.Notification
+                    {
+                        UserId = admin.Id,
+                        NotiTypeId = (Guid)notiType?.Id,
+                        Content = $"Sắp tới có vụ nuôi {farmingBatch.Name} trong chuồng {farmingBatch.Cage.Name} bắt đầu vào ngày {farmingBatch.EstimatedTimeStart.Value.ToString("yyyy-MM-dd")}.",
+                        CreatedAt = DateTime.UtcNow,
+                        MedicalSymptomId = null,  // Không phải là triệu chứng y tế
+                        IsRead = false
+                    };
+
+                    // Gửi thông báo cho admin
+                    await _notificationUserService.CreateNotificationAsync(notification);
+                    await _notificationService.SendNotification(admin.DeviceId, "Thông báo về vụ nuôi sắp tới", notification);
+
+                    // Gửi email nhắc nhở admin
+                    await _emailService.SendReminderEmailAsync(admin.Email, admin.FullName, "Cảnh báo từ hệ thống",
+                        $"Sắp tới có vụ nuôi {farmingBatch.Name} trong chuồng {farmingBatch.CageId} bắt đầu vào ngày {farmingBatch.EstimatedTimeStart.Value.ToString("yyyy-MM-dd")}. Vui lòng kiểm tra và đảm bảo không có xung đột lịch.");
+                }
+            }
+
+        }
+        public async Task<CageFarmingStageModel> GetCurrentFarmingStageWithCageAsync(Guid cageId)
+        {
+            // 🔹 Lấy thông tin chuồng
+            var cage = await _unitOfWork.Cages
+                .FindByCondition(c => c.Id == cageId)
+                .Include(c => c.CageStaffs)
+                .ThenInclude(cs => cs.StaffFarm)
+                .FirstOrDefaultAsync();
+
+            if (cage == null)
+                return null;
+
+            // 🔹 Lấy vụ nuôi đang hoạt động (`Active`) trong chuồng
+            var farmingBatch = await _unitOfWork.FarmingBatches
+                .FindByCondition(fb => fb.CageId == cageId && fb.Status == FarmingBatchStatusEnum.Active)
+                .Include(fb => fb.GrowthStages) // Lấy danh sách các giai đoạn phát triển
+                .Include(gs => gs.Template)
+                .FirstOrDefaultAsync();
+
+            // Nếu không có vụ nuôi active thì chỉ trả về thông tin Cage
+            if (farmingBatch == null)
+            {
+                return new CageFarmingStageModel
+                {
+                    Id = cage.Id,
+                    PenCode = cage.PenCode,
+                    FarmId = cage.FarmId,
+                    Name = cage.Name,
+                    Area = cage.Area,
+                    Location = cage.Location,
+                    Capacity = cage.Capacity,
+                    BoardCode = cage.BoardCode,
+                    BoardStatus = cage.BoardStatus,
+                    CreatedDate = cage.CreatedDate,
+                    ModifiedDate = cage.ModifiedDate,
+                    CameraUrl = cage.CameraUrl,
+                    StaffId = cage.CageStaffs.FirstOrDefault()?.StaffFarmId ?? Guid.Empty,
+                    StaffName = cage.CageStaffs.FirstOrDefault()?.StaffFarm.FullName ?? "Unknown",
+                    FarmingBatchStageModel = null
+                };
+            }
+
+            // 🔹 Tìm giai đoạn phát triển hiện tại dựa trên thời gian
+            var today = DateTimeUtils.GetServerTimeInVietnamTime().Date;
+            var currentGrowthStage = farmingBatch.GrowthStages
+                .Where(gs => gs.AgeStartDate.HasValue && gs.AgeEndDate.HasValue)
+                .FirstOrDefault(gs => gs.AgeStartDate.Value.Date <= today && gs.AgeEndDate.Value.Date >= today);
+
+            return new CageFarmingStageModel
+            {
+                Id = cage.Id,
+                PenCode = cage.PenCode,
+                FarmId = cage.FarmId,
+                Name = cage.Name,
+                Area = cage.Area,
+                Location = cage.Location,
+                Capacity = cage.Capacity,
+                BoardCode = cage.BoardCode,
+                BoardStatus = cage.BoardStatus,
+                CreatedDate = cage.CreatedDate,
+                ModifiedDate = cage.ModifiedDate,
+                CameraUrl = cage.CameraUrl,
+                StaffId = cage.CageStaffs.FirstOrDefault()?.StaffFarmId ?? Guid.Empty,
+                StaffName = cage.CageStaffs.FirstOrDefault()?.StaffFarm.FullName ?? "Unknown",
+                FarmingBatchStageModel = new FarmingBatchStageModel
+                {
+                    Id = farmingBatch.Id,
+                    FarmingbatchCode = farmingBatch.Name,
+                    Name = farmingBatch.Name,
+                    Species = farmingBatch.Template.Species,
+                    StartDate = farmingBatch.StartDate,
+                    CompleteAt = farmingBatch.CompleteAt,
+                    EstimatedTimeStart = farmingBatch.StartDate,
+                    EndDate = farmingBatch.EndDate,
+                    Status = farmingBatch.Status,
+                    CleaningFrequency = farmingBatch.CleaningFrequency,
+                    Quantity = farmingBatch.Quantity,
+                    DeadQuantity = farmingBatch.DeadQuantity,
+                    GrowthStageDetails = currentGrowthStage == null ? null : new GrowthStageDetailModel
+                    {
+                        Id = currentGrowthStage.Id,
+                        FarmingBatchId = farmingBatch.Id,
+                        Name = currentGrowthStage.Name,
+                        WeightAnimal = currentGrowthStage.WeightAnimal,
+                        Quantity = currentGrowthStage.Quantity,
+                        AgeStart = currentGrowthStage.AgeStart,
+                        AgeEnd = currentGrowthStage.AgeEnd,
+                        FoodType = currentGrowthStage.FoodType,
+                        AgeStartDate = currentGrowthStage.AgeStartDate,
+                        AgeEndDate = currentGrowthStage.AgeEndDate,
+                        Status = currentGrowthStage.Status,
+                        AffectQuantity = currentGrowthStage.AffectedQuantity,
+                        DeadQuantity = currentGrowthStage.DeadQuantity,
+                        RecommendedWeightPerSession = currentGrowthStage.RecommendedWeightPerSession,
+                        WeightBasedOnBodyMass = currentGrowthStage.WeightBasedOnBodyMass,
+                    }
+                }
             };
         }
 
+        public async Task<bool> UpdateStartDateAsync(Guid farmingBatchId, DateTime newStartDate)
+        {
+            var farmingBatch = await _unitOfWork.FarmingBatches
+                .FindByCondition(fb => fb.Id == farmingBatchId)
+                .Include(fb => fb.GrowthStages)
+                .FirstOrDefaultAsync();
+            if (farmingBatch == null)
+            {
+                throw new ArgumentException("FarmingBatch không tồn tại.");
+            }
+            if (farmingBatch.Status != FarmingBatchStatusEnum.Planning)
+            {
+                throw new InvalidOperationException("Chỉ có vụ nuôi đang ở trạng thái 'Planning' mới có thể thay đổi ngày bắt đầu.");
+            }
+            if (newStartDate <= farmingBatch.EstimatedTimeStart)
+            {
+                throw new InvalidOperationException("Ngày bắt đầu mới phải lớn hơn ngày dự kiến bắt đầu.");
+            }
+            var conflictingBatch = await _unitOfWork.FarmingBatches
+                .FindByCondition(fb => fb.CageId == farmingBatch.CageId &&
+                                        fb.Status == FarmingBatchStatusEnum.Active && 
+                                        fb.EstimatedTimeStart.HasValue &&
+                                        fb.EstimatedTimeStart.Value.Date == newStartDate.Date) 
+                .FirstOrDefaultAsync();
+
+            if (conflictingBatch != null)
+            {
+                throw new InvalidOperationException($"Chuồng này đã có vụ nuôi đang hoạt động vào ngày {newStartDate.ToString("yyyy-MM-dd")}. Cần điều chỉnh ngày bắt đầu.");
+            }
+            farmingBatch.StartDate = newStartDate;  // Cập nhật EstimatedTimeStart (ngày dự kiến)
+
+            var ageEndMax = farmingBatch.GrowthStages.Max(gs => gs.AgeEnd);
+            farmingBatch.EndDate = newStartDate.AddDays(ageEndMax ?? 0);
+
+            await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatch);
+            await _unitOfWork.CommitAsync();
+
+            // Trả về true nếu cập nhật thành công
+            return true;
+        }
 
     }
 }

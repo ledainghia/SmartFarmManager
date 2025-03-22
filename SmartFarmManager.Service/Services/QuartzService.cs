@@ -31,6 +31,8 @@ namespace SmartFarmManager.Service.Services
             }
             // Danh sách các jobs mặc định
             await ScheduleJob<Jobs.GenerateTasksForTomorrowJob>("GenerateTasksForTomorrowJob", "0 0 1 * * ?", serverTimeZone, cancellationToken);
+            await ScheduleJob<Jobs.UpdateFarmingBatchStatusForTodayJob>("UpdateFarmingBatchStatusForTodayJob", "0 0 1 * * ?", serverTimeZone, cancellationToken);
+            await ScheduleJob<Jobs.UpdateGrowthStagesStatusJob>("UpdateGrowthStagesStatusJob", "0 0 23 * * ?", serverTimeZone, cancellationToken);
             await ScheduleJob<Jobs.UpdateTaskStatusesJob>("UpdateTaskStatusesJob-Morning", "0 0 6 * * ?", serverTimeZone, cancellationToken);
             await ScheduleJob<Jobs.UpdateTaskStatusesJob>("UpdateTaskStatusesJob-Noon", "0 0 12 * * ?", serverTimeZone, cancellationToken);
             await ScheduleJob<Jobs.UpdateTaskStatusesJob>("UpdateTaskStatusesJob-Afternoon", "0 0 14 * * ?", serverTimeZone, cancellationToken);
