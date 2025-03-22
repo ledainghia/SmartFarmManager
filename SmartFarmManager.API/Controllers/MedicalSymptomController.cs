@@ -142,9 +142,10 @@ namespace SmartFarmManager.API.Controllers
     [FromQuery] string? status,
     [FromQuery] DateTime? startDate,
     [FromQuery] DateTime? endDate,
-    [FromQuery] string? searchTerm)
+    [FromQuery] string? searchTerm,
+        [FromQuery] Guid? id )
         {
-            var medicalSymptoms = await _medicalSymptomService.GetMedicalSymptomsAsync(status, startDate, endDate, searchTerm);
+            var medicalSymptoms = await _medicalSymptomService.GetMedicalSymptomsAsync(status, startDate, endDate, searchTerm, id);
 
             if (medicalSymptoms == null || !medicalSymptoms.Any())
             {
