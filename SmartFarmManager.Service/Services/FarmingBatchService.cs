@@ -912,6 +912,45 @@ namespace SmartFarmManager.Service.Services
                 })
                 .ToList();
 
+            var growthStageReports = farmingBatch.GrowthStages.Select(gs => new GrowthStageReportModel
+            {
+                StageId = gs.Id,
+                StageName = gs.Name,
+                AgeStartDate = gs.AgeStartDate,
+                AgeEndDate = gs.AgeEndDate,
+                WeightAnimal = gs.WeightAnimal,
+                WeightAnimalExpect = gs.WeightAnimalExpect,
+                Quantity = gs.Quantity,
+                DeadQuantity = gs.DeadQuantity,
+
+                Vaccines = gs.VaccineSchedules.Select(vs => new VaccineDetail
+                {
+                    VaccineName = vs.Vaccine.Name,
+                    Quantity = vs.Quantity,
+                    TotalPrice = vs.ToltalPrice ?? 0,
+                    DateAdministered = vs.Date
+                }).ToList(),
+
+                Foods = gs.DailyFoodUsageLogs.GroupBy(f => f.Stage.FoodType).Select(group => new FoodUsageDetail
+                {
+                    FoodType = group.Key,
+                    TotalWeightUsed = group.Sum(log => log.ActualWeight ?? 0)
+                }).ToList(),
+
+                Prescriptions = farmingBatch.MedicalSymptoms
+            .Where(ms => ms.CreateAt >= gs.AgeStartDate && ms.CreateAt <= gs.AgeEndDate)
+            .Select(ms => new PrescriptionDetail
+            {
+                PrescriptionId = ms.Prescriptions.FirstOrDefault()?.Id ?? Guid.Empty,
+                Diagnosis = ms.Diagnosis,
+                AffectedQuantity = ms.AffectedQuantity ?? 0,
+                PrescriptionPrice = ms.Prescriptions.Sum(p => p.Price ?? 0),
+                DiseaseName = ms.Disease?.Name ?? "Unknown",
+                DiseaseDescription = ms.Disease?.Description ?? "N/A",
+                Symptoms = ms.MedicalSymptomDetails.Select(d => d.Symptom.SymptomName).ToList()
+            }).ToList()
+            }).ToList();
+
             // Chi tiết đơn thuốc trong quá trình nuôi
             var prescriptionDetails = farmingBatch.MedicalSymptoms
                 .Select(ms => new PrescriptionDetail
@@ -944,6 +983,8 @@ namespace SmartFarmManager.Service.Services
             {
                 FarmingBatchId = farmingBatch.Id,
                 FarmingBatchName = farmingBatch.Name,
+                QuantityAnimal = farmingBatch.Quantity,
+                DeadQuantity = farmingBatch.DeadQuantity,
                 CageName = farmingBatch.Cage.Name,
                 StartDate = farmingBatch.StartDate,
                 EndDate = farmingBatch.CompleteAt,
@@ -956,7 +997,8 @@ namespace SmartFarmManager.Service.Services
                 NetProfit = netProfit,
                 VaccineDetails = vaccineDetails,
                 PrescriptionDetails = prescriptionDetails,
-                FoodUsageDetails = foodUsageDetails
+                FoodUsageDetails = foodUsageDetails,
+                GrowthStageReports = growthStageReports
             };
         }
         public async System.Threading.Tasks.Task CheckAndNotifyAdminForUpcomingFarmingBatchesAsync()
