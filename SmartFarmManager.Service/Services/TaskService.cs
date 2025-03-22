@@ -753,7 +753,24 @@ namespace SmartFarmManager.Service.Services
             {
                 cageAnimal = await _unitOfWork.Prescription.FindByCondition(t => t.Id == task.PrescriptionId).Include(p => p.MedicalSymtom).ThenInclude(p => p.FarmingBatch).ThenInclude(p => p.Cage).FirstOrDefaultAsync();
             }
+            int countPrescription = 0;
+            if(task.TaskType.TaskTypeName == "Cho ăn")
+            {
+                var farmingBatch = await _unitOfWork.FarmingBatches
+                    .FindByCondition(fb => fb.CageId == task.CageId && fb.Status == FarmingBatchStatusEnum.Active)
+                    .Include(fb => fb.MedicalSymptoms)
+                    .ThenInclude(ms => ms.Prescriptions)
+                    .FirstOrDefaultAsync();
+
+                if (farmingBatch != null)
+                {
+                    countPrescription = farmingBatch.MedicalSymptoms?
+                        .SelectMany(ms => ms.Prescriptions)?
+                        .Count(p => p.Status == PrescriptionStatusEnum.Active) ?? 0;
+                }
+            }
             
+
             // Map Task sang TaskDetailResponse
             return new TaskDetailModel
             {
@@ -770,6 +787,7 @@ namespace SmartFarmManager.Service.Services
                 CreatedAt = task.CreatedAt,
                 IsTreatmentTask = task.IsTreatmentTask,
                 PrescriptionId = task.PrescriptionId,
+                HasAnimalDesease = countPrescription > 0,  
                 CageAnimalName = task.TaskType.TaskTypeName == "Cho uống thuốc" && cageAnimal != null ? cageAnimal.MedicalSymtom.FarmingBatch.Cage.Name : null,
                 AssignedToUser = new UserResponseModel
                 {
@@ -2175,6 +2193,18 @@ namespace SmartFarmManager.Service.Services
             return totalTasksToCreate;
         }
 
+        public async Task<bool> SetIsTreatmentTaskTrueAsync(Guid taskId)
+        {
+            var task = await _unitOfWork.Tasks.FindByCondition(t => t.Id == taskId).FirstOrDefaultAsync();
+            if (task == null)
+                return false;
+
+            task.IsTreatmentTask = true;
+            await _unitOfWork.Tasks.UpdateAsync(task);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
 
 
 
