@@ -2,6 +2,7 @@
 using MailKit.Search;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json.Linq;
 using Org.BouncyCastle.Utilities.Date;
 using SmartFarmManager.DataAccessObject.Models;
@@ -42,7 +43,7 @@ namespace SmartFarmManager.Service.Services
             _emailService = emailService;
         }
 
-        public async Task<IEnumerable<GetAllMedicalSymptomModel>> GetMedicalSymptomsAsync(string? status, DateTime? startDate, DateTime? endDate, string? searchTerm)
+        public async Task<IEnumerable<GetAllMedicalSymptomModel>> GetMedicalSymptomsAsync(string? status, DateTime? startDate, DateTime? endDate, string? searchTerm, Guid? id)
         {
             var query = _unitOfWork.MedicalSymptom
         .FindAll()
@@ -66,6 +67,11 @@ namespace SmartFarmManager.Service.Services
             {
                 query = query.Where(ms => ms.CreateAt <= endDate.Value);
             }
+            if (id.HasValue && id.Value != Guid.Empty)
+            {
+                query = query.Where(ms => ms.Id == id);
+            }
+
 
             // Lọc theo từ khóa tìm kiếm nếu có
             if (!string.IsNullOrEmpty(searchTerm))
