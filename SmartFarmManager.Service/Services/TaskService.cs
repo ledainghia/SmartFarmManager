@@ -2193,6 +2193,18 @@ namespace SmartFarmManager.Service.Services
             return totalTasksToCreate;
         }
 
+        public async Task<bool> SetIsTreatmentTaskTrueAsync(Guid taskId)
+        {
+            var task = await _unitOfWork.Tasks.FindByCondition(t => t.Id == taskId).FirstOrDefaultAsync();
+            if (task == null)
+                return false;
+
+            task.IsTreatmentTask = true;
+            await _unitOfWork.Tasks.UpdateAsync(task);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
 
 
 

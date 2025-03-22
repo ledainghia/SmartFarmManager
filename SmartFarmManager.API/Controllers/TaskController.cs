@@ -343,5 +343,17 @@ namespace SmartFarmManager.API.Controllers
             }
         }
 
+        [HttpPut("{taskId}/set-treatment")]
+        public async Task<IActionResult> MarkAsTreatmentTask(Guid taskId)
+        {
+            var result = await _taskService.SetIsTreatmentTaskTrueAsync(taskId);
+
+            if (!result)
+                return NotFound(ApiResult<object>.Fail("Task not found or update failed."));
+
+            return Ok(ApiResult<object>.Succeed("Task marked as treatment task successfully."));
+        }
+
+
     }
 }
