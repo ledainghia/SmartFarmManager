@@ -98,6 +98,74 @@ namespace SmartFarmManager.Service.Services
                 HasPreviousPage = page > 1
             };
         }
+        public async Task<bool> UpdateMedicationAsync(Guid id, UpdateMedicationModel model)
+        {
+            var existingMedication = await _unitOfWork.Medication
+                .FindByCondition(m => m.Id == id)
+                .FirstOrDefaultAsync();
+
+            if (existingMedication == null)
+            {
+                throw new KeyNotFoundException($"Medication with ID {id} does not exist.");
+            }
+            if (await _unitOfWork.Medication.AnyAsync(x => x.Name.Equals(model.Name))){
+                throw new ArgumentException($"Medication with name {model.Name} already exists.");
+            }
+
+            existingMedication.Name = model.Name ?? existingMedication.Name;
+            existingMedication.UsageInstructions = model.UsageInstructions ?? existingMedication.UsageInstructions;
+            existingMedication.Price = model.Price ?? existingMedication.Price;
+            existingMedication.DoseWeight = model.DoseWeight ?? existingMedication.DoseWeight;
+            existingMedication.Weight = model.Weight ?? existingMedication.Weight;
+            existingMedication.DoseQuantity = model.DoseQuantity ?? existingMedication.DoseQuantity;
+            existingMedication.PricePerDose = model.PricePerDose ?? existingMedication.PricePerDose;
+
+            await _unitOfWork.Medication.UpdateAsync(existingMedication);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
+        public async Task<bool> DeleteMedicationAsync(Guid id)
+        {
+            // 1. Kiểm tra Medication có tồn tại không
+            var medication = await _unitOfWork.Medication
+                .FindByCondition(m => m.Id == id)
+                .FirstOrDefaultAsync();
+
+            if (medication == null)
+            {
+                throw new KeyNotFoundException($"Medication with ID {id} does not exist.");
+            }
+
+            await _unitOfWork.Medication.DeleteAsync(medication);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
+        public async Task<MedicationDetailResponseModel?> GetMedicationDetailAsync(Guid id)
+        {
+            var medication = await _unitOfWork.Medication
+                .FindByCondition(m => m.Id == id)
+                .FirstOrDefaultAsync();
+
+            if (medication == null)
+            {
+                return null;
+            }
+
+            return new MedicationDetailResponseModel
+            {
+                Id = medication.Id,
+                Name = medication.Name,
+                UsageInstructions = medication.UsageInstructions,
+                Price = medication.Price,
+                DoseWeight = medication.DoseWeight,
+                Weight = medication.Weight,
+                DoseQuantity = medication.DoseQuantity,
+                PricePerDose = medication.PricePerDose
+            };
+        }
+
 
     }
 
