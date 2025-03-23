@@ -6,16 +6,14 @@ using System.Threading.Tasks;
 
 namespace SmartFarmManager.Service.BusinessModels.VaccineSchedule
 {
-    public class VaccineScheduleItemModel
+    public class CreateVaccineScheduleModel
     {
-        public Guid Id { get; set; }
         public Guid VaccineId { get; set; }
         public Guid StageId { get; set; }
         public DateTime? Date { get; set; }
         public int? Quantity { get; set; }
         public int? ApplicationAge { get; set; }
-        public decimal? ToltalPrice { get; set; }
+        public decimal? ToltalPrice { get; set; } = 0;
         public int Session { get; set; }
-        public string Status { get; set; }
     }
 }

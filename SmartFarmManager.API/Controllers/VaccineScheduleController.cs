@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SmartFarmManager.API.Common;
+using SmartFarmManager.API.Payloads.Requests.VaccineSchedule;
+using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.VaccineSchedule;
 using SmartFarmManager.Service.Interfaces;
 
@@ -17,6 +19,42 @@ namespace SmartFarmManager.API.Controllers
         {
             _vaccineScheduleService = vaccineScheduleService;
             _taskService = taskService;
+        }
+
+        [HttpPost("")]
+        public async Task<IActionResult> CreateVaccineSchedule([FromBody] CreateVaccineScheduleRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                                               .Select(e => e.ErrorMessage)
+                                               .ToList();
+                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
+            {
+                { "Errors", errors.ToArray() }
+            }));
+            }
+
+            try
+            {
+                var model = request.MapToModel();
+                var result = await _vaccineScheduleService.CreateVaccineScheduleAsync(model);
+
+                if (!result)
+                {
+                    throw new Exception("Error while creating Vaccine Schedule!");
+                }
+
+                return Ok(ApiResult<string>.Succeed("Vaccine Schedule created successfully!"));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+            }
         }
 
         [HttpGet("vaccine-schedules")]
@@ -104,6 +142,42 @@ namespace SmartFarmManager.API.Controllers
             catch (Exception ex)
             {
                 return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+        }
+
+        [HttpGet("")]
+        public async Task<IActionResult> GetVaccineSchedules([FromQuery] VaccineScheduleFilterPagingRequest filterRequest)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                                               .Select(e => e.ErrorMessage)
+                                               .ToList();
+                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
+            {
+                { "Errors", errors.ToArray() }
+            }));
+            }
+
+            try
+            {
+                var filterModel = new VaccineScheduleFilterKeySearchModel
+                {
+                    KeySearch = filterRequest.KeySearch,
+                    VaccineId = filterRequest.VaccineId,
+                    StageId = filterRequest.StageId,
+                    Date = filterRequest.Date,
+                    Status = filterRequest.Status,
+                    PageNumber = filterRequest.PageNumber,
+                    PageSize = filterRequest.PageSize
+                };
+
+                var result = await _vaccineScheduleService.GetVaccineSchedulesAsync(filterModel);
+                return Ok(ApiResult<PagedResult<VaccineScheduleItemModel>>.Succeed(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
             }
         }
 
