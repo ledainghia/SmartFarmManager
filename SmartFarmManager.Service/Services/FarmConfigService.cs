@@ -44,7 +44,8 @@ namespace SmartFarmManager.Service.Services
             await _unitOfWork.CommitAsync();
 
             DateTimeUtils.SetTimeDifference(farmConfig.TimeDifferenceInMinutes);
-            
+            await _taskService.UpdateAllTaskStatusesAsync();
+
         }
 
         public async Task ResetTimeDifferenceAsync(Guid farmId)
@@ -59,7 +60,7 @@ namespace SmartFarmManager.Service.Services
             await _unitOfWork.FarmConfigs.UpdateAsync(farmConfig);
             await _unitOfWork.CommitAsync();
             DateTimeUtils.SetTimeDifference(farmConfig.TimeDifferenceInMinutes);
-            _taskService.UpdateAllTaskStatusesAsync();
+            
         }
 
         public async Task<bool> UpdateFarmConfigAsync(Guid farmId, FarmConfigUpdateModel model)

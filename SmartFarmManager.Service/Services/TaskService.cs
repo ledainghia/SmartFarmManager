@@ -1569,7 +1569,7 @@ namespace SmartFarmManager.Service.Services
                 }
 
                 var tasks = await _unitOfWork.Tasks
-                    .FindByCondition(t => t.DueDate.Value.Date == today.Date)
+                    .FindByCondition(t => t.DueDate.Value.Date <= today.Date)
                     .ToListAsync();
 
                 foreach (var task in tasks)
