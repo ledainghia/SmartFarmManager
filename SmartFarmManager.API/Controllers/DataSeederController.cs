@@ -515,15 +515,17 @@ namespace SmartFarmManager.API.Controllers
                                     ApplicationAge = vaccine.ApplicationAge,
                                     ToltalPrice = 200 * (decimal)vaccineData.Price,
                                     Session = vaccine.Session,
-                                    Status = "Complete"
+                                    Status = VaccineScheduleStatusEnum.Completed
                                 };
 
                                 vaccineSchedules.Add(vaccineSchedule);
                             }
                         }
-                    }
-                }
 
+                    }
+
+                }
+                UpdateVaccineScheduleStatus(vaccineSchedules);
                 _context.GrowthStages.AddRange(growthStages);
                 _context.TaskDailies.AddRange(taskDailies);
                 _context.VaccineSchedules.AddRange(vaccineSchedules);
@@ -537,6 +539,36 @@ namespace SmartFarmManager.API.Controllers
                 return StatusCode(500, $"Lỗi nhập dữ liệu: {ex.Message}");
             }
         }
+
+        private void UpdateVaccineScheduleStatus(List<VaccineSchedule> vaccineSchedules)
+        {
+            DateTime vietnamNow = DateTimeUtils.GetServerTimeInVietnamTime(); // Lấy giờ thực tế theo múi giờ Việt Nam
+            int currentSession = SessionTime.GetCurrentSession(vietnamNow.TimeOfDay); // Lấy session hiện tại từ giờ
+
+            foreach (var schedule in vaccineSchedules)
+            {
+                if (!schedule.Date.HasValue)
+                    continue;
+
+                var scheduleDate = schedule.Date.Value.Date;
+
+                // Nếu ngày thực tế > ngày lịch → chắc chắn là upcoming
+                if (vietnamNow.Date < scheduleDate)
+                {
+                    schedule.Status = VaccineScheduleStatusEnum.Upcoming;
+                }
+                // Nếu cùng ngày thì so session
+                else if (vietnamNow.Date == scheduleDate)
+                {
+                    if (currentSession >= schedule.Session)
+                    {
+                        schedule.Status = VaccineScheduleStatusEnum.Upcoming;
+                    }
+                }
+                // Còn lại (ngày nhỏ hơn) thì giữ nguyên (ví dụ vẫn "Complete")
+            }
+        }
+
         [HttpPost("seed/Tasks")]
         public IActionResult SeedTasks()
         {
@@ -1212,7 +1244,7 @@ namespace SmartFarmManager.API.Controllers
                 return StatusCode(500, $"Lỗi khi nhập dữ liệu điện: {ex.Message}");
             }
         }
-         
+
         [HttpPost("seed/WaterData")]
         public IActionResult SeedWaterData()
         {
@@ -1292,7 +1324,7 @@ namespace SmartFarmManager.API.Controllers
                 }
 
                 // Lấy danh sách các cảm biến (Sensor) đã tạo ở bước trước
-                var sensors = _context.Sensors.Include(s=>s.SensorType).ToList();
+                var sensors = _context.Sensors.Include(s => s.SensorType).ToList();
 
                 // Tạo dữ liệu cảm biến giả cho mỗi cảm biến
                 foreach (var sensor in sensors)
@@ -1484,7 +1516,7 @@ namespace SmartFarmManager.API.Controllers
 
                 foreach (var stageTemplate in growthStageTemplates)
                 {
-                    
+
                     var foodTemplate = _context.FoodTemplates.FirstOrDefault(f => f.StageTemplateId == stageTemplate.Id);
 
                     var growthStage = new GrowthStage
@@ -1566,6 +1598,89 @@ namespace SmartFarmManager.API.Controllers
             }
         }
 
+        [HttpPost("newPrescription")]
+        public async Task<IActionResult> CreateNewPrescription()
+        {
+            try
+            {
+                // ID thực tế của disease cần test (ví dụ: Dịch tả gà)
+                var diseaseId = _context.Diseases.FirstOrDefault(d => d.Name == "Dịch tả gà")?.Id;
+                if (diseaseId == null) return BadRequest("Không tìm thấy bệnh");
 
+                // Lấy StandardPrescription mẫu
+                var standardPrescription = _context.StandardPrescriptions
+                    .Where(sp => sp.DiseaseId == diseaseId)
+                    .FirstOrDefault();
+
+                if (standardPrescription == null) return BadRequest("Không tìm thấy đơn thuốc mẫu");
+
+                var farmingBatch = await _context.FarmingBatchs.Where(fb => fb.CageId == Guid.Parse("F37F0727-435D-4D80-9C29-AE2F41B49C9D")).FirstOrDefaultAsync();
+                // Tạo MedicalSymptom
+                var symptom = new MedicalSymptom
+                {
+                    Id = Guid.NewGuid(),
+                    FarmingBatchId = farmingBatch.Id, // farming batch cụ thể
+                    Diagnosis = "Ủ rũ, kém hoạt động, Giảm ăn, bỏ ăn",
+                    Status = MedicalSymptomStatuseEnum.Prescribed,
+                    AffectedQuantity = 20,
+                    QuantityInCage = 200,
+                    IsEmergency = false,
+                    Notes = "Phát hiện nghi nhiễm dịch tả",
+                    CreateAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                    DiseaseId = diseaseId
+                };
+
+                // Tạo Prescription từ mẫu
+                var prescription = new Prescription
+                {
+                    Id = Guid.NewGuid(),
+                    MedicalSymtomId = symptom.Id,
+                    CageId = Guid.Parse("F37F0727-435D-4D80-9C29-AE2F41B49C9D"),
+                    PrescribedDate = DateTimeUtils.GetServerTimeInVietnamTime().AddDays(-10),
+                    EndDate = DateTimeUtils.GetServerTimeInVietnamTime().AddDays(-10 + standardPrescription.RecommendDay),
+                    Notes = "Đơn thuốc từ mẫu chuẩn",
+                    QuantityAnimal = 20,
+                    RemainingQuantity = 20,
+                    Status = PrescriptionStatusEnum.Completed,
+                    DaysToTake = standardPrescription.RecommendDay,
+                    Price = 0 // sẽ tính bên dưới
+                };
+
+                // Tạo danh sách PrescriptionMedications từ StandardPrescriptionMedications
+                var stdMeds = _context.StandardPrescriptionMedications
+                    .Where(m => m.PrescriptionId == standardPrescription.Id)
+                    .ToList();
+
+                var prescriptionMeds = stdMeds.Select(m => new PrescriptionMedication
+                {
+                    Id = Guid.NewGuid(),
+                    PrescriptionId = prescription.Id,
+                    MedicationId = m.MedicationId,
+                    Morning = m.Morning,
+                    Noon = m.Noon,
+                    Afternoon = m.Afternoon,
+                    Evening = m.Evening
+                }).ToList();
+
+                // Tính tổng giá đơn thuốc (nếu cần)
+                var medicationPrices = _context.Medications
+                    .Where(m => stdMeds.Select(x => x.MedicationId).Contains(m.Id))
+                    .ToDictionary(m => m.Id, m => m.PricePerDose ?? 0);
+
+                prescription.Price = prescriptionMeds.Sum(pm => (medicationPrices.ContainsKey(pm.MedicationId) ? medicationPrices[pm.MedicationId] : 0) * prescription.DaysToTake ?? 1);
+
+                // Add vào DB
+                _context.MedicalSymptoms.Add(symptom);
+                _context.Prescriptions.Add(prescription);
+                _context.PrescriptionMedications.AddRange(prescriptionMeds);
+                _context.SaveChanges();
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"❌ Lỗi khi cập nhật dữ liệu: {ex.Message}");
+            }
+        }
     }
 }
