@@ -217,7 +217,13 @@ namespace SmartFarmManager.Service.Services
                 {
                     Id = v.Id,
                     VaccineId = v.VaccineId,
+                    VaccineName=v.Vaccine.Name,
                     StageId = v.StageId,
+                    StageName = v.Stage.Name,
+                    FarmingBatchId=v.Stage.FarmingBatchId,
+                    FarmingBatchName = v.Stage.FarmingBatch.Name,
+                    CageId = v.Stage.FarmingBatch.CageId,
+                    CageName = v.Stage.FarmingBatch.Cage.Name,
                     Date = v.Date,
                     Quantity = v.Quantity,
                     ApplicationAge = v.ApplicationAge,

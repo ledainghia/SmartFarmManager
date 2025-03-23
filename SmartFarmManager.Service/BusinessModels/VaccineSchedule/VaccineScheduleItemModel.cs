@@ -10,7 +10,13 @@ namespace SmartFarmManager.Service.BusinessModels.VaccineSchedule
     {
         public Guid Id { get; set; }
         public Guid VaccineId { get; set; }
+        public string VaccineName { get; set; }
         public Guid StageId { get; set; }
+        public string StageName { get; set; }
+        public Guid FarmingBatchId { get; set; }
+        public string FarmingBatchName { get; set; }
+        public Guid CageId { get; set; }
+        public string CageName { get; set; }
         public DateTime? Date { get; set; }
         public int? Quantity { get; set; }
         public int? ApplicationAge { get; set; }
