@@ -1414,28 +1414,41 @@ namespace SmartFarmManager.API.Controllers
         {
             try
             {
-                // Lấy giờ Việt Nam
+                // Lấy ngày Việt Nam hiện tại
                 var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
                 var vietnamToday = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone).Date;
 
                 var updatedCount = 0;
                 var foodLogs = new List<DailyFoodUsageLog>();
 
-                // Lấy tất cả Task chưa hoàn thành có DueDate <= hôm nay
+                // Lấy các Cage có FarmingBatch đang Completed
+                var cageIds = _context.Cages
+                    .Where(c => c.FarmingBatches.Any(fb => fb.Status == FarmingBatchStatusEnum.Completed))
+                    .Select(c => c.Id)
+                    .ToList();
+
+                // Lấy tất cả Task chưa hoàn thành có DueDate <= hôm nay và nằm trong cage hợp lệ
                 var tasks = _context.Tasks
-                    .Where(t => t.Status != "Done" && t.DueDate.HasValue && t.DueDate.Value.Date <= vietnamToday)
+                    .Where(t =>
+                        t.Status != TaskStatusEnum.Done &&
+                        t.DueDate.HasValue &&
+                        t.DueDate.Value.Date <= vietnamToday &&
+                        cageIds.Contains(t.CageId))
                     .ToList();
 
                 foreach (var task in tasks)
                 {
-                    task.Status = "Done";
+                    task.Status = TaskStatusEnum.Done;
                     task.CompletedAt = DateTimeUtils.GetServerTimeInVietnamTime();
                     updatedCount++;
 
                     // Nếu là task "Cho ăn" thì tạo log
                     if (task.TaskName == "Cho ăn")
                     {
-                        var batch = _context.FarmingBatchs.FirstOrDefault(b => b.CageId == task.CageId);
+                        var batch = _context.FarmingBatchs.FirstOrDefault(b =>
+                            b.CageId == task.CageId &&
+                            b.Status == FarmingBatchStatusEnum.Completed);
+
                         if (batch != null)
                         {
                             var stage = _context.GrowthStages.FirstOrDefault(s =>
@@ -1477,6 +1490,7 @@ namespace SmartFarmManager.API.Controllers
                 return StatusCode(500, $"❌ Lỗi khi cập nhật dữ liệu: {ex.Message}");
             }
         }
+
         [HttpPost("newFarmingBatch")]
         public IActionResult CreateNewFarmingBatch([FromQuery] DateTime dateEstimated)
         {
@@ -1626,7 +1640,7 @@ namespace SmartFarmManager.API.Controllers
                     QuantityInCage = 200,
                     IsEmergency = false,
                     Notes = "Phát hiện nghi nhiễm dịch tả",
-                    CreateAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                    CreateAt = DateTimeUtils.GetServerTimeInVietnamTime().AddDays(-10),
                     DiseaseId = diseaseId
                 };
 
