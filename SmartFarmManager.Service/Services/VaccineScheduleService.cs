@@ -1,8 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
+using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.VaccineSchedule;
 using SmartFarmManager.Service.BusinessModels.VaccineScheduleLog;
 using SmartFarmManager.Service.Interfaces;
+using SmartFarmManager.Service.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -126,6 +129,111 @@ namespace SmartFarmManager.Service.Services
                     Photo = log.Photo,
                     TaskId = log.TaskId
                 }).ToList()
+            };
+        }
+
+
+        public async Task<bool> CreateVaccineScheduleAsync(CreateVaccineScheduleModel model)
+        {
+            // Kiểm tra Vaccine và GrowthStage có tồn tại không
+            var vaccine = await _unitOfWork.Vaccines
+                .FindByCondition(v => v.Id == model.VaccineId)
+                .FirstOrDefaultAsync();
+
+            if (vaccine == null)
+            {
+                throw new ArgumentException($"Vaccine with ID {model.VaccineId} does not exist.");
+            }
+
+            var growthStage = await _unitOfWork.GrowthStages
+                .FindByCondition(g => g.Id == model.StageId)
+                .FirstOrDefaultAsync();
+
+            if (growthStage == null)
+            {
+                throw new ArgumentException($"Growth Stage with ID {model.StageId} does not exist.");
+            }
+             
+
+            var vaccineSchedule = new VaccineSchedule
+            {
+                Id = Guid.NewGuid(),
+                VaccineId = model.VaccineId,
+                StageId = model.StageId,
+                Date = model.Date,
+                Quantity = model.Quantity,
+                ApplicationAge = model.ApplicationAge,
+                ToltalPrice = model.ToltalPrice,
+                Session = model.Session,
+                Status = VaccineScheduleStatusEnum.Upcoming
+            };
+
+            await _unitOfWork.VaccineSchedules.CreateAsync(vaccineSchedule);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
+
+        public async Task<PagedResult<VaccineScheduleItemModel>> GetVaccineSchedulesAsync(VaccineScheduleFilterKeySearchModel filter)
+        {
+            var query = _unitOfWork.VaccineSchedules.FindAll(false)
+                .Include(x=>x.Vaccine)
+                .Include(x => x.Stage)
+                .ThenInclude(x => x.FarmingBatch)
+                .ThenInclude(x => x.Cage)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(filter.KeySearch)){
+                query = query.Where(v => v.Vaccine.Name.Contains(filter.KeySearch)||
+                v.Stage.Name.Contains(filter.KeySearch)||
+                v.Stage.FarmingBatch.Name.Contains(filter.KeySearch));
+            }
+
+            if (filter.VaccineId.HasValue)
+            {
+                query = query.Where(v => v.VaccineId == filter.VaccineId.Value);
+            }
+
+            if (filter.StageId.HasValue)
+            {
+                query = query.Where(v => v.StageId == filter.StageId.Value);
+            }
+
+            if (filter.Date.HasValue)
+            {
+                query = query.Where(v => v.Date.Value.Date == filter.Date.Value.Date);
+            }
+            if(!string.IsNullOrEmpty(filter.Status))
+            {
+                query = query.Where(v => v.Status == filter.Status);
+            }
+
+            var totalItems = await query.CountAsync();
+
+            var items = await query
+                .Skip((filter.PageNumber - 1) * filter.PageSize)
+                .Take(filter.PageSize)
+                .Select(v => new VaccineScheduleItemModel
+                {
+                    Id = v.Id,
+                    VaccineId = v.VaccineId,
+                    StageId = v.StageId,
+                    Date = v.Date,
+                    Quantity = v.Quantity,
+                    ApplicationAge = v.ApplicationAge,
+                    ToltalPrice = v.ToltalPrice,
+                    Session = v.Session,
+                    Status = v.Status
+                })
+                .ToListAsync();
+
+            return new PagedResult<VaccineScheduleItemModel>
+            {
+                Items = items,
+                TotalItems = totalItems,
+                PageSize = filter.PageSize,
+                CurrentPage = filter.PageNumber,
+                TotalPages = (int)Math.Ceiling((double)totalItems / filter.PageSize)
             };
         }
 
