@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Payloads\Requests\Vaccine\" />
     <Folder Include="Payloads\Responses\Task\" />
   </ItemGroup>
 
