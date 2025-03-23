@@ -6,6 +6,7 @@ using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Service.BusinessModels.SensorDataLog;
 using SmartFarmManager.Service.BusinessModels.Webhook;
 using SmartFarmManager.Service.Helpers;
+using SmartFarmManager.Service.Shared;
 
 namespace SmartFarmManager.API.Controllers
 {
@@ -1376,7 +1377,194 @@ namespace SmartFarmManager.API.Controllers
             return JsonConvert.SerializeObject(sensorRecords);
         }
 
+        [HttpPost("update/tasks-to-done-and-log-by-date")]
+        public IActionResult UpdateTasksAndLogByDate()
+        {
+            try
+            {
+                // Lấy giờ Việt Nam
+                var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                var vietnamToday = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone).Date;
 
+                var updatedCount = 0;
+                var foodLogs = new List<DailyFoodUsageLog>();
+
+                // Lấy tất cả Task chưa hoàn thành có DueDate <= hôm nay
+                var tasks = _context.Tasks
+                    .Where(t => t.Status != "Done" && t.DueDate.HasValue && t.DueDate.Value.Date <= vietnamToday)
+                    .ToList();
+
+                foreach (var task in tasks)
+                {
+                    task.Status = "Done";
+                    task.CompletedAt = DateTimeUtils.GetServerTimeInVietnamTime();
+                    updatedCount++;
+
+                    // Nếu là task "Cho ăn" thì tạo log
+                    if (task.TaskName == "Cho ăn")
+                    {
+                        var batch = _context.FarmingBatchs.FirstOrDefault(b => b.CageId == task.CageId);
+                        if (batch != null)
+                        {
+                            var stage = _context.GrowthStages.FirstOrDefault(s =>
+                                s.FarmingBatchId == batch.Id &&
+                                s.AgeStartDate <= task.DueDate &&
+                                s.AgeEndDate >= task.DueDate);
+
+                            if (stage != null)
+                            {
+                                foodLogs.Add(new DailyFoodUsageLog
+                                {
+                                    Id = Guid.NewGuid(),
+                                    StageId = stage.Id,
+                                    RecommendedWeight = stage.Quantity * stage.RecommendedWeightPerSession,
+                                    ActualWeight = stage.Quantity * stage.RecommendedWeightPerSession,
+                                    Notes = "Ghi nhận cho ăn tự động (theo ngày)",
+                                    LogTime = task.DueDate,
+                                    UnitPrice = 15000,
+                                    Photo = "log_food_auto.jpg",
+                                    TaskId = task.Id
+                                });
+                            }
+                        }
+                    }
+                }
+
+                _context.Tasks.UpdateRange(tasks);
+                if (foodLogs.Any())
+                {
+                    _context.DailyFoodUsageLogs.AddRange(foodLogs);
+                }
+
+                _context.SaveChanges();
+
+                return Ok($"✅ Đã cập nhật {updatedCount} task thành 'Done', thêm {foodLogs.Count} log cho ăn.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"❌ Lỗi khi cập nhật dữ liệu: {ex.Message}");
+            }
+        }
+        [HttpPost("newFarmingBatch")]
+        public IActionResult CreateNewFarmingBatch([FromQuery] DateTime dateEstimated)
+        {
+            try
+            {
+                var template = _context.AnimalTemplates.FirstOrDefault(t => t.Name == "Gà nuôi thịt - Cobb-500");
+                if (template == null)
+                    return BadRequest("Không tìm thấy mẫu chăn nuôi Gà nuôi thịt - Cobb-500.");
+
+                var farmingBatch = new FarmingBatch
+                {
+                    Id = Guid.NewGuid(),
+                    TemplateId = template.Id,
+                    CageId = Guid.Parse("f37f0727-435d-4d80-9c29-ae2f41b49c9d"),
+                    FarmingBatchCode = $"FB-{Guid.NewGuid().ToString().Substring(0, 8)}",
+                    Name = "Gà nuôi thịt - Cobb-500",
+                    StartDate = null,
+                    EstimatedTimeStart = dateEstimated,
+                    EndDate = null,
+                    Status = FarmingBatchStatusEnum.Planning,
+                    CleaningFrequency = 2,
+                    Quantity = 200,
+                    DeadQuantity = 0,
+                    FarmId = Guid.Parse("7b0ad5a5-ca3e-45b1-9519-d42135d5bea4")
+                };
+
+                _context.FarmingBatchs.Add(farmingBatch);
+                _context.SaveChanges();
+
+                var growthStageTemplates = _context.GrowthStageTemplates
+                    .Where(g => g.TemplateId == template.Id)
+                    .ToList();
+
+                var growthStages = new List<GrowthStage>();
+                var taskDailies = new List<TaskDaily>();
+                var vaccineSchedules = new List<VaccineSchedule>();
+
+                foreach (var stageTemplate in growthStageTemplates)
+                {
+                    
+                    var foodTemplate = _context.FoodTemplates.FirstOrDefault(f => f.StageTemplateId == stageTemplate.Id);
+
+                    var growthStage = new GrowthStage
+                    {
+                        Id = Guid.NewGuid(),
+                        FarmingBatchId = farmingBatch.Id,
+                        Name = stageTemplate.StageName,
+                        WeightAnimal = stageTemplate.WeightAnimal,
+                        WeightAnimalExpect = stageTemplate.WeightAnimal,
+                        Quantity = 200,
+                        AgeStart = stageTemplate.AgeStart,
+                        AgeEnd = stageTemplate.AgeEnd,
+                        FoodType = foodTemplate?.FoodType ?? "Không xác định",
+                        AgeStartDate = null,
+                        AgeEndDate = null,
+                        Status = GrowthStageStatusEnum.Planning,
+                        DeadQuantity = 0,
+                        AffectedQuantity = 0,
+                        WeightBasedOnBodyMass = foodTemplate?.WeightBasedOnBodyMass ?? 0,
+                        RecommendedWeightPerSession = stageTemplate.WeightAnimal * (foodTemplate?.WeightBasedOnBodyMass ?? 0)
+                    };
+
+                    growthStages.Add(growthStage);
+
+                    var taskDailyTemplates = _context.TaskDailyTemplates.Where(t => t.GrowthStageTemplateId == stageTemplate.Id).ToList();
+
+                    foreach (var taskTemplate in taskDailyTemplates)
+                    {
+                        taskDailies.Add(new TaskDaily
+                        {
+                            Id = Guid.NewGuid(),
+                            GrowthStageId = growthStage.Id,
+                            TaskTypeId = taskTemplate.TaskTypeId,
+                            TaskName = taskTemplate.TaskName,
+                            Description = taskTemplate.Description,
+                            Session = taskTemplate.Session,
+                            StartAt = null,
+                            EndAt = null
+                        });
+                    }
+
+                    var vaccineTemplates = _context.VaccineTemplates
+                        .Where(v => v.TemplateId == template.Id &&
+                                    v.ApplicationAge >= growthStage.AgeStart &&
+                                    v.ApplicationAge <= growthStage.AgeEnd)
+                        .ToList();
+
+                    foreach (var vaccine in vaccineTemplates)
+                    {
+                        var vaccineData = _context.Vaccines.FirstOrDefault(v => v.Name == vaccine.VaccineName);
+                        if (vaccineData != null)
+                        {
+                            vaccineSchedules.Add(new VaccineSchedule
+                            {
+                                Id = Guid.NewGuid(),
+                                StageId = growthStage.Id,
+                                VaccineId = vaccineData.Id,
+                                Date = null,
+                                Quantity = 200,
+                                ApplicationAge = vaccine.ApplicationAge,
+                                ToltalPrice = 200 * (decimal)vaccineData.Price,
+                                Session = vaccine.Session,
+                                Status = VaccineScheduleStatusEnum.Upcoming,
+                            });
+                        }
+                    }
+                }
+
+                _context.GrowthStages.AddRange(growthStages);
+                _context.TaskDailies.AddRange(taskDailies);
+                _context.VaccineSchedules.AddRange(vaccineSchedules);
+                _context.SaveChanges();
+
+                return Ok("Đã tạo vụ nuôi mới");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"❌ Lỗi khi cập nhật dữ liệu: {ex.Message}");
+            }
+        }
 
 
     }

@@ -698,6 +698,7 @@ namespace SmartFarmManager.Service.Services
                     CreatedAt = t.CreatedAt,
                     PrescriptionId = t.PrescriptionId,
                     IsTreatmentTask = t.IsTreatmentTask,
+                    IsWarning = t.IsWarning,
                     AssignedToUser = t.AssignedToUser == null ? null : new UserResponseModel
                     {
                         UserId = t.AssignedToUser.Id,
@@ -788,6 +789,7 @@ namespace SmartFarmManager.Service.Services
                 IsTreatmentTask = task.IsTreatmentTask,
                 PrescriptionId = task.PrescriptionId,
                 HasAnimalDesease = countPrescription > 0,  
+                IsWarning = task.IsWarning,
                 CageAnimalName = task.TaskType.TaskTypeName == "Cho uống thuốc" && cageAnimal != null ? cageAnimal.MedicalSymtom.FarmingBatch.Cage.Name : null,
                 AssignedToUser = new UserResponseModel
                 {
@@ -912,6 +914,7 @@ namespace SmartFarmManager.Service.Services
                     t.Session,
                     t.IsTreatmentTask,
                     t.PrescriptionId,
+                    t.IsWarning,
                     CageName = t.Cage.Name, // Use CageName from database
                     AssignedToUser = new
                     {
@@ -964,6 +967,7 @@ namespace SmartFarmManager.Service.Services
                                 CreatedAt = task.CreatedAt,
                                 IsTreatmentTask = task.IsTreatmentTask,
                                 PrescriptionId = task.PrescriptionId,
+                                IsWarning = task.IsWarning,
                                 AssignedToUser = new UserResponseModel
                                 {
                                     UserId = task.AssignedToUser.Id,
@@ -2199,7 +2203,7 @@ namespace SmartFarmManager.Service.Services
             if (task == null)
                 return false;
 
-            task.IsTreatmentTask = true;
+            task.IsWarning = true;
             await _unitOfWork.Tasks.UpdateAsync(task);
             await _unitOfWork.CommitAsync();
 
