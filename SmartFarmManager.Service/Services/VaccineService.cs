@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
+using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Vaccine;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
@@ -70,6 +72,159 @@ namespace SmartFarmManager.Service.Services
                 AgeEnd = vaccine.AgeEnd
             };
         }
+
+        public async Task<bool> CreateVaccineAsync(CreateVaccineModel model)
+        {
+            // Check for duplicate Vaccine
+            var existingVaccine = await _unitOfWork.Vaccines
+                .FindByCondition(v => v.Name == model.Name)
+                .FirstOrDefaultAsync();
+
+            if (existingVaccine != null)
+            {
+                throw new ArgumentException($"Vaccine with name '{model.Name}' already exists.");
+            }
+            if(model.AgeStart > model.AgeEnd)
+            {
+                throw new ArgumentException("Age start must be less than or equal to age end.");
+            }
+
+            // Create Vaccine
+            var vaccine = new Vaccine
+            {
+                Id = Guid.NewGuid(),
+                Name = model.Name,
+                Method = model.Method,
+                Price = model.Price,
+                AgeStart = model.AgeStart,
+                AgeEnd = model.AgeEnd
+            };
+
+            await _unitOfWork.Vaccines.CreateAsync(vaccine);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
+        public async Task<bool> UpdateVaccineAsync(Guid id, VaccineUpdateModel model)
+        {
+            var vaccine = await _unitOfWork.Vaccines
+                .FindByCondition(v => v.Id == id)
+                .FirstOrDefaultAsync();
+
+            if (vaccine == null)
+            {
+                throw new KeyNotFoundException($"Vaccine with ID {id} not found.");
+            }
+            if(model.AgeStart > model.AgeEnd)
+            {
+                throw new ArgumentException("Age start must be less than or equal to age end.");
+            }
+            var vaccineWithSameName = await _unitOfWork.Vaccines
+                .FindByCondition(v => v.Name == model.Name && v.Id != id)
+                .FirstOrDefaultAsync();
+            if(vaccineWithSameName != null)
+            {
+                throw new ArgumentException($"Vaccine with name '{model.Name}' already exists.");
+            }
+
+            vaccine.Name = model.Name ?? vaccine.Name;
+            vaccine.Method = model.Method ?? vaccine.Method;
+            vaccine.Price = model.Price ?? vaccine.Price;
+            vaccine.AgeStart = model.AgeStart ?? vaccine.AgeStart;
+            vaccine.AgeEnd = model.AgeEnd ?? vaccine.AgeEnd;
+
+            await _unitOfWork.Vaccines.UpdateAsync(vaccine);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
+        public async Task<bool> DeleteVaccineAsync(Guid id)
+        {
+            var vaccine = await _unitOfWork.Vaccines
+                .FindByCondition(v => v.Id == id)
+                .FirstOrDefaultAsync();
+
+            if (vaccine == null)
+            {
+                throw new KeyNotFoundException($"Vaccine with ID {id} not found.");
+            }
+
+            await _unitOfWork.Vaccines.DeleteAsync(vaccine);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
+        public async Task<PagedResult<VaccineItemModel>> GetVaccinesAsync(VaccineFilterModel filter)
+        {
+            var query = _unitOfWork.Vaccines.FindAll(false).AsQueryable();
+
+            if (!string.IsNullOrEmpty(filter.Name))
+            {
+                query = query.Where(v => v.Name.Contains(filter.Name));
+            }
+
+            if (filter.AgeStart.HasValue)
+            {
+                query = query.Where(v => v.AgeStart >= filter.AgeStart.Value);
+            }
+
+            if (filter.AgeEnd.HasValue)
+            {
+                query = query.Where(v => v.AgeEnd <= filter.AgeEnd.Value);
+            }
+
+            var totalItems = await query.CountAsync();
+
+            var items = await query
+                .Skip((filter.PageNumber - 1) * filter.PageSize)
+                .Take(filter.PageSize)
+                .Select(v => new VaccineItemModel
+                {
+                    Id = v.Id,
+                    Name = v.Name,
+                    Method = v.Method,
+                    Price = v.Price,
+                    AgeStart = v.AgeStart,
+                    AgeEnd = v.AgeEnd
+                })
+                .ToListAsync();
+
+            var result = new PaginatedList<VaccineItemModel>(items, totalItems, filter.PageNumber, filter.PageSize);
+            return new PagedResult<VaccineItemModel>
+            {
+                Items = result.Items,
+                TotalItems = result.TotalCount,
+                PageSize = result.PageSize,
+                CurrentPage = result.CurrentPage,
+                TotalPages = result.TotalPages,
+                HasNextPage = result.HasNextPage,
+                HasPreviousPage = result.HasPreviousPage
+
+            };
+        }
+        public async Task<VaccineDetailResponseModel?> GetVaccineDetailAsync(Guid id)
+        {
+            var vaccine = await _unitOfWork.Vaccines
+                .FindByCondition(v => v.Id == id)
+                .FirstOrDefaultAsync();
+
+            if (vaccine == null)
+            {
+                return null;
+            }
+
+            return new VaccineDetailResponseModel
+            {
+                Id = vaccine.Id,
+                Name = vaccine.Name,
+                Method = vaccine.Method,
+                Price = vaccine.Price,
+                AgeStart = vaccine.AgeStart,
+                AgeEnd = vaccine.AgeEnd
+            };
+        }
+
+
 
     }
 }
