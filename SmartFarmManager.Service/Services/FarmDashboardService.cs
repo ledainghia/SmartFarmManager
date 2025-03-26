@@ -21,67 +21,59 @@ namespace SmartFarmManager.Service.Services
         }
 
 
-        public async Task<DashboardStatisticsModel> GetFarmDashboardStatisticsAsync(Guid farmId)
+        public async Task<DashboardStatisticsModel> GetFarmDashboardStatisticsAsync(Guid farmId, DateTime? startDate, DateTime? endDate)
         {
             var dashboardModel = new DashboardStatisticsModel();
 
             // Task Statistics
-            dashboardModel.TaskStatistics = await GetTaskStatisticsAsync(farmId);
+            dashboardModel.TaskStatistics = await GetTaskStatisticsAsync(farmId, startDate, endDate);
 
             // Cage Statistics
             dashboardModel.CageStatistics = await GetCageStatisticsAsync(farmId);
 
             // FarmingBatch Statistics
-            dashboardModel.FarmingBatchStatistics = await GetFarmingBatchStatisticsAsync(farmId);
+            dashboardModel.FarmingBatchStatistics = await GetFarmingBatchStatisticsAsync(farmId, startDate, endDate);
 
             // Staff Statistics
             dashboardModel.StaffStatistics = await GetStaffStatisticsAsync(farmId);
 
             // VaccineSchedule Statistics
-            dashboardModel.VaccineScheduleStatistics = await GetVaccineScheduleStatisticsAsync(farmId);
+            dashboardModel.VaccineScheduleStatistics = await GetVaccineScheduleStatisticsAsync(farmId, startDate, endDate);
 
             return dashboardModel;
         }
 
-        private async Task<TaskStatisticModel> GetTaskStatisticsAsync(Guid farmId)
+        private async Task<TaskStatisticModel> GetTaskStatisticsAsync(Guid farmId, DateTime? startDate, DateTime? endDate)
         {
             var query = _unitOfWork.Tasks
                 .FindByCondition(t => t.Cage.FarmId == farmId)
                 .Include(x => x.Cage)
-                .AsQueryable(); // Khởi tạo query ban đầu
+                .AsQueryable();
 
-            // Tính toán các thống kê
+            // Filter theo khoảng thời gian nếu có
+            if (startDate.HasValue)
+            {
+                query = query.Where(t => t.CreatedAt >= startDate.Value);
+            }
+
+            if (endDate.HasValue)
+            {
+                query = query.Where(t => t.CreatedAt <= endDate.Value);
+            }
+
             var taskStats = new TaskStatisticModel
             {
                 TotalTasks = await query.CountAsync(),
-
-                // Các công việc có trạng thái "Pending"
-                PendingTasks = await query
-                    .Where(t => t.Status == TaskStatusEnum.Pending)
-                    .CountAsync(),
-
-                // Các công việc có trạng thái "InProgress"
-                InProgressTasks = await query
-                    .Where(t => t.Status == TaskStatusEnum.InProgress)
-                    .CountAsync(),
-
-                // Các công việc có trạng thái "Completed"
-                DoneTasks = await query
-                    .Where(t => t.Status == TaskStatusEnum.Done)
-                    .CountAsync(),
-
-                // Các công việc bị "Cancelled"
-                CancelledTasks = await query
-                    .Where(t => t.Status == TaskStatusEnum.Cancelled)
-                    .CountAsync(),
-                OverdueTasks = await query
-                    .Where(t => t.Status == TaskStatusEnum.Overdue)
-                    .CountAsync(),
-                 
+                PendingTasks = await query.Where(t => t.Status == TaskStatusEnum.Pending).CountAsync(),
+                InProgressTasks = await query.Where(t => t.Status == TaskStatusEnum.InProgress).CountAsync(),
+                DoneTasks = await query.Where(t => t.Status == TaskStatusEnum.Done).CountAsync(),
+                CancelledTasks = await query.Where(t => t.Status == TaskStatusEnum.Cancelled).CountAsync(),
+                OverdueTasks = await query.Where(t => t.Status == TaskStatusEnum.Overdue).CountAsync(),
             };
 
             return taskStats;
         }
+
 
 
         private async Task<CageStatisticModel> GetCageStatisticsAsync(Guid farmId)
@@ -118,27 +110,31 @@ namespace SmartFarmManager.Service.Services
         }
 
 
-        private async Task<FarmingBatchStatisticModel> GetFarmingBatchStatisticsAsync(Guid farmId)
+        private async Task<FarmingBatchStatisticModel> GetFarmingBatchStatisticsAsync(Guid farmId, DateTime? startDate, DateTime? endDate)
         {
             var query = _unitOfWork.FarmingBatches
-                .FindByCondition(fb => fb.Cage.FarmId == farmId).Include(fb => fb.Cage)
+                .FindByCondition(fb => fb.Cage.FarmId == farmId)
+                .Include(fb => fb.Cage)
                 .AsQueryable();
+
+            // Filter theo khoảng thời gian nếu có
+            if (startDate.HasValue)
+            {
+                query = query.Where(fb => fb.EstimatedTimeStart >= startDate.Value);
+            }
+
+            if (endDate.HasValue)
+            {
+                query = query.Where(fb => fb.EstimatedTimeStart <= endDate.Value);
+            }
 
             var farmingBatchStats = new FarmingBatchStatisticModel
             {
                 TotalFarmingBatches = await query.CountAsync(),
-                PlanningFarmingBatches = await query
-                    .Where(fb => fb.Status ==  FarmingBatchStatusEnum.Planning)
-                    .CountAsync(),
-                ActiveFarmingBatches = await query
-                    .Where(fb => fb.Status == FarmingBatchStatusEnum.Active)
-                    .CountAsync(),
-                CompletedFarmingBatches = await query
-                    .Where(fb => fb.Status == FarmingBatchStatusEnum.Completed)
-                    .CountAsync(),
-                CancelledFarmingBatches = await query
-                    .Where(fb => fb.Status == FarmingBatchStatusEnum.Cancelled)
-                    .CountAsync()
+                PlanningFarmingBatches = await query.Where(fb => fb.Status == FarmingBatchStatusEnum.Planning).CountAsync(),
+                ActiveFarmingBatches = await query.Where(fb => fb.Status == FarmingBatchStatusEnum.Active).CountAsync(),
+                CompletedFarmingBatches = await query.Where(fb => fb.Status == FarmingBatchStatusEnum.Completed).CountAsync(),
+                CancelledFarmingBatches = await query.Where(fb => fb.Status == FarmingBatchStatusEnum.Cancelled).CountAsync()
             };
 
             return farmingBatchStats;
@@ -159,9 +155,8 @@ namespace SmartFarmManager.Service.Services
             return staffStats;
         }
 
-        private async Task<VaccineScheduleStatisticModel> GetVaccineScheduleStatisticsAsync(Guid farmId)
+        private async Task<VaccineScheduleStatisticModel> GetVaccineScheduleStatisticsAsync(Guid farmId, DateTime? startDate, DateTime? endDate)
         {
-            // Truy vấn tất cả VaccineSchedules trong farm
             var query = _unitOfWork.VaccineSchedules
                 .FindByCondition(vs => vs.Stage.FarmingBatch.Cage.FarmId == farmId)
                 .Include(vs => vs.Stage)
@@ -169,35 +164,30 @@ namespace SmartFarmManager.Service.Services
                 .ThenInclude(fb => fb.Cage)
                 .AsQueryable();
 
+            // Filter theo khoảng thời gian nếu có
+            if (startDate.HasValue)
+            {
+                query = query.Where(vs => vs.Date >= startDate.Value);
+            }
+
+            if (endDate.HasValue)
+            {
+                query = query.Where(vs => vs.Date <= endDate.Value);
+            }
+
             var vaccineScheduleStats = new VaccineScheduleStatisticModel
             {
-                // Tổng số Vaccine Schedules
                 TotalVaccineSchedules = await query.CountAsync(),
-
-                // Vaccine Schedules đang "Upcoming"
-                UpcomingVaccineSchedules = await query
-                    .Where(vs => vs.Status == VaccineScheduleStatusEnum.Upcoming)
-                    .CountAsync(),
-
-                // Vaccine Schedules đã "Completed"
-                CompletedVaccineSchedules = await query
-                    .Where(vs => vs.Status == VaccineScheduleStatusEnum.Completed)
-                    .CountAsync(),
-
-                // Vaccine Schedules bị "Missed"
-                MissedVaccineSchedules = await query
-                    .Where(vs => vs.Status == VaccineScheduleStatusEnum.Missed)
-                    .CountAsync(),
-                CancelledVacineSchedules = await query
-                    .Where(vs => vs.Status == VaccineScheduleStatusEnum.Cancelled)
-                    .CountAsync(),
-                RedoVaccineSchedules= await query
-                    .Where(vs => vs.Status == VaccineScheduleStatusEnum.Redo)
-                    .CountAsync()
+                UpcomingVaccineSchedules = await query.Where(vs => vs.Status == VaccineScheduleStatusEnum.Upcoming).CountAsync(),
+                CompletedVaccineSchedules = await query.Where(vs => vs.Status == VaccineScheduleStatusEnum.Completed).CountAsync(),
+                MissedVaccineSchedules = await query.Where(vs => vs.Status == VaccineScheduleStatusEnum.Missed).CountAsync(),
+                CancelledVacineSchedules = await query.Where(vs => vs.Status == VaccineScheduleStatusEnum.Cancelled).CountAsync(),
+                RedoVaccineSchedules = await query.Where(vs => vs.Status == VaccineScheduleStatusEnum.Redo).CountAsync()
             };
 
             return vaccineScheduleStats;
         }
+
 
     }
 }
