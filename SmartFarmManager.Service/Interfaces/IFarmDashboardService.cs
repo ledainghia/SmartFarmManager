@@ -9,6 +9,6 @@ namespace SmartFarmManager.Service.Interfaces
 {
     public interface IFarmDashboardService
     {
-        Task<DashboardStatisticsModel> GetFarmDashboardStatisticsAsync(Guid farmId);
+        Task<DashboardStatisticsModel> GetFarmDashboardStatisticsAsync(Guid farmId, DateTime? startDate, DateTime? endDate);
     }
 }
