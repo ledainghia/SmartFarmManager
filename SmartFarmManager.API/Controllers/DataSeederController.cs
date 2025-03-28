@@ -1213,7 +1213,7 @@ namespace SmartFarmManager.API.Controllers
                         {
                             BeginTime = beginTime,  // Thời gian bắt đầu của mỗi giờ
                             EndTime = endTime,      // Thời gian kết thúc của mỗi giờ
-                            Value = Math.Round(random.NextDouble() * 500, 2),  // Giá trị random cho điện tiêu thụ (từ 0 - 500)
+                            Value = Math.Round(random.NextDouble() * 300, 2),  // Giá trị random cho điện tiêu thụ (từ 0 - 500)
                             Date = DateTime.UtcNow.Date.AddHours(hour)  // Ngày và giờ ghi nhận (cùng ngày)
                         };
 
@@ -1281,7 +1281,7 @@ namespace SmartFarmManager.API.Controllers
                         {
                             BeginTime = beginTime,  // Thời gian bắt đầu của mỗi giờ
                             EndTime = endTime,      // Thời gian kết thúc của mỗi giờ
-                            Value = Math.Round(random.NextDouble() * 1000, 2),  // Giá trị random cho nước tiêu thụ (từ 0 - 1000)
+                            Value = Math.Round(random.NextDouble() * 300, 2),  // Giá trị random cho nước tiêu thụ (từ 0 - 1000)
                             Date = DateTime.UtcNow.Date.AddHours(hour)  // Ngày và giờ ghi nhận (cùng ngày)
                         };
 

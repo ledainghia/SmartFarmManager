@@ -43,7 +43,7 @@ namespace SmartFarmManager.Service.Services
             return dashboardModel;
         }
 
-        private async Task<TaskStatisticModel> GetTaskStatisticsAsync(Guid farmId, DateTime? startDate, DateTime? endDate)
+        public async Task<TaskStatisticModel> GetTaskStatisticsAsync(Guid farmId, DateTime? startDate, DateTime? endDate)
         {
             var query = _unitOfWork.Tasks
                 .FindByCondition(t => t.Cage.FarmId == farmId)
@@ -76,7 +76,7 @@ namespace SmartFarmManager.Service.Services
 
 
 
-        private async Task<CageStatisticModel> GetCageStatisticsAsync(Guid farmId)
+        public async Task<CageStatisticModel> GetCageStatisticsAsync(Guid farmId)
         {
             var query = _unitOfWork.Cages
                 .FindByCondition(c => c.FarmId == farmId)
@@ -110,38 +110,51 @@ namespace SmartFarmManager.Service.Services
         }
 
 
-        private async Task<FarmingBatchStatisticModel> GetFarmingBatchStatisticsAsync(Guid farmId, DateTime? startDate, DateTime? endDate)
+        public async Task<FarmingBatchStatisticModel> GetFarmingBatchStatisticsAsync(Guid farmId, DateTime? startDate, DateTime? endDate)
         {
             var query = _unitOfWork.FarmingBatches
                 .FindByCondition(fb => fb.Cage.FarmId == farmId)
                 .Include(fb => fb.Cage)
                 .AsQueryable();
-
-            // Filter theo khoảng thời gian nếu có
-            if (startDate.HasValue)
+            if (startDate.HasValue && endDate.HasValue)
             {
-                query = query.Where(fb => fb.EstimatedTimeStart >= startDate.Value);
+                query = query.Where(fb =>
+                    (fb.StartDate >= startDate.Value && fb.StartDate <= endDate.Value) ||
+                    (fb.EstimatedTimeStart >= startDate.Value && fb.EstimatedTimeStart <= endDate.Value) ||
+                    (fb.EndDate >= startDate.Value && fb.EndDate <= endDate.Value) ||
+                    (fb.Status == "Active" && fb.CompleteAt == null));
             }
-
-            if (endDate.HasValue)
+            else if (startDate.HasValue)
             {
-                query = query.Where(fb => fb.EstimatedTimeStart <= endDate.Value);
+                query = query.Where(fb => fb.StartDate >= startDate.Value);
+            }
+            else if (endDate.HasValue)
+            {
+                query = query.Where(fb => fb.EndDate <= endDate.Value);
             }
 
             var farmingBatchStats = new FarmingBatchStatisticModel
             {
                 TotalFarmingBatches = await query.CountAsync(),
-                PlanningFarmingBatches = await query.Where(fb => fb.Status == FarmingBatchStatusEnum.Planning).CountAsync(),
-                ActiveFarmingBatches = await query.Where(fb => fb.Status == FarmingBatchStatusEnum.Active).CountAsync(),
-                CompletedFarmingBatches = await query.Where(fb => fb.Status == FarmingBatchStatusEnum.Completed).CountAsync(),
-                CancelledFarmingBatches = await query.Where(fb => fb.Status == FarmingBatchStatusEnum.Cancelled).CountAsync()
+                PlanningFarmingBatches = await query
+                    .Where(fb => fb.Status == FarmingBatchStatusEnum.Planning)
+                    .CountAsync(),
+                ActiveFarmingBatches = await query
+                    .Where(fb => fb.Status == FarmingBatchStatusEnum.Active)
+                    .CountAsync(),
+                CompletedFarmingBatches = await query
+                    .Where(fb => fb.Status == FarmingBatchStatusEnum.Completed)
+                    .CountAsync(),
+                CancelledFarmingBatches = await query
+                    .Where(fb => fb.Status == FarmingBatchStatusEnum.Cancelled)
+                    .CountAsync()
             };
 
             return farmingBatchStats;
         }
 
 
-        private async Task<StaffStatisticModel> GetStaffStatisticsAsync(Guid farmId)
+        public async Task<StaffStatisticModel> GetStaffStatisticsAsync(Guid farmId)
         {
             var query = _unitOfWork.Users
        .FindByCondition(u =>  u.Role.RoleName == "Staff Farm")
@@ -155,7 +168,7 @@ namespace SmartFarmManager.Service.Services
             return staffStats;
         }
 
-        private async Task<VaccineScheduleStatisticModel> GetVaccineScheduleStatisticsAsync(Guid farmId, DateTime? startDate, DateTime? endDate)
+        public async Task<VaccineScheduleStatisticModel> GetVaccineScheduleStatisticsAsync(Guid farmId, DateTime? startDate, DateTime? endDate)
         {
             var query = _unitOfWork.VaccineSchedules
                 .FindByCondition(vs => vs.Stage.FarmingBatch.Cage.FarmId == farmId)

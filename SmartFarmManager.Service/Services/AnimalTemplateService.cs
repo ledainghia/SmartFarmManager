@@ -221,7 +221,7 @@ namespace SmartFarmManager.Service.Services
             var query = _unitOfWork.AnimalTemplates.FindAll(false).AsQueryable();
 
             // Lọc các template có Status khác Deleted
-            query = query.Where(t => !t.Status.Equals(AnimalTemplateStatusEnum.Deleted));
+            query = query.Where(t => t.IsDeleted==false);
 
             // Áp dụng các bộ lọc từ request
             if (!string.IsNullOrEmpty(filter.Name))

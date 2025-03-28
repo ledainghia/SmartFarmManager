@@ -58,6 +58,55 @@ namespace SmartFarmManager.API.Controllers
             }
         }
 
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateFoodStack(Guid id, [FromBody] UpdateFoodStackRequest request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState.Values.SelectMany(v => v.Errors)
+                                                   .Select(e => e.ErrorMessage)
+                                                   .ToList();
+
+                    return BadRequest(new { Errors = errors });
+                }
+
+                var result = await _foodStackService.UpdateFoodStackAsync(id, request.MapToModel());
+
+                if (!result)
+                {
+                    return NotFound(new { Message = "FoodStock not found or could not be updated." });
+                }
+
+                return Ok(new { Message = "FoodStack updated successfully!" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = ex.Message });
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteFoodStack(Guid id)
+        {
+            try
+            {
+                var result = await _foodStackService.DeleteFoodStackAsync(id);
+
+                if (!result)
+                {
+                    return NotFound(new { Message = "FoodStack not found or could not be deleted." });
+                }
+
+                return Ok(new { Message = "FoodStack deleted successfully!" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = ex.Message });
+            }
+        }
+
         [HttpGet()]
         public async Task<IActionResult> GetFoodStacks([FromQuery] FoodStackFilterPagingRequest filterRequest)
         {
