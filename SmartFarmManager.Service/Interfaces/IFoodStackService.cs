@@ -14,5 +14,7 @@ namespace SmartFarmManager.Service.Interfaces
         Task<bool> CreateFoodStackAsync(FoodStackCreateModel model);
         Task<PagedResult<FoodStackItemModel>> GetFoodStacksAsync(FoodStackFilterModel filter);
         Task<PagedResult<StockLogItemModel>> GetStockLogHistoryAsync(Guid foodStackId, int  pageNumber, int pageSize);
+        Task<bool> UpdateFoodStackAsync(Guid id, UpdateFoodStockModel request);
+        Task<bool> DeleteFoodStackAsync(Guid id);
     }
 }
