@@ -29,7 +29,7 @@ namespace SmartFarmManager.Service.Services
 
             // 2. Check for Duplicate Name and Species
             var duplicateExists = await _unitOfWork.AnimalTemplates
-                .FindByCondition(x => x.Name == model.Name)
+                .FindByCondition(x => x.Name == model.Name&&x.IsDeleted==false)
                 .AnyAsync();
 
             if (duplicateExists)
@@ -206,12 +206,8 @@ namespace SmartFarmManager.Service.Services
                 throw new KeyNotFoundException($"Animal Template with ID {id} does not exist.");
             }
 
-            if (string.Equals(existingTemplate.Status, AnimalTemplateStatusEnum.Deleted, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
 
-            existingTemplate.Status = AnimalTemplateStatusEnum.Deleted;
+            existingTemplate.IsDeleted = true;
             await _unitOfWork.AnimalTemplates.UpdateAsync(existingTemplate);
             await _unitOfWork.CommitAsync();
 

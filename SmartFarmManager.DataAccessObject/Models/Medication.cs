@@ -20,6 +20,7 @@ public partial class Medication : EntityBase
     public int? DoseQuantity { get; set; } // Số lượng liều (tính theo mg)
 
     public decimal? PricePerDose { get; set; }
+    public bool IsDeleted { get; set; } = false;
 
     public virtual ICollection<PrescriptionMedication> PrescriptionMedications { get; set; } = new List<PrescriptionMedication>();
     public virtual ICollection<StandardPrescriptionMedication> StandardPrescriptionMedications { get; set; } = new List<StandardPrescriptionMedication>();

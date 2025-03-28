@@ -47,6 +47,11 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<Guid> CreateSymptomAsync(SymptomModel symptomModel)
         {
+            var symptomExist =  _unitOfWork.Symptoms.FindByCondition(s => s.SymptomName.Equals(symptomModel.SymptomName) && s.IsDeleted == false);
+            if(symptomExist != null)
+            {
+                throw new ArgumentException($" Symptom with name '{symptomModel.SymptomName}' already exists.");
+            }
             var symptom = new DataAccessObject.Models.Symptom
             {
                 SymptomName = symptomModel.SymptomName
@@ -80,8 +85,9 @@ namespace SmartFarmManager.Service.Services
             {
                 return false;
             }
+            symptom.IsDeleted = true;
 
-            await _unitOfWork.Symptoms.DeleteAsync(symptom);
+            await _unitOfWork.Symptoms.UpdateAsync(symptom);
             await _unitOfWork.CommitAsync();
 
             return true;
