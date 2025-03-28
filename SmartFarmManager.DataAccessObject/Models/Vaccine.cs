@@ -15,6 +15,7 @@ public partial class Vaccine : EntityBase
     public int? AgeStart { get; set; }
 
     public int? AgeEnd { get; set; }
+    public bool IsDeleted { get; set; } = false;
 
     public virtual ICollection<VaccineSchedule> VaccineSchedules { get; set; } = new List<VaccineSchedule>();
 }

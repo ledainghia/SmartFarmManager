@@ -14,7 +14,7 @@ public partial class AnimalTemplate
     public string Species { get; set; }
     public string Status { get; set; }
     public string Notes { get; set; }
-
+    public bool IsDeleted { get; set; } = false;
     public virtual ICollection<FarmingBatch> FarmingBatches { get; set; } = new List<FarmingBatch>();
 
     public virtual ICollection<GrowthStageTemplate> GrowthStageTemplates { get; set; } = new List<GrowthStageTemplate>();

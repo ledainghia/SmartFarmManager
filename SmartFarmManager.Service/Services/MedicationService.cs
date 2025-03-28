@@ -136,8 +136,8 @@ namespace SmartFarmManager.Service.Services
             {
                 throw new KeyNotFoundException($"Medication with ID {id} does not exist.");
             }
-
-            await _unitOfWork.Medication.DeleteAsync(medication);
+            medication.IsDeleted = true;
+            await _unitOfWork.Medication. UpdateAsync(medication);
             await _unitOfWork.CommitAsync();
 
             return true;

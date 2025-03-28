@@ -10,7 +10,7 @@ using SmartFarmManager.Service.Services;
 
 namespace SmartFarmManager.API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/foodstock")]
     [ApiController]
     public class FoodStackController : ControllerBase
     {
