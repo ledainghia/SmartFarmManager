@@ -75,7 +75,9 @@ namespace SmartFarmManager.API.Controllers
                 Date = log.Date,
                 Notes = log.Notes,
                 Photo = log.Photo,
-                TaskId = log.TaskId
+                TaskId = log.TaskId,
+                Quantity = log.Quantity,
+                ToltalPrice = log.ToltalPrice
             };
 
             return Ok(ApiResult<Payloads.Responses.VaccineScheduleLog.VaccineScheduleLogResponse>.Succeed(response));
