@@ -357,59 +357,73 @@ namespace SmartFarmManager.Service.Services
         //change status of task by task id and status id
         public async Task<bool> ChangeTaskStatusAsync(Guid taskId, string? status)
         {
-            // 1. Lấy thông tin Task
             var task = await _unitOfWork.Tasks.FindAsync(x => x.Id == taskId);
             if (task == null)
             {
                 throw new ArgumentException($"Không tìm thấy Task với ID '{taskId}'.");
             }
 
-            // 2. Kiểm tra trạng thái hợp lệ
-            if (string.IsNullOrEmpty(status) ||
-                (status != TaskStatusEnum.Pending &&
-                 status != TaskStatusEnum.InProgress &&
-                 status != TaskStatusEnum.Done &&
-                 status != TaskStatusEnum.Overdue))
+            var validStatuses = new[]
+            {
+        TaskStatusEnum.Pending,
+        TaskStatusEnum.InProgress,
+        TaskStatusEnum.Done,
+        TaskStatusEnum.Overdue,
+        TaskStatusEnum.Cancelled
+    };
+
+            if (string.IsNullOrEmpty(status) || !validStatuses.Contains(status))
             {
                 throw new ArgumentException("Trạng thái không hợp lệ.");
             }
 
-            // 3. Kiểm tra giờ của session
-            var currentTime = DateTimeUtils.GetServerTimeInVietnamTime().TimeOfDay;
-            if ((SessionTypeEnum)task.Session == SessionTypeEnum.Morning && (currentTime < SessionTime.Morning.Start || currentTime >= SessionTime.Morning.End) ||
-    (SessionTypeEnum)task.Session == SessionTypeEnum.Noon && (currentTime < SessionTime.Noon.Start || currentTime >= SessionTime.Noon.End) ||
-    (SessionTypeEnum)task.Session == SessionTypeEnum.Afternoon && (currentTime < SessionTime.Afternoon.Start || currentTime >= SessionTime.Afternoon.End) ||
-    (SessionTypeEnum)task.Session == SessionTypeEnum.Evening && (currentTime < SessionTime.Evening.Start || currentTime >= SessionTime.Evening.End))
-            {
-                throw new InvalidOperationException($"Nhiệm vụ chỉ có thể được cập nhật trong giờ của phiên '{(SessionTypeEnum)task.Session}'.");
-            }
+            var now = DateTimeUtils.GetServerTimeInVietnamTime();
+            var currentTime = now.TimeOfDay;
+            var currentSession = SessionTime.GetCurrentSession(currentTime);
+            var taskDate = task.DueDate?.Date ?? throw new InvalidOperationException("Task không có ngày DueDate.");
+            var taskSession = task.Session;
 
-            if (status == TaskStatusEnum.Done)
+            // ❗ Check trạng thái Cancelled
+            if (status == TaskStatusEnum.Cancelled)
             {
-                task.CompletedAt = DateTimeUtils.GetServerTimeInVietnamTime();
+                if (now.Date > taskDate || (now.Date == taskDate && currentSession >= taskSession))
+                {
+                    throw new InvalidOperationException("Không thể hủy task sau khi đã quá thời gian thực hiện phiên hoặc trong phiên.");
+                }
+
+                // Nếu không phải trạng thái còn chờ xử lý
+                if (task.Status != TaskStatusEnum.Pending)
+                {
+                    throw new InvalidOperationException("Chỉ có thể hủy task khi đang ở trạng thái 'Pending'.");
+                }
             }
             else
             {
-                task.CompletedAt = null;
+                // ❗ Các trạng thái khác yêu cầu đúng ngày và đúng session
+                if (now.Date != taskDate || currentSession != taskSession)
+                {
+                    throw new InvalidOperationException($"Chỉ có thể cập nhật task vào đúng phiên ({(SessionTypeEnum)taskSession}) của ngày {taskDate:dd/MM/yyyy}.");
+                }
             }
 
+            // ✅ Cập nhật trạng thái và thời gian hoàn thành (nếu có)
             task.Status = status;
+            task.CompletedAt = (status == TaskStatusEnum.Done) ? now : null;
 
             var statusLog = new StatusLog
             {
                 TaskId = task.Id,
-                UpdatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                UpdatedAt = now,
                 Status = status
             };
 
             await _unitOfWork.StatusLogs.CreateAsync(statusLog);
-
-            // 6. Cập nhật Task và Commit
             await _unitOfWork.Tasks.UpdateAsync(task);
             await _unitOfWork.CommitAsync();
 
             return true;
         }
+
 
 
         //get task filter
