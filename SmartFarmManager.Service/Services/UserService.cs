@@ -451,46 +451,67 @@ namespace SmartFarmManager.Service.Services
             }
             return true;
         }
-        public async Task<IEnumerable<BusinessModels.Users.UserModel>> GetUsersAsync(string? username, string? email, string? phoneNumber, Guid? roleId, bool? isActive, string? fullName, string? address)
+        public async Task<PagedResult<BusinessModels.Users.UserModel>> GetUsersAsync(UserFilterModel filter)
         {
             var query = _unitOfWork.Users.FindAll();
 
-            if (!string.IsNullOrWhiteSpace(username))
-                query = query.Where(u => u.Username.Contains(username));
+            // Lọc theo các tham số trong UserFilterModel
+            if (!string.IsNullOrWhiteSpace(filter.Username))
+                query = query.Where(u => u.Username.Contains(filter.Username));
 
-            if (!string.IsNullOrWhiteSpace(email))
-                query = query.Where(u => u.Email.Contains(email));
+            if (!string.IsNullOrWhiteSpace(filter.Email))
+                query = query.Where(u => u.Email.Contains(filter.Email));
 
-            if (!string.IsNullOrWhiteSpace(phoneNumber))
-                query = query.Where(u => u.PhoneNumber.Contains(phoneNumber));
+            if (!string.IsNullOrWhiteSpace(filter.PhoneNumber))
+                query = query.Where(u => u.PhoneNumber.Contains(filter.PhoneNumber));
 
-            if (roleId.HasValue)
-                query = query.Where(u => u.RoleId == roleId.Value);
+            if (filter.RoleId.HasValue)
+                query = query.Where(u => u.RoleId == filter.RoleId.Value);
 
-            if (isActive.HasValue)
-                query = query.Where(u => u.IsActive == isActive.Value);
+            if (filter.IsActive.HasValue)
+                query = query.Where(u => u.IsActive == filter.IsActive.Value);
 
-            if (!string.IsNullOrWhiteSpace(fullName))
-                query = query.Where(u => u.FullName.Contains(fullName));
+            if (!string.IsNullOrWhiteSpace(filter.FullName))
+                query = query.Where(u => u.FullName.Contains(filter.FullName));
 
-            if (!string.IsNullOrWhiteSpace(address))
-                query = query.Where(u => u.Address.Contains(address));
+            if (!string.IsNullOrWhiteSpace(filter.Address))
+                query = query.Where(u => u.Address.Contains(filter.Address));
 
-            var users = await query.ToListAsync();
+            // Tính tổng số items
+            var totalItems = await query.CountAsync();
 
-            return users.Select(user => new BusinessModels.Users.UserModel
+            // Phân trang
+            var items = await query.Skip((filter.PageNumber - 1) * filter.PageSize)
+                                   .Take(filter.PageSize)
+                                   .Select(user => new BusinessModels.Users.UserModel
+                                   {
+                                       Id = user.Id,
+                                       Username = user.Username,
+                                       FullName = user.FullName,
+                                       Email = user.Email,
+                                       PhoneNumber = user.PhoneNumber,
+                                       Address = user.Address,
+                                       IsActive = user.IsActive,
+                                       CreatedAt = user.CreatedAt,
+                                       RoleId = user.RoleId
+                                   })
+                                   .ToListAsync();
+
+            // Tạo đối tượng phân trang
+            var result = new PaginatedList<BusinessModels.Users.UserModel>(items, totalItems, filter.PageNumber, filter.PageSize);
+
+            return new PagedResult<BusinessModels.Users.UserModel>
             {
-                Id = user.Id,
-                Username = user.Username,
-                FullName = user.FullName,
-                Email = user.Email,
-                PhoneNumber = user.PhoneNumber,
-                Address = user.Address,
-                IsActive = user.IsActive,
-                CreatedAt = user.CreatedAt,
-                RoleId = user.RoleId
-            });
+                Items = result.Items,
+                TotalItems = result.TotalCount,
+                PageSize = result.PageSize,
+                CurrentPage = result.CurrentPage,
+                TotalPages = result.TotalPages,
+                HasNextPage = result.HasNextPage,
+                HasPreviousPage = result.HasPreviousPage,
+            };
         }
+
 
         public async Task<IEnumerable<BusinessModels.Users.UserModel>> GetUsersAsync(string? roleName, bool? isActive, string? search)
         {

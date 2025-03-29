@@ -30,7 +30,7 @@ namespace SmartFarmManager.Service.Interfaces
 
         Task<bool?> CheckUserByEmail(string email, string username);
         Task<bool?> CheckUserByPhone(string phone, string username);
-        Task<IEnumerable<BusinessModels.Users.UserModel>> GetUsersAsync(string? username, string? email, string? phoneNumber, Guid? roleId, bool? isActive, string? fullName, string? address);
+        Task<PagedResult<BusinessModels.Users.UserModel>> GetUsersAsync(UserFilterModel filter);
         Task<IEnumerable<BusinessModels.Users.UserModel>> GetUsersAsync(string? roleName, bool? isActive, string? search);
         Task<bool> VerifyPasswordAsync(UserPasswordRequest request);
         Task<bool> ResetPasswordAsync(UserPasswordRequest request);
