@@ -274,7 +274,11 @@ namespace SmartFarmManager.Service.Services
                 if (activeUserCount > 0)
                     throw new ArgumentException($"{role.RoleName} can only have one active account.");
             }
-
+            var exitingEmail = await _unitOfWork.Users.FindByCondition(u => u.Email == request.Email).FirstOrDefaultAsync();
+            if(exitingEmail != null)
+            {
+                throw new ArgumentException($"{request.Email} already exit.");
+            }
             // Tạo Username tự động
             var username = await GenerateUniqueUsernameAsync(request.FullName);
 
@@ -335,6 +339,8 @@ namespace SmartFarmManager.Service.Services
 
         private string RemoveDiacritics(string text)
         {
+            // Thay thế đặc biệt cho chữ Đ/đ trước khi loại dấu
+            text = text.Replace("Đ", "D").Replace("đ", "d");
             var normalizedString = text.Normalize(NormalizationForm.FormD);
             var stringBuilder = new StringBuilder();
 
