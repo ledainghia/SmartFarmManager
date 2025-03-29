@@ -620,5 +620,23 @@ namespace SmartFarmManager.Service.Services
             return true;
         }
 
+        public async Task<bool> ToggleUserStatusAsync(Guid userId)
+        {
+            var user = await _unitOfWork.Users.FindByCondition(u => u.Id == userId).FirstOrDefaultAsync();
+
+            if (user == null)
+            {
+                throw new KeyNotFoundException($"Người dùng với Id là {userId} không tìm thấy !.");
+            }
+
+            // Toggle the IsActive status
+            user.IsActive = !user.IsActive;
+
+            await _unitOfWork.Users.UpdateAsync(user);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
+
     }
 }

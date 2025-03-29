@@ -126,8 +126,11 @@ namespace SmartFarmManager.Service.Services
 
             var vetUsers = await _unitOfWork.Users.FindByCondition(u => u.Role.RoleName == "Vet")
                 .Include(u => u.Role).FirstOrDefaultAsync();
-
-            // Nhóm theo StaffFarm và gộp danh sách Cage
+            var adminFarmUsers = await _unitOfWork.FarmsAdmins.FindByCondition(fa => fa.FarmId == farmId)
+                .Include(fa => fa.Admin)
+                .ThenInclude(u => u.Role)
+                .Select(fa => fa.Admin)
+                .FirstOrDefaultAsync();
             var groupedUsers = await usersQuery
                 .GroupBy(u => u.StaffFarm)
                 .Select(group => new
@@ -182,10 +185,27 @@ namespace SmartFarmManager.Service.Services
                     Email = vetUsers.Email,
                     PhoneNumber = vetUsers.PhoneNumber,
                     Address = vetUsers.Address,
-                    Role = vetUsers.Role != null ? vetUsers.Role.RoleName : "No Role",
+                    Role = vetUsers.Role != null ? vetUsers.Role.RoleName : "Vet",
                     IsActive = vetUsers.IsActive ?? false,
                     Cages = null,
                     TasksCountByStatus = null 
+                });
+            }
+
+            if (adminFarmUsers != null )
+            {
+                userModels.Add(new UserModel
+                {
+                    Id = adminFarmUsers.Id,
+                    Username = adminFarmUsers.Username,
+                    FullName = adminFarmUsers.FullName,
+                    Email = adminFarmUsers.Email,
+                    PhoneNumber = adminFarmUsers.PhoneNumber,
+                    Address = adminFarmUsers.Address,
+                    Role = adminFarmUsers.Role != null ? adminFarmUsers.Role.RoleName : "Admin Farm",
+                    IsActive = adminFarmUsers.IsActive ?? false,
+                    Cages = null,
+                    TasksCountByStatus = null
                 });
             }
             var result= new PaginatedList<UserModel>(userModels, totalCount, pageIndex, pageSize);

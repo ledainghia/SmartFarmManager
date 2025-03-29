@@ -35,5 +35,6 @@ namespace SmartFarmManager.Service.Interfaces
         Task<bool> VerifyPasswordAsync(UserPasswordRequest request);
         Task<bool> ResetPasswordAsync(UserPasswordRequest request);
         Task<bool> AssignMoreCagesToStaffAsync(Guid staffId, List<Guid> newCageIds);
+        Task<bool> ToggleUserStatusAsync(Guid userId);
     }
 }

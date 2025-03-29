@@ -495,6 +495,29 @@ namespace SmartFarmManager.API.Controllers
                 return StatusCode(500, ApiResult<object>.Fail(ex));
             }
         }
+        [HttpPost("active-inactive/{id}")]
+        public async Task<IActionResult> ToggleUserStatus(Guid id)
+        {
+            try
+            {
+                var result = await _userService.ToggleUserStatusAsync(id);
+
+                if (!result)
+                {
+                    return BadRequest("Error occurred while toggling user status.");
+                }
+
+                return Ok(ApiResult<string>.Succeed("User status updated successfully."));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+            }
+        }
 
     }
 }
