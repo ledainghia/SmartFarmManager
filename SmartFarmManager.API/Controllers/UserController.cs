@@ -403,22 +403,15 @@ namespace SmartFarmManager.API.Controllers
             return Unauthorized(ApiResult<SendOtpResponse>.Fail(new Exception("Invalid OTP.")));
         }
 
-
         [HttpGet]
-        public async Task<IActionResult> GetUsers(
-    [FromQuery] string? username,
-    [FromQuery] string? email,
-    [FromQuery] string? phoneNumber,
-    [FromQuery] Guid? roleId,
-    [FromQuery] bool? isActive,
-    [FromQuery] string? fullName,
-    [FromQuery] string? address)
+        public async Task<IActionResult> GetUsers([FromQuery] UserFilterModel filter)
         {
-            var users = await _userService.GetUsersAsync(username, email, phoneNumber, roleId, isActive, fullName, address);
-            return Ok(ApiResult<IEnumerable<UserModel>>.Succeed(users));
+            var users = await _userService.GetUsersAsync(filter);
+            return Ok(ApiResult<PagedResult<UserModel>>.Succeed(users));
         }
 
-    [HttpGet("/filter")]
+
+        [HttpGet("/filter")]
         public async Task<IActionResult> GetUsers(
 
         [FromQuery] string? roleName,
