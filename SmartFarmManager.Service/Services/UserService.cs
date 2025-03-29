@@ -7,6 +7,7 @@ using SmartFarmManager.Service.BusinessModels.Farm;
 using SmartFarmManager.Service.BusinessModels.Users;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
+using Sprache;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -558,5 +559,66 @@ namespace SmartFarmManager.Service.Services
 
             return true;
         }
+
+        public async Task<bool> AssignMoreCagesToStaffAsync(Guid staffId, List<Guid> newCageIds)
+        {
+            // 1. Kiểm tra User
+            var user = await _unitOfWork.Users
+                .FindByCondition(u => u.Id == staffId)
+                .Include(u => u.Role)
+                .Include(u => u.CageStaffs)
+                .ThenInclude(cs => cs.Cage)
+                .FirstOrDefaultAsync();
+
+            if (user == null)
+                throw new ArgumentException("Người dùng không tồn tại.");
+
+            if (user.Role.RoleName != "Staff Farm")
+                throw new InvalidOperationException("Chỉ nhân viên trang trại mới được gán chuồng.");
+
+            // 2. Lấy FarmId của người dùng (giả sử staff có thể thuộc nhiều farm, nhưng bạn dùng farm đầu tiên)
+            var farmId = user.CageStaffs.FirstOrDefault()?.Cage?.FarmId;
+            if (farmId == null)
+                throw new InvalidOperationException("Không tìm thấy Farm gắn với staff này.");
+
+            // 3. Lấy config Farm
+            var farmConfig = await _unitOfWork.FarmConfigs.FindAll().FirstOrDefaultAsync();
+
+            if (farmConfig == null)
+                throw new InvalidOperationException("Không tìm thấy cấu hình trang trại.");
+
+            int maxCages = farmConfig.MaxCagesPerStaff;
+
+            // 4. Đếm chuồng đã gán + sắp gán (loại trừ trùng lặp)
+            var existingCageIds = await _unitOfWork.CageStaffs
+                .FindByCondition(cs => cs.StaffFarmId == staffId)
+                .Select(cs => cs.CageId)
+                .ToListAsync();
+
+            var distinctNewCageIds = newCageIds
+                .Where(id => !existingCageIds.Contains(id))
+                .Distinct()
+                .ToList();
+
+            var totalAfterAssign = existingCageIds.Count + distinctNewCageIds.Count;
+
+            if (totalAfterAssign > maxCages)
+                throw new InvalidOperationException($"Số chuồng vượt quá giới hạn ({maxCages}). Nhân viên đang có {existingCageIds.Count} chuồng, không thể gán thêm {distinctNewCageIds.Count} chuồng.");
+
+            // 5. Gán thêm chuồng mới
+            var newAssignments = distinctNewCageIds.Select(cageId => new CageStaff
+            {
+                Id = Guid.NewGuid(),
+                StaffFarmId = staffId,
+                CageId = cageId,
+                AssignedDate = DateTimeUtils.GetServerTimeInVietnamTime()
+            }).ToList();
+
+            await _unitOfWork.CageStaffs.CreateListAsync(newAssignments);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
+
     }
 }
