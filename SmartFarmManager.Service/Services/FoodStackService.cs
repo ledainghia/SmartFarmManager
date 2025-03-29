@@ -102,6 +102,9 @@ namespace SmartFarmManager.Service.Services
         {
             var query = _unitOfWork.FoodStacks.FindAll(false).AsQueryable();
 
+            if (!string.IsNullOrEmpty(filter.KeySearch){
+                query = query.Where(f => f.FoodType.Contains(filter.KeySearch)|);
+            }
             if (filter.FarmId.HasValue)
             {
                 query = query.Where(f => f.FarmId == filter.FarmId.Value);
@@ -112,6 +115,10 @@ namespace SmartFarmManager.Service.Services
                 query = query.Where(f => f.FoodType.Contains(filter.FoodType));
             }
             var totalItems = await query.CountAsync();
+            if(filter.IsDeleted.HasValue)
+            {
+                query = query.Where(f => f.IsDeleted == filter.IsDeleted.Value);
+            }
 
             // Paginate and fetch the data
             var items = await query
@@ -125,7 +132,8 @@ namespace SmartFarmManager.Service.Services
                     FoodType = f.FoodType,
                     Quantity = (decimal)f.Quantity,
                     CurrentStock = (decimal)f.CurrentStock,
-                    CostPerKg = (decimal)f.CostPerKg
+                    CostPerKg = (decimal)f.CostPerKg,
+                    IsDeleted = f.IsDeleted
                 })
                 .ToListAsync();
 

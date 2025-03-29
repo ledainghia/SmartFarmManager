@@ -129,7 +129,8 @@ namespace SmartFarmManager.API.Controllers
                     FarmId = filterRequest.FarmId,
                     FoodType = filterRequest.FoodType,
                     PageNumber = filterRequest.PageNumber,
-                    PageSize = filterRequest.PageSize
+                    PageSize = filterRequest.PageSize,
+                    IsDeleted = filterRequest.IsDeleted
                 };
 
                 var result = await _foodStackService.GetFoodStacksAsync(filterModel);
