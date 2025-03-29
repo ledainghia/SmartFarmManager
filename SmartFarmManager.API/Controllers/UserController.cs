@@ -478,5 +478,23 @@ namespace SmartFarmManager.API.Controllers
             await _otpPhoneService.SendOtpViaSmsAsync(phoneNumber, otp);
             return Ok(new { message = "OTP sent successfully." });
         }
+
+        [HttpPost("assign-staffFarm-cages")]
+        public async Task<IActionResult> AssignCages([FromBody] AssignStaffToCagesRequest request)
+        {
+            try
+            {
+                var result = await _userService.AssignMoreCagesToStaffAsync(request.StaffId, request.CageIds);
+                if (result)
+                    return Ok(ApiResult<object>.Succeed("Gán chuồng cho nhân viên thành công."));
+                else
+                    return BadRequest(ApiResult<object>.Fail("Gán chuồng thất bại."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<object>.Fail(ex));
+            }
+        }
+
     }
 }
