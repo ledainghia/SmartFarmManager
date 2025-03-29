@@ -287,7 +287,7 @@ namespace SmartFarmManager.Service.Services
                 Address = request.Address,
                 RoleId = request.RoleId,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
                 PasswordHash = SecurityUtil.Hash("123@123Aa")
             };
 
@@ -297,6 +297,7 @@ namespace SmartFarmManager.Service.Services
             return new BusinessModels.Users.UserModel
             {
                 Id = newUser.Id,
+                Username = username,
                 FullName = newUser.FullName,
                 Email = newUser.Email,
                 PhoneNumber = newUser.PhoneNumber,
