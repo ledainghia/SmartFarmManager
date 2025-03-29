@@ -102,8 +102,8 @@ namespace SmartFarmManager.Service.Services
         {
             var query = _unitOfWork.FoodStacks.FindAll(false).AsQueryable();
 
-            if (!string.IsNullOrEmpty(filter.KeySearch){
-                query = query.Where(f => f.FoodType.Contains(filter.KeySearch)|);
+            if (!string.IsNullOrEmpty(filter.KeySearch)){
+                query = query.Where(f => f.FoodType.Contains(filter.KeySearch));
             }
             if (filter.FarmId.HasValue)
             {
