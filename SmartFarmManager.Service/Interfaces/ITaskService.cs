@@ -36,6 +36,7 @@ namespace SmartFarmManager.Service.Interfaces
         Task<Dictionary<string, int>> GetTaskCountByStatusAsync(DateTime startDate, DateTime endDate, Guid? assignedToUserId = null, Guid? farmId = null);
         Task<bool> RedoVaccineScheduleAsync(RedoVaccineScheduleRequest request);
         Task<bool> SetIsTreatmentTaskTrueAsync(Guid taskId);
+        Task<TaskLogResponse> GetLogsByTaskIdAsync(Guid taskId);
 
 
     }
