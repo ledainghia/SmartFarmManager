@@ -278,7 +278,7 @@ namespace SmartFarmManager.Service.Services
             // Map GrowthStage sang GrowthStageModel
             return new GrowthStageDetailModel
             {
-                Id = growthStage.Id,
+                Id = farmingBatch.Id,
                 Name = growthStage.Name,
                 WeightAnimal = growthStage.WeightAnimal,
                 Quantity = growthStage.Quantity,
@@ -290,7 +290,8 @@ namespace SmartFarmManager.Service.Services
                 AgeEndDate = growthStage.AgeEndDate,
                 Status = growthStage.Status,
                 RecommendedWeightPerSession = growthStage.RecommendedWeightPerSession,
-                WeightBasedOnBodyMass = growthStage.WeightBasedOnBodyMass
+                WeightBasedOnBodyMass = growthStage.WeightBasedOnBodyMass,
+                FoodType = growthStage.FoodType,
             };
         }
         public async Task<bool> UpdateWeightAnimalAsync(UpdateGrowthStageRequest request)
@@ -387,11 +388,10 @@ namespace SmartFarmManager.Service.Services
         }
         public async Task<List<AnimalSaleGroupedByTypeModel>> GetAnimalSalesByGrowthStageAsync(Guid growthStageId)
         {
-            // 1️⃣ Lấy giai đoạn phát triển và vụ nuôi
+            // 1️⃣ Lấy giai đoạn phát triển
             var growthStage = await _unitOfWork.GrowthStages
                 .FindByCondition(gs => gs.Id == growthStageId)
                 .Include(gs => gs.FarmingBatch)
-                .Include(gs => gs.FarmingBatch.GrowthStages)
                 .FirstOrDefaultAsync();
 
             if (growthStage == null || !growthStage.AgeStartDate.HasValue)
@@ -400,13 +400,13 @@ namespace SmartFarmManager.Service.Services
             var farmingBatchId = growthStage.FarmingBatchId;
             var startDate = growthStage.AgeStartDate.Value;
 
-            // 2️⃣ Xác định giai đoạn cuối
-            var isLastStage = !growthStage.FarmingBatch.GrowthStages
-                .Any(gs => gs.AgeStartDate > growthStage.AgeStartDate);
+            // 2️⃣ Lấy tất cả các giai đoạn khác của vụ nuôi để xác định có phải là giai đoạn cuối không
+            var allStages = await _unitOfWork.GrowthStages
+                .FindByCondition(gs => gs.FarmingBatchId == farmingBatchId)
+                .ToListAsync();
 
-            DateTime? endDate = isLastStage
-                ? null // nếu là giai đoạn cuối thì không giới hạn end
-                : growthStage.AgeEndDate;
+            var isLastStage = !allStages.Any(gs => gs.AgeStartDate > growthStage.AgeStartDate);
+            DateTime? endDate = isLastStage ? null : growthStage.AgeEndDate;
 
             // 3️⃣ Lọc các bản ghi AnimalSales trong giai đoạn đó
             var query = _unitOfWork.AnimalSales
@@ -442,6 +442,7 @@ namespace SmartFarmManager.Service.Services
 
             return grouped;
         }
+
 
 
 
