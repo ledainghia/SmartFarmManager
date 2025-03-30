@@ -12,6 +12,7 @@ namespace SmartFarmManager.DataAccessObject.Models
 
         public string Notes { get; set; }
         public int RecommendDay{ get; set; }
+        public bool IsDeleted { get; set; } = false;
 
         public virtual Disease Disease { get; set; }
 
