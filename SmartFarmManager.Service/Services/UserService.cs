@@ -483,6 +483,18 @@ namespace SmartFarmManager.Service.Services
             if (!string.IsNullOrWhiteSpace(filter.Address))
                 query = query.Where(u => u.Address.Contains(filter.Address));
 
+            if (!string.IsNullOrWhiteSpace(filter.Search))
+            {
+                string keyword = filter.Search.Trim().ToLower();
+                query = query.Where(u =>
+                    u.Username.ToLower().Contains(keyword) ||
+                    u.FullName.ToLower().Contains(keyword) ||
+                    u.Email.ToLower().Contains(keyword) ||
+                    u.PhoneNumber.ToLower().Contains(keyword) ||
+                    u.Address.ToLower().Contains(keyword)
+                );
+            }
+
             // Pagination
             var totalItems = await query.CountAsync();
 

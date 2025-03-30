@@ -15,6 +15,7 @@ namespace SmartFarmManager.Service.BusinessModels.Users
         public bool? IsActive { get; set; }
         public string? FullName { get; set; }
         public string? Address { get; set; }
+        public string? Search { get; set; }
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 10;
     }
