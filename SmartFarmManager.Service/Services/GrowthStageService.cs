@@ -278,7 +278,7 @@ namespace SmartFarmManager.Service.Services
             // Map GrowthStage sang GrowthStageModel
             return new GrowthStageDetailModel
             {
-                Id = growthStage.Id,
+                Id = farmingBatch.Id,
                 Name = growthStage.Name,
                 WeightAnimal = growthStage.WeightAnimal,
                 Quantity = growthStage.Quantity,
@@ -290,7 +290,8 @@ namespace SmartFarmManager.Service.Services
                 AgeEndDate = growthStage.AgeEndDate,
                 Status = growthStage.Status,
                 RecommendedWeightPerSession = growthStage.RecommendedWeightPerSession,
-                WeightBasedOnBodyMass = growthStage.WeightBasedOnBodyMass
+                WeightBasedOnBodyMass = growthStage.WeightBasedOnBodyMass,
+                FoodType = growthStage.FoodType,
             };
         }
         public async Task<bool> UpdateWeightAnimalAsync(UpdateGrowthStageRequest request)
