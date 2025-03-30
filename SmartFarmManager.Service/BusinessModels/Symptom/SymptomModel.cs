@@ -10,5 +10,6 @@ namespace SmartFarmManager.Service.BusinessModels.Symptom
     {
         public Guid? Id { get; set; }
         public string SymptomName { get; set; }
+        public bool IsDeleted { get; set; }
     }
 }
