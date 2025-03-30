@@ -123,9 +123,10 @@ namespace SmartFarmManager.API.Controllers
                 var result = await _standardPrescriptionService.DeleteStandardPrescriptionAsync(id);
                 if (!result)
                 {
-                    throw new Exception("Lỗi khi xóa phiếu chuẩn bị!");
+                    return Ok(ApiResult<string>.Succeed("Khôi phục thành công!"));
                 }
-                return Ok(ApiResult<string>.Succeed("Phiếu chuẩn bị đã được xóa thành công!"));
+            
+                return Ok(ApiResult<string>.Succeed("Xóa thành công"));
             }
             catch (KeyNotFoundException ex)
             {

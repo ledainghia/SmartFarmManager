@@ -142,10 +142,10 @@ namespace SmartFarmManager.API.Controllers
 
                 if (!result)
                 {
-                    throw new Exception("Error while deleting Medication!");
+                    return Ok(ApiResult<string>.Succeed("Khôi phục thành công!"));
                 }
 
-                return Ok(ApiResult<string>.Succeed("Medication deleted successfully!"));
+                return Ok(ApiResult<string>.Succeed("Xóa thành công!"));
             }
             catch (KeyNotFoundException ex)
             {
