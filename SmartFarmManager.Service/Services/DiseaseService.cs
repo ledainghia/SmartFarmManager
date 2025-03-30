@@ -111,10 +111,16 @@ namespace SmartFarmManager.Service.Services
         {
             var query = _unitOfWork.Diseases.FindAll(false).AsQueryable();
 
-            if (!string.IsNullOrEmpty(filter.Name))
+            
+            if (!string.IsNullOrEmpty(filter.KeySearch))
             {
-                query = query.Where(d => d.Name.Contains(filter.Name));
+                query = query.Where(d => d.Name.Contains(filter.KeySearch));
             }
+            if(filter.IsDeleted.HasValue)
+            {
+                query = query.Where(d => d.IsDeleted == filter.IsDeleted);
+            }
+           
 
             var totalItems = await query.CountAsync();
 
@@ -125,7 +131,9 @@ namespace SmartFarmManager.Service.Services
                 {
                     Id = d.Id,
                     Name = d.Name,
-                    Description = d.Description
+                    Description = d.Description,
+                    IsDeleted = d.IsDeleted
+
                 })
                 .ToListAsync();
 

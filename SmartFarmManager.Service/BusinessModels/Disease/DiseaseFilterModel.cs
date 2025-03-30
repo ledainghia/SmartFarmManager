@@ -8,7 +8,8 @@ namespace SmartFarmManager.Service.BusinessModels.Disease
 {
     public  class DiseaseFilterModel
     {
-        public string? Name { get; set; }
+        public string? KeySearch { get; set; }
+        public bool? IsDeleted { get; set; }
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 20;
     }
