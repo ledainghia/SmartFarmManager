@@ -258,6 +258,7 @@ namespace SmartFarmManager.Service.Services
             {
                 Id = prescription.Id,
                 DiseaseName = prescription.Disease.Name,
+                DiseaseId = prescription.Disease.Id,
                 DiseaseDescription = prescription.Disease.Description,
                 Notes = prescription.Notes,
                 RecommendDay = prescription.RecommendDay,
