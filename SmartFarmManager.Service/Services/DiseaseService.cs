@@ -102,11 +102,37 @@ namespace SmartFarmManager.Service.Services
                 throw new KeyNotFoundException($"Disease with ID {id} does not exist.");
             }
 
-            await _unitOfWork.Diseases.DeleteAsync(existingDisease);
+            if (existingDisease.IsDeleted)
+            {
+                var diseaseWithSameName = await _unitOfWork.Diseases
+                    .FindByCondition(d => d.Name == existingDisease.Name && d.IsDeleted == false)
+                    .FirstOrDefaultAsync();
+
+                if (diseaseWithSameName != null)
+                {
+                    throw new InvalidOperationException($"Bệnh với tên '{existingDisease.Name}' đã tồn tại và không thể khổi phục");
+                }
+
+                existingDisease.IsDeleted = false;
+            }
+            else
+            {
+                existingDisease.IsDeleted = true;
+            }
+
+            await _unitOfWork.Diseases.UpdateAsync(existingDisease);
             await _unitOfWork.CommitAsync();
 
-            return true;
+            if (existingDisease.IsDeleted)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
+
         public async Task<PagedResult<DiseaseItemModel>> GetDiseasesAsync(DiseaseFilterModel filter)
         {
             var query = _unitOfWork.Diseases.FindAll(false).AsQueryable();

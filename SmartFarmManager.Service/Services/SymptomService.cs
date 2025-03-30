@@ -84,14 +84,36 @@ namespace SmartFarmManager.Service.Services
             var symptom = await _unitOfWork.Symptoms.GetByIdAsync(id);
             if (symptom == null)
             {
-                return false;
+                throw new KeyNotFoundException($"Triệu chứng với ID {id} không tồn tại.");
             }
-            symptom.IsDeleted = true;
+            if (symptom.IsDeleted)
+            {
+                var symptomWithSameName = await _unitOfWork.Symptoms
+                    .FindByCondition(s => s.SymptomName == symptom.SymptomName && s.IsDeleted == false)
+                    .FirstOrDefaultAsync();
+
+                if (symptomWithSameName != null)
+                {
+                    throw new InvalidOperationException($"Triệu chứng với tên '{symptom.SymptomName}' đã tồn tại nên không thể khôi phục.");
+                }
+                symptom.IsDeleted = false;
+            }
+            else
+            {
+                symptom.IsDeleted = true;
+            }
 
             await _unitOfWork.Symptoms.UpdateAsync(symptom);
             await _unitOfWork.CommitAsync();
 
-            return true;
+            if (symptom.IsDeleted)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
         public async Task<PagedResult<SymptomModel>> GetSymptomsAsync(SymptomFilterModel filter)
         {

@@ -112,8 +112,6 @@ namespace SmartFarmManager.Service.Services
             {
                 query = query.Where(m => m.Weight <= filter.MaxWeight.Value);
             }
-
-            // Lọc theo DoseQuantity nếu có
             if (filter.MinDoseQuantity.HasValue)
             {
                 query = query.Where(m => m.DoseQuantity >= filter.MinDoseQuantity.Value);
@@ -203,20 +201,39 @@ namespace SmartFarmManager.Service.Services
         }
         public async Task<bool> DeleteMedicationAsync(Guid id)
         {
-            // 1. Kiểm tra Medication có tồn tại không
             var medication = await _unitOfWork.Medication
                 .FindByCondition(m => m.Id == id)
                 .FirstOrDefaultAsync();
-
             if (medication == null)
             {
-                throw new KeyNotFoundException($"Medication with ID {id} does not exist.");
+                throw new KeyNotFoundException($"Thuốc với  ID {id} không tồn tại");
             }
-            medication.IsDeleted = true;
-            await _unitOfWork.Medication. UpdateAsync(medication);
+            if (medication.IsDeleted)
+            {
+                var medicationExisting = await _unitOfWork.Medication
+                    .FindByCondition(m => m.Name == medication.Name&&m.IsDeleted==false)
+                    .FirstOrDefaultAsync();
+                if (medicationExisting != null)
+                {
+                    throw new ArgumentException($"Thuốc với tên {medication.Name} đã tồn tại nên không thể khôi phục được! ");
+                }
+                medication.IsDeleted = false;
+            }
+            else
+            {
+                medication.IsDeleted = true;
+            }
+            await _unitOfWork.Medication.UpdateAsync(medication);
             await _unitOfWork.CommitAsync();
 
-            return true;
+            if (medication.IsDeleted)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
         public async Task<MedicationDetailResponseModel?> GetMedicationDetailAsync(Guid id)
         {

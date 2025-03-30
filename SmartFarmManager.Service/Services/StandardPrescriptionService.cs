@@ -162,21 +162,43 @@ namespace SmartFarmManager.Service.Services
         public async Task<bool> DeleteStandardPrescriptionAsync(Guid id)
         {
             var existingPrescription = await _unitOfWork.StandardPrescriptions
-                .FindByCondition(p => p.Id == id)
-                .FirstOrDefaultAsync();
+        .FindByCondition(p => p.Id == id)
+        .Include(p => p.Disease)
+        .FirstOrDefaultAsync();
 
             if (existingPrescription == null)
             {
                 throw new KeyNotFoundException($"Đơn thuốc mẫu với ID {id} không tồn tại.");
             }
 
-            // Cập nhật trường IsDeleted để "xóa mềm"
-            existingPrescription.IsDeleted = true;
+            if (existingPrescription.IsDeleted)
+            {
+                var prescriptionWithSameName = await _unitOfWork.StandardPrescriptions
+                    .FindByCondition(p => p.DiseaseId == existingPrescription.DiseaseId&& p.IsDeleted == false)
+                    .FirstOrDefaultAsync();
+
+                if (prescriptionWithSameName != null)
+                {
+                    throw new InvalidOperationException($"Đơn thuốc mẫu cho bệnh '{existingPrescription.Disease.Name}' đã tồn tại nên không thể khôi phục.");
+                }
+                existingPrescription.IsDeleted = false;
+            }
+            else
+            {
+                existingPrescription.IsDeleted = true;
+            }
 
             await _unitOfWork.StandardPrescriptions.UpdateAsync(existingPrescription);
             await _unitOfWork.CommitAsync();
 
-            return true;
+            if (existingPrescription.IsDeleted)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
         public async Task<PagedResult<StandardPrescriptionItemModel>> GetStandardPrescriptionsAsync(StandardPrescriptionFilterModel filter)
         {

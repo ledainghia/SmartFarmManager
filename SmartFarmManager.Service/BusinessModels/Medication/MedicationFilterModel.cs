@@ -8,7 +8,7 @@ namespace SmartFarmManager.Service.BusinessModels.Medication
 {
     public class MedicationFilterModel
     {
-        public string KeySearch { get; set; } // Tìm kiếm theo tên thuốc
+        public string? KeySearch { get; set; } // Tìm kiếm theo tên thuốc
         public int PageNumber { get; set; } = 1;  // Số trang
         public int PageSize { get; set; } = 10;   // Số mục trên mỗi trang
         public decimal? MinPrice { get; set; } // Giá tối thiểu

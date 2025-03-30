@@ -109,10 +109,10 @@ namespace SmartFarmManager.API.Controllers
             var result = await _symptomService.DeleteSymptomAsync(id);
             if (!result)
             {
-                return NotFound(ApiResult<object>.Fail("Symptom not found."));
+                return Ok(ApiResult<object>.Succeed("Khôi phục thành công!"));
             }
 
-            return Ok(ApiResult<object>.Succeed("Symptom deleted successfully."));
+            return Ok(ApiResult<object>.Succeed("Xóa thành công!"));
         }
 
     }
