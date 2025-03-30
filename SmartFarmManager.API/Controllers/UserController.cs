@@ -477,7 +477,7 @@ namespace SmartFarmManager.API.Controllers
         {
             try
             {
-                var result = await _userService.AssignMoreCagesToStaffAsync(request.StaffId, request.CageIds);
+                var result = await _userService.AssignCagesToStaffAsync(request.StaffId, request.CageIds);
                 if (result)
                     return Ok(ApiResult<object>.Succeed("Gán chuồng cho nhân viên thành công."));
                 else
