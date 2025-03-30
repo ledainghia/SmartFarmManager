@@ -315,18 +315,18 @@ namespace SmartFarmManager.API.Controllers
                         Id = Guid.NewGuid(),
                         FarmId = Guid.Parse("7b0ad5a5-ca3e-45b1-9519-d42135d5bea4"),
                         FoodType = "Dạng mảnh",
-                        Quantity = 10000000m,
+                        Quantity = 1000m,
                         CostPerKg = 15000m,
-                        CurrentStock = 10000000m
+                        CurrentStock = 1000m
                     },
                     new FoodStack
                     {
                         Id = Guid.NewGuid(),
                         FarmId = Guid.Parse("7b0ad5a5-ca3e-45b1-9519-d42135d5bea4"),
                         FoodType = "Dạng viên",
-                        Quantity = 20000000m,
+                        Quantity = 2000m,
                         CostPerKg = 17000m,
-                        CurrentStock = 20000000m
+                        CurrentStock = 2000m
                     }
                 };
 

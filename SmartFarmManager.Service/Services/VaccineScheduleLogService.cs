@@ -81,10 +81,7 @@ namespace SmartFarmManager.Service.Services
         public async Task<VaccineScheduleLogModel> GetVaccineScheduleLogByTaskIdAsync(Guid taskId)
         {
             // Tìm VaccineScheduleLog dựa trên TaskId
-            var log = await _unitOfWork.VaccineScheduleLogs.FindByCondition(
-                log => log.TaskId == taskId,
-                trackChanges: false
-            ).FirstOrDefaultAsync();
+            var log = await _unitOfWork.VaccineScheduleLogs.FindByCondition(log => log.TaskId == taskId).Include(vsl => vsl.Schedule).FirstOrDefaultAsync();
 
             if (log == null)
                 return null;
@@ -96,7 +93,9 @@ namespace SmartFarmManager.Service.Services
                 Date = log.Date,
                 Notes = log.Notes,
                 Photo = log.Photo,
-                TaskId = log.TaskId
+                TaskId = log.TaskId,
+                Quantity = log.Schedule.Quantity,
+                ToltalPrice = log.Schedule.ToltalPrice,
             };
         }
         public async Task<bool> CreateVaccineLogAsync(CreateVaccineLogRequest request)

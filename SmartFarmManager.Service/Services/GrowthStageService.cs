@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using SmartFarmManager.Service.BusinessModels.TaskDaily;
 using SmartFarmManager.Service.BusinessModels.VaccineSchedule;
 using SmartFarmManager.Service.Shared;
+using SmartFarmManager.Service.BusinessModels.AnimalSale;
 
 namespace SmartFarmManager.Service.Services
 {
@@ -384,6 +385,65 @@ namespace SmartFarmManager.Service.Services
                 }
             }
         }
+        public async Task<List<AnimalSaleGroupedByTypeModel>> GetAnimalSalesByGrowthStageAsync(Guid growthStageId)
+        {
+            // 1️⃣ Lấy giai đoạn phát triển và vụ nuôi
+            var growthStage = await _unitOfWork.GrowthStages
+                .FindByCondition(gs => gs.Id == growthStageId)
+                .Include(gs => gs.FarmingBatch)
+                .Include(gs => gs.FarmingBatch.GrowthStages)
+                .FirstOrDefaultAsync();
+
+            if (growthStage == null || !growthStage.AgeStartDate.HasValue)
+                throw new ArgumentException("Không tìm thấy giai đoạn phát triển hợp lệ.");
+
+            var farmingBatchId = growthStage.FarmingBatchId;
+            var startDate = growthStage.AgeStartDate.Value;
+
+            // 2️⃣ Xác định giai đoạn cuối
+            var isLastStage = !growthStage.FarmingBatch.GrowthStages
+                .Any(gs => gs.AgeStartDate > growthStage.AgeStartDate);
+
+            DateTime? endDate = isLastStage
+                ? null // nếu là giai đoạn cuối thì không giới hạn end
+                : growthStage.AgeEndDate;
+
+            // 3️⃣ Lọc các bản ghi AnimalSales trong giai đoạn đó
+            var query = _unitOfWork.AnimalSales
+                .FindByCondition(s => s.FarmingBatchId == farmingBatchId && s.SaleDate >= startDate);
+
+            if (endDate.HasValue)
+            {
+                query = query.Where(s => s.SaleDate <= endDate.Value);
+            }
+
+            var animalSales = await query
+                .Include(s => s.SaleType)
+                .ToListAsync();
+
+            // 4️⃣ Group theo SaleType
+            var grouped = animalSales
+                .GroupBy(s => s.SaleType.StageTypeName)
+                .Select(g => new AnimalSaleGroupedByTypeModel
+                {
+                    SaleType = g.Key,
+                    TotalQuantity = g.Sum(x => x.Quantity),
+                    TotalRevenue = g.Sum(x => x.Total),
+                    UnitPriceAverage = g.Average(x => x.UnitPrice ?? 0),
+                    Logs = g.Select(x => new AnimalSaleLogModel
+                    {
+                        SaleDate = x.SaleDate,
+                        Quantity = x.Quantity,
+                        UnitPrice = x.UnitPrice,
+                        Total = x.Total
+                    }).ToList()
+                })
+                .ToList();
+
+            return grouped;
+        }
+
+
 
     }
 }

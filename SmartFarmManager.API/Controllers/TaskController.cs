@@ -354,6 +354,19 @@ namespace SmartFarmManager.API.Controllers
             return Ok(ApiResult<object>.Succeed("Task marked as treatment task successfully."));
         }
 
+        [HttpGet("{taskId}/logs")]
+        public async Task<IActionResult> GetLogsByTaskId(Guid taskId)
+        {
+            try
+            {
+                var logs = await _taskService.GetLogsByTaskIdAsync(taskId);
+                return Ok(ApiResult<TaskLogResponse>.Succeed(logs));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail($"Lỗi: {ex.Message}"));
+            }
+        }
 
     }
 }

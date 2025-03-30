@@ -8,6 +8,8 @@ using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.BusinessModels.TaskDaily;
 using SmartFarmManager.Service.BusinessModels.VaccineSchedule;
 using Sprache;
+using SmartFarmManager.Service.BusinessModels.AnimalSale;
+using SmartFarmManager.Service.Services;
 
 namespace SmartFarmManager.API.Controllers
 {
@@ -211,6 +213,20 @@ namespace SmartFarmManager.API.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred. Please contact support."));
+            }
+        }
+
+        [HttpGet("growth-stage/{growthStageId}/sales")]
+        public async Task<IActionResult> GetSalesByGrowthStage(Guid growthStageId)
+        {
+            try
+            {
+                var result = await _growthStageService.GetAnimalSalesByGrowthStageAsync(growthStageId);
+                return Ok(ApiResult<List<AnimalSaleGroupedByTypeModel>>.Succeed(result));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
             }
         }
 

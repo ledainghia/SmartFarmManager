@@ -274,7 +274,11 @@ namespace SmartFarmManager.Service.Services
                 if (activeUserCount > 0)
                     throw new ArgumentException($"{role.RoleName} can only have one active account.");
             }
-
+            var exitingEmail = await _unitOfWork.Users.FindByCondition(u => u.Email == request.Email).FirstOrDefaultAsync();
+            if(exitingEmail != null)
+            {
+                throw new ArgumentException($"{request.Email} already exit.");
+            }
             // Tạo Username tự động
             var username = await GenerateUniqueUsernameAsync(request.FullName);
 
@@ -335,6 +339,8 @@ namespace SmartFarmManager.Service.Services
 
         private string RemoveDiacritics(string text)
         {
+            // Thay thế đặc biệt cho chữ Đ/đ trước khi loại dấu
+            text = text.Replace("Đ", "D").Replace("đ", "d");
             var normalizedString = text.Normalize(NormalizationForm.FormD);
             var stringBuilder = new StringBuilder();
 
@@ -447,9 +453,15 @@ namespace SmartFarmManager.Service.Services
         }
         public async Task<PagedResult<BusinessModels.Users.UserModel>> GetUsersAsync(UserFilterModel filter)
         {
-            var query = _unitOfWork.Users.FindAll();
+            var query = _unitOfWork.Users.FindAll()
+                .Include(u => u.Role)
+                .Include(u => u.CageStaffs)
+                    .ThenInclude(cs => cs.Cage)
+                        .ThenInclude(c => c.Farm)
+                .Include(u => u.FarmAdmins)
+                    .ThenInclude(fa => fa.Farm).AsQueryable(); ;
 
-            // Lọc theo các tham số trong UserFilterModel
+            // Apply filters
             if (!string.IsNullOrWhiteSpace(filter.Username))
                 query = query.Where(u => u.Username.Contains(filter.Username));
 
@@ -471,40 +483,44 @@ namespace SmartFarmManager.Service.Services
             if (!string.IsNullOrWhiteSpace(filter.Address))
                 query = query.Where(u => u.Address.Contains(filter.Address));
 
-            // Tính tổng số items
+            // Pagination
             var totalItems = await query.CountAsync();
 
-            // Phân trang
-            var items = await query.Skip((filter.PageNumber - 1) * filter.PageSize)
-                                   .Take(filter.PageSize)
-                                   .Select(user => new BusinessModels.Users.UserModel
-                                   {
-                                       Id = user.Id,
-                                       Username = user.Username,
-                                       FullName = user.FullName,
-                                       Email = user.Email,
-                                       PhoneNumber = user.PhoneNumber,
-                                       Address = user.Address,
-                                       IsActive = user.IsActive,
-                                       CreatedAt = user.CreatedAt,
-                                       RoleId = user.RoleId
-                                   })
-                                   .ToListAsync();
-
-            // Tạo đối tượng phân trang
-            var result = new PaginatedList<BusinessModels.Users.UserModel>(items, totalItems, filter.PageNumber, filter.PageSize);
+            var items = await query
+                .Skip((filter.PageNumber - 1) * filter.PageSize)
+                .Take(filter.PageSize)
+                .Select(u => new BusinessModels.Users.UserModel
+                {
+                    Id = u.Id,
+                    Username = u.Username,
+                    FullName = u.FullName,
+                    Email = u.Email,
+                    PhoneNumber = u.PhoneNumber,
+                    Address = u.Address,
+                    IsActive = u.IsActive,
+                    CreatedAt = u.CreatedAt,
+                    RoleId = u.RoleId,
+                    RoleName = u.Role.RoleName,
+                    FarmName = u.FarmAdmins.Select(fa => fa.Farm.Name)
+                                 .Union(u.CageStaffs.Select(cs => cs.Cage.Farm.Name))
+                                 .Distinct()
+                                 .First(),
+                    CageNames = u.CageStaffs.Select(cs => cs.Cage.Name).Distinct().ToList()
+                })
+                .ToListAsync();
 
             return new PagedResult<BusinessModels.Users.UserModel>
             {
-                Items = result.Items,
-                TotalItems = result.TotalCount,
-                PageSize = result.PageSize,
-                CurrentPage = result.CurrentPage,
-                TotalPages = result.TotalPages,
-                HasNextPage = result.HasNextPage,
-                HasPreviousPage = result.HasPreviousPage,
+                Items = items,
+                TotalItems = totalItems,
+                PageSize = filter.PageSize,
+                CurrentPage = filter.PageNumber,
+                TotalPages = (int)Math.Ceiling(totalItems / (double)filter.PageSize),
+                HasNextPage = filter.PageNumber * filter.PageSize < totalItems,
+                HasPreviousPage = filter.PageNumber > 1
             };
         }
+
 
 
         public async Task<IEnumerable<BusinessModels.Users.UserModel>> GetUsersAsync(string? roleName, bool? isActive, string? search)

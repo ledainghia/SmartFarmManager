@@ -3,8 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels;
+using SmartFarmManager.Service.BusinessModels.DailyFoodUsageLog;
+using SmartFarmManager.Service.BusinessModels.HealthLog;
 using SmartFarmManager.Service.BusinessModels.Task;
 using SmartFarmManager.Service.BusinessModels.VaccineSchedule;
+using SmartFarmManager.Service.BusinessModels.VaccineScheduleLog;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Shared;
@@ -2224,6 +2227,57 @@ namespace SmartFarmManager.Service.Services
             return true;
         }
 
+
+        public async Task<TaskLogResponse> GetLogsByTaskIdAsync(Guid taskId)
+        {
+            var foodLog = await _unitOfWork.DailyFoodUsageLogs
+                .FindByCondition(l => l.TaskId == taskId)
+                .FirstOrDefaultAsync();
+
+            var vaccineLog = await _unitOfWork.VaccineScheduleLogs
+                .FindByCondition(l => l.TaskId == taskId)
+                .Include(v => v.Schedule)
+                .FirstOrDefaultAsync();
+
+            var healthLog = await _unitOfWork.HealthLogs
+                .FindByCondition(l => l.TaskId == taskId)
+                .FirstOrDefaultAsync();
+
+            return new TaskLogResponse
+            {
+                FoodLog = foodLog == null ? null : new DailyFoodUsageLogModel
+                {
+                    Id = foodLog.Id,
+                    StageId = foodLog.StageId,
+                    RecommendedWeight = foodLog.RecommendedWeight,
+                    ActualWeight = foodLog.ActualWeight,
+                    Notes = foodLog.Notes,
+                    LogTime = foodLog.LogTime,
+                    Photo = foodLog.Photo,
+                    TaskId = foodLog.TaskId
+                },
+                VaccineLog = vaccineLog == null ? null : new VaccineScheduleLogModel
+                {
+                    Id = vaccineLog.Id,
+                    ScheduleId = vaccineLog.ScheduleId,
+                    Date = vaccineLog.Date,
+                    Notes = vaccineLog.Notes,
+                    Photo = vaccineLog.Photo,
+                    TaskId = vaccineLog.TaskId,
+                    Quantity = vaccineLog.Schedule?.Quantity,
+                    ToltalPrice = vaccineLog.Schedule?.ToltalPrice
+                },
+                HealthLog = healthLog == null ? null : new HealthLogModel
+                {
+                    Id = healthLog.Id,
+                    PrescriptionId = healthLog.PrescriptionId,
+                    Date = healthLog.Date,
+                    Notes = healthLog.Notes,
+                    Photo = healthLog.Photo,
+                    TaskId = healthLog.TaskId
+                }
+            };
+        }
 
 
 
