@@ -278,7 +278,8 @@ namespace SmartFarmManager.Service.Services
             // Map GrowthStage sang GrowthStageModel
             return new GrowthStageDetailModel
             {
-                Id = farmingBatch.Id,
+                Id = growthStage.Id,
+                FarmingBatchId = farmingBatch.Id,
                 Name = growthStage.Name,
                 WeightAnimal = growthStage.WeightAnimal,
                 Quantity = growthStage.Quantity,
