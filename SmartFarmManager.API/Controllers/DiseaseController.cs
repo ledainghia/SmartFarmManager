@@ -140,7 +140,8 @@ namespace SmartFarmManager.API.Controllers
             {
                 var filterModel = new DiseaseFilterModel
                 {
-                    Name = filterRequest.Name,
+                    KeySearch = filterRequest.KeySearch,
+                    IsDeleted = filterRequest.IsDeleted,
                     PageNumber = filterRequest.PageNumber,
                     PageSize = filterRequest.PageSize
                 };
