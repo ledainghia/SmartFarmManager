@@ -8,15 +8,14 @@ namespace SmartFarmManager.Service.BusinessModels.Medication
 {
     public class MedicationModel
     {
-        public Guid? Id { get; set; }
+        public Guid Id { get; set; }
         public string Name { get; set; }
-
         public string UsageInstructions { get; set; }
-
         public decimal? Price { get; set; }
-
+        public int? DoseWeight { get; set; } 
+        public int? Weight { get; set; }
         public int? DoseQuantity { get; set; }
-
         public decimal? PricePerDose { get; set; }
+        public bool IsDeleted { get; set; }
     }
 }

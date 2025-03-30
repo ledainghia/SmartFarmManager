@@ -50,11 +50,29 @@ namespace SmartFarmManager.API.Controllers
 
         // GET: api/medications
         [HttpGet]
-        public async Task<IActionResult> GetMedications([FromQuery] string? name, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetMedications([FromQuery] MedicationFilterModel filter)
         {
-            var pagedMedications = await _medicationService.GetPagedMedicationsAsync(name, minPrice, maxPrice, page, pageSize);
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                                               .Select(e => e.ErrorMessage)
+                                               .ToList();
 
-            return Ok(ApiResult<PagedResult<MedicationModel>>.Succeed(pagedMedications));
+                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
+        {
+            { "Errors", errors.ToArray() }
+        }));
+            }
+
+            try
+            {
+                var result = await _medicationService.GetMedicationsAsync(filter);
+                return Ok(ApiResult<PagedResult<MedicationModel>>.Succeed(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+            }
         }
 
         [HttpPut("{id}")]
