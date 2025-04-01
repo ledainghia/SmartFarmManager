@@ -16,7 +16,7 @@ namespace SmartFarmManager.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class  : ControllerBase
+    public class PrescriptionController : ControllerBase
     {
         private readonly IPrescriptionService _prescriptionService;
 
