@@ -12,7 +12,7 @@ namespace SmartFarmManager.Service.BusinessModels.Task
         public Guid TaskTypeId { get; set; }
         public string TaskName { get; set; }
         public string Description { get; set; }
-        public List<int> Sessions { get; set; } // Danh sách các buổi
+        public List<int> Sessions { get; set; }
         public DateTime StartAt { get; set; }
         public DateTime EndAt { get; set; }
     }

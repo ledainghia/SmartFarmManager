@@ -99,7 +99,7 @@ namespace SmartFarmManager.Service.Services
 
             if (existingDisease == null)
             {
-                throw new KeyNotFoundException($"Disease with ID {id} does not exist.");
+                throw new KeyNotFoundException($"Bệnh với Id {id} không tồn tại.");
             }
 
             if (existingDisease.IsDeleted)
