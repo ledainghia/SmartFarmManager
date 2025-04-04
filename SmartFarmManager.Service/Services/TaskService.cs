@@ -5,6 +5,9 @@ using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.DailyFoodUsageLog;
 using SmartFarmManager.Service.BusinessModels.HealthLog;
+using SmartFarmManager.Service.BusinessModels.Medication;
+using SmartFarmManager.Service.BusinessModels.Prescription;
+using SmartFarmManager.Service.BusinessModels.PrescriptionMedication;
 using SmartFarmManager.Service.BusinessModels.Task;
 using SmartFarmManager.Service.BusinessModels.VaccineSchedule;
 using SmartFarmManager.Service.BusinessModels.VaccineScheduleLog;
@@ -2221,10 +2224,14 @@ namespace SmartFarmManager.Service.Services
             var vaccineLog = await _unitOfWork.VaccineScheduleLogs
                 .FindByCondition(l => l.TaskId == taskId)
                 .Include(v => v.Schedule)
+                .ThenInclude(s => s.Vaccine)
                 .FirstOrDefaultAsync();
 
             var healthLog = await _unitOfWork.HealthLogs
                 .FindByCondition(l => l.TaskId == taskId)
+                .Include(hl => hl.Prescription)
+                .ThenInclude(p => p.PrescriptionMedications)
+                .ThenInclude(pm => pm.Medication)
                 .FirstOrDefaultAsync();
 
             return new TaskLogResponse
@@ -2249,7 +2256,8 @@ namespace SmartFarmManager.Service.Services
                     Photo = vaccineLog.Photo,
                     TaskId = vaccineLog.TaskId,
                     Quantity = vaccineLog.Schedule?.Quantity,
-                    ToltalPrice = vaccineLog.Schedule?.ToltalPrice
+                    ToltalPrice = vaccineLog.Schedule?.ToltalPrice,
+                    VaccineName = vaccineLog.Schedule.Vaccine.Name
                 },
                 HealthLog = healthLog == null ? null : new HealthLogModel
                 {
@@ -2258,12 +2266,36 @@ namespace SmartFarmManager.Service.Services
                     Date = healthLog.Date,
                     Notes = healthLog.Notes,
                     Photo = healthLog.Photo,
-                    TaskId = healthLog.TaskId
+                    TaskId = healthLog.TaskId,
+                    Prescriptions = healthLog.Prescription == null ? null : new PrescriptionModel
+                    {
+                        Id = healthLog.Prescription.Id,
+                        PrescribedDate = healthLog.Prescription.PrescribedDate,
+                        Status = healthLog.Prescription.Status,
+                        QuantityAnimal = healthLog.Prescription.QuantityAnimal,
+                        Notes = healthLog.Prescription.Notes,
+                        Price = healthLog.Prescription.Price,
+                        DaysToTake = healthLog.Prescription.DaysToTake,
+                        EndDate = healthLog.Prescription.EndDate,
+                        Medications = healthLog.Prescription.PrescriptionMedications?.Select(pm => new PrescriptionMedicationModel
+                        {
+                            MedicationId = pm.MedicationId,
+                            Morning = pm.Morning,
+                            Afternoon = pm.Afternoon,
+                            Evening = pm.Evening,
+                            Noon = pm.Noon,
+                            Notes = pm.Notes,
+                            Medication = pm.Medication == null ? null : new MedicationModel
+                            {
+                                Name = pm.Medication.Name,
+                                UsageInstructions = pm.Medication.UsageInstructions,
+                                Price = pm.Medication.Price,
+                                DoseQuantity = pm.Medication.DoseQuantity
+                            }
+                        }).ToList()
+                    }
                 }
             };
         }
-
-
-
     }
 }

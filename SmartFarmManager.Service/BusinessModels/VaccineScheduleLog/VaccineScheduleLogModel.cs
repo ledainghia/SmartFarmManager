@@ -10,6 +10,7 @@ namespace SmartFarmManager.Service.BusinessModels.VaccineScheduleLog
     {
         public Guid Id { get; set; }
         public Guid? ScheduleId { get; set; }
+        public string? VaccineName { get; set; }
         public DateOnly? Date { get; set; }
         public string Notes { get; set; }
         public string Photo { get; set; }
