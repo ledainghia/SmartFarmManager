@@ -752,8 +752,8 @@ namespace SmartFarmManager.API.Controllers
                                 {
                                     Id = Guid.NewGuid(),
                                     StageId = stage.Id,
-                                    RecommendedWeight = stage.Quantity * stage.RecommendedWeightPerSession,
-                                    ActualWeight = stage.Quantity * stage.RecommendedWeightPerSession,
+                                    RecommendedWeight = stage.Quantity * stage.RecommendedWeightPerSession * 0.5m,
+                                    ActualWeight = stage.Quantity * stage.RecommendedWeightPerSession * 0.5m,
                                     Notes = "Ghi nhận lượng thức ăn tiêu thụ",
                                     LogTime = date,
                                     UnitPrice = 15000, // Giá đại diện
