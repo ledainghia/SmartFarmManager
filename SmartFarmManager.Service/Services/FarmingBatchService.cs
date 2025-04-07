@@ -1221,5 +1221,71 @@ namespace SmartFarmManager.Service.Services
             return true;
         }
 
+        public async Task<FarmingBatchDetailModel> GetFarmingBatchDetailAsync(Guid farmingBatchId)
+        {
+            var farmingBatch = await _unitOfWork.FarmingBatches
+                .FindByCondition(fb => fb.Id == farmingBatchId)
+                .Include(fb => fb.Cage)
+                .Include(fb=>fb.Template)
+                .Include(fb => fb.AnimalSales)  
+                .Include(fb => fb.GrowthStages) 
+                .Include(fb=>fb.MedicalSymptoms)
+                .FirstOrDefaultAsync();
+
+            if (farmingBatch == null)
+            {
+                throw new KeyNotFoundException($"Farming batch with ID {farmingBatchId} not found.");
+            }
+
+            var detailModel = new FarmingBatchDetailModel
+            {
+                Id = farmingBatch.Id,
+                Name = farmingBatch.Name,
+                Status = farmingBatch.Status,
+                StartDate = farmingBatch.StartDate,
+                EndDate = farmingBatch.EndDate,
+                CageId = farmingBatch.CageId,
+                CageName = farmingBatch.Cage.Name,
+                CleaningFrequency = farmingBatch.CleaningFrequency,
+                CompleteAt = farmingBatch.CompleteAt,
+                DeadQuantity = farmingBatch.DeadQuantity,
+                EstimatedTimeStart=farmingBatch.EstimatedTimeStart,
+                FarmId = farmingBatch.FarmId,
+                FarmingBatchCode = farmingBatch.FarmingBatchCode,
+                Quantity = farmingBatch.Quantity,
+                TemplateName = farmingBatch.Template.Name,
+                AnimalSales = farmingBatch.AnimalSales.Select(asale => new AnimalSaleDetaiInFarmingBatchlModel
+                {
+                    Id = asale.Id,
+                    SaleDate = (DateTime) asale.SaleDate,
+                    Quantity = asale.Quantity,
+                    Total = asale.Total,
+                    UnitPrice = (double)asale.UnitPrice
+                }).ToList(),
+                GrowthStages = farmingBatch.GrowthStages.Select(gs => new GrowthStageDetailInFarmingBactchModel
+                {
+                    Id = gs.Id,
+                    Name = gs.Name,                 
+                    AgeStartDate = gs.AgeStartDate,
+                    AgeEndDate = gs.AgeEndDate
+                }).ToList(),
+                MedicalSymptoms=farmingBatch.MedicalSymptoms.Select(ms => new MedicalSymptomInFarmingBatchModel
+                {
+                    Id = ms.Id,
+                    Diagnosis = ms.Diagnosis,
+                    AffectedQuantity = ms.AffectedQuantity,
+                    IsEmergency = ms.IsEmergency,
+                    Notes=ms.Notes,
+                    QuantityInCage = ms.QuantityInCage,
+                    Status= ms.Status
+
+                }).ToList()
+
+
+            };
+
+            return detailModel;
+        }
+
     }
 }
