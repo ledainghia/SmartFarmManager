@@ -42,5 +42,22 @@ namespace SmartFarmManager.API.Controllers
                 return BadRequest(ApiResult<string>.Fail(ex.Message));
             }
         }
+
+        [HttpGet("{taskId}")]
+        public async Task<IActionResult> GetAnimalSaleLogByTaskId(Guid taskId)
+        {
+            try
+            {
+                var result = await _animalSaleService.GetAnimalSaleLogByTaskId(taskId);
+                if (result == null)
+                    return NotFound(ApiResult<string>.Fail("AnimalSale log not found."));
+                return Ok(ApiResult<AnimalSaleLogByTaskModel>.Succeed(result));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+
+        }
     }
 }

@@ -86,5 +86,50 @@ namespace SmartFarmManager.Service.Services
             return true;
         }
 
+
+        public async Task<AnimalSaleLogByTaskModel> GetAnimalSaleLogByTaskId(Guid taskId)
+        {
+            try
+            {
+                // Lấy task theo taskId và bao gồm các status log
+                var task = await _unitOfWork.Tasks
+                    .FindByCondition(t => t.Id == taskId)
+                    .Include(t => t.StatusLogs)
+                    .Include(t=>t.TaskType)
+                    .FirstOrDefaultAsync();
+
+                if (task == null)
+                {
+                    throw new KeyNotFoundException($"Không tìm thấy task với ID '{taskId}'.");
+                }
+
+                if (task.TaskType?.TaskTypeName != "Bán vật nuôi")
+                {
+                    throw new InvalidOperationException("Task không phải là 'Bán vật nuôi'.");
+                }
+
+                var statusLog = task.StatusLogs
+                    .FirstOrDefault(sl => sl.Status == TaskStatusEnum.Done);
+
+                if (statusLog == null)
+                {
+                    throw new KeyNotFoundException("Không tìm thấy StatusLog với trạng thái 'Done'.");
+                }
+
+                if (string.IsNullOrEmpty(statusLog.Log))
+                {
+                    throw new InvalidOperationException("Log của task này không có dữ liệu.");
+                }
+                var animalSaleLog = JsonConvert.DeserializeObject<AnimalSaleLogByTaskModel>(statusLog.Log);
+
+                return animalSaleLog;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Lỗi khi lấy log từ task: {ex.Message}");
+            }
+        }
+
+
     }
 }
