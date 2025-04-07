@@ -1,8 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels.AnimalSale;
+using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
+using SmartFarmManager.Service.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,8 +44,31 @@ namespace SmartFarmManager.Service.Services
                 StaffId = request.StaffId,
                 SaleTypeId = request.SaleTypeId
             };
-
             await _unitOfWork.AnimalSales.CreateAsync(newAnimalSale);
+            var newAnimalSaleLogByTask = new AnimalSaleLogByTaskModel
+            {
+                GrowthStageId = request.GrowthStageId,
+                LogTime=DateTimeUtils.GetServerTimeInVietnamTime(),
+                Quantity = request.Quantity,
+                SaleDate = request.SaleDate,
+                SaleTypeId = request.SaleTypeId,
+                StaffId = request.StaffId,
+                Total = request.UnitPrice * request.Quantity,
+                UnitPrice = request.UnitPrice               
+            };
+            var task = await _unitOfWork.Tasks.FindByCondition(t => t.Id == request.TaskId).FirstOrDefaultAsync();
+            if (task != null)
+            {
+                var statusLog = new StatusLog
+                {
+                    TaskId = task.Id,
+                    UpdatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                    Status = TaskStatusEnum.Done,  
+                    Log = JsonConvert.SerializeObject(newAnimalSaleLogByTask)  
+                };
+
+                await _unitOfWork.StatusLogs.CreateAsync(statusLog); 
+            }
             await _unitOfWork.CommitAsync();
             return true;
         }

@@ -13,6 +13,9 @@ using SmartFarmManager.Service.BusinessModels.TaskDaily;
 using SmartFarmManager.Service.BusinessModels.VaccineSchedule;
 using SmartFarmManager.Service.Shared;
 using SmartFarmManager.Service.BusinessModels.AnimalSale;
+using Newtonsoft.Json;
+using SmartFarmManager.DataAccessObject.Models;
+using SmartFarmManager.Service.BusinessModels.Log;
 
 namespace SmartFarmManager.Service.Services
 {
@@ -302,25 +305,43 @@ namespace SmartFarmManager.Service.Services
                 .FirstOrDefaultAsync();
 
             if (growthStage == null)
-                return false; // Không tìm thấy GrowthStage
+                return false;
 
-            // 2️⃣ Cập nhật WeightAnimal với giá trị mới từ request
+            var oldWeightAnimal = growthStage.WeightAnimal;
             growthStage.WeightAnimal = request.WeightAnimal;
 
-            // 3️⃣ Tính lại RecommendedWeightPerSession
             if (growthStage.WeightBasedOnBodyMass.HasValue)
             {
                 growthStage.RecommendedWeightPerSession = request.WeightAnimal * growthStage.WeightBasedOnBodyMass.Value;
             }
-
-            // 4️⃣ Cập nhật lại GrowthStage trong database
             await _unitOfWork.GrowthStages.UpdateAsync(growthStage);
+
+            var task = await _unitOfWork.Tasks.FindByCondition(t => t.Id == request.TaskId).FirstOrDefaultAsync();
+            if (task != null)
+            {
+                var statusLog = new StatusLog
+                {
+                    TaskId = task.Id,
+                    UpdatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                    Status = TaskStatusEnum.Done,  // Trạng thái Done khi hoàn thành công việc cập nhật cân nặng
+                    Log = JsonConvert.SerializeObject(new
+                    WeightAnimalLogModel {
+                        GrowthStageId = growthStage.Id,
+                        OldWeight = oldWeightAnimal,
+                        NewWeight = growthStage.WeightAnimal,
+                        LogTime=DateTimeUtils.GetServerTimeInVietnamTime(),
+                        TaskId=request.TaskId
+                    })  
+                };
+
+                await _unitOfWork.StatusLogs.CreateAsync(statusLog);
+            }
             await _unitOfWork.CommitAsync();
 
             return true; // Cập nhật thành công
         }
 
-        public async Task UpdateGrowthStagesStatusAsync()
+        public async System.Threading.Tasks.Task UpdateGrowthStagesStatusAsync()
         {
             var activeFarmingBatches = await _unitOfWork.FarmingBatches
            .FindByCondition(fb => fb.Status == FarmingBatchStatusEnum.Active)

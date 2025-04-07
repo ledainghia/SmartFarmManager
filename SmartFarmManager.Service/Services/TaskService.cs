@@ -1,10 +1,14 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels;
+using SmartFarmManager.Service.BusinessModels.AnimalSale;
 using SmartFarmManager.Service.BusinessModels.DailyFoodUsageLog;
 using SmartFarmManager.Service.BusinessModels.HealthLog;
+using SmartFarmManager.Service.BusinessModels.Log;
+using SmartFarmManager.Service.BusinessModels.LogInTask;
 using SmartFarmManager.Service.BusinessModels.Task;
 using SmartFarmManager.Service.BusinessModels.VaccineSchedule;
 using SmartFarmManager.Service.BusinessModels.VaccineScheduleLog;
@@ -393,18 +397,38 @@ namespace SmartFarmManager.Service.Services
                 }
             }
 
-            // ✅ Cập nhật trạng thái và thời gian hoàn thành (nếu có)
             task.Status = status;
             task.CompletedAt = (status == TaskStatusEnum.Done) ? now : null;
 
-            var statusLog = new StatusLog
+            if (status == TaskStatusEnum.Done)
             {
-                TaskId = task.Id,
-                UpdatedAt = now,
-                Status = status
-            };
+                var existingDoneStatusLog = await _unitOfWork.StatusLogs
+                    .FindByCondition(sl => sl.TaskId == task.Id && sl.Status == TaskStatusEnum.Done)
+                    .FirstOrDefaultAsync();
 
-            await _unitOfWork.StatusLogs.CreateAsync(statusLog);
+                if (existingDoneStatusLog == null)
+                {
+                    // Tạo StatusLog mới cho trạng thái "Done"
+                    var statusLog = new StatusLog
+                    {
+                        TaskId = task.Id,
+                        UpdatedAt = now,
+                        Status = TaskStatusEnum.Done
+                    };
+                    await _unitOfWork.StatusLogs.CreateAsync(statusLog);
+                }
+            }
+            else
+            {
+
+                var statusLog = new StatusLog
+                {
+                    TaskId = task.Id,
+                    UpdatedAt = now,
+                    Status = status
+                };
+                await _unitOfWork.StatusLogs.CreateAsync(statusLog);
+            }
             await _unitOfWork.Tasks.UpdateAsync(task);
             await _unitOfWork.CommitAsync();
 
@@ -1342,13 +1366,8 @@ namespace SmartFarmManager.Service.Services
         {
             try
             {
-                // Lấy ngày hôm nay theo giờ Việt Nam
                 var today = DateTimeUtils.GetServerTimeInVietnamTime().Date;
-
-                // Lấy ngày cần generate task (ngày mai)
                 var targetDate = today.AddDays(1);
-
-                // Lấy tất cả các FarmingBatch đang ở trạng thái Active
                 var activeBatches = await _unitOfWork.FarmingBatches
                     .FindByCondition(fb => fb.Status == FarmingBatchStatusEnum.Active)
                     .Include(fb => fb.GrowthStages)
@@ -1360,8 +1379,6 @@ namespace SmartFarmManager.Service.Services
                     .ToListAsync();
 
                 var tasksToCreate = new List<Task>();
-
-                // Lặp qua tất cả các FarmingBatch và sử dụng GenerateTasksForDate để tạo task cho ngày mai
                 foreach (var batch in activeBatches)
                 {
                     var existingTasksForTargetDate = await _unitOfWork.Tasks
@@ -1659,7 +1676,40 @@ namespace SmartFarmManager.Service.Services
             var tasks = new List<Task>();
             var adminId = await GetFarmAdminIdByCageId(farmingBatch.CageId);
 
-            foreach (var growthStage in farmingBatch.GrowthStages)
+            var lastGrowthStage = farmingBatch.GrowthStages.OrderByDescending(gs => gs.AgeEndDate).FirstOrDefault();
+
+            if (lastGrowthStage != null && lastGrowthStage.AgeEndDate.HasValue && date.Date > lastGrowthStage.AgeEndDate.Value.Date)
+            {
+
+                var assignedStaff = await GetAssignedStaffForCage(farmingBatch.CageId, date);
+                var taskTypeId = await GetTaskTypeIdByName("Cho ăn");
+                var taskType = await _unitOfWork.TaskTypes.FindByCondition(t => t.Id == taskTypeId).FirstOrDefaultAsync();
+                for (int session = 1; session <= 3; session++)
+                {
+                    tasks.Add(new Task
+                    {
+                        TaskTypeId = taskTypeId,
+                        CageId = farmingBatch.CageId,
+                        AssignedToUserId = (Guid)assignedStaff,
+                        CreatedByUserId = (Guid)adminId,
+                        TaskName = $"Cho ăn cho giai đoạn {lastGrowthStage.Name} - {GetSessionName(session)}",
+                        PriorityNum = (int)taskType?.PriorityNum,
+                        Description = $"Cho các động vật trong giai đoạn {lastGrowthStage.Name} ăn - {GetSessionName(session)}",
+                        DueDate = date.Add(GetSessionEndTime(session)),  // Dựa vào session để tính giờ kết thúc
+                        Session = session,
+                        Status = TaskStatusEnum.Pending,
+                        CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
+                    });
+                }
+
+
+
+
+
+            }
+
+
+                foreach (var growthStage in farmingBatch.GrowthStages)
             {
                 // Kiểm tra nếu ngày nằm trong khoảng thời gian của GrowthStage
                 if (growthStage.AgeStartDate.Value.Date <= date.Date && growthStage.AgeEndDate.Value >= date.Date)
@@ -2214,54 +2264,56 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<TaskLogResponse> GetLogsByTaskIdAsync(Guid taskId)
         {
-            var foodLog = await _unitOfWork.DailyFoodUsageLogs
-                .FindByCondition(l => l.TaskId == taskId)
-                .FirstOrDefaultAsync();
-
-            var vaccineLog = await _unitOfWork.VaccineScheduleLogs
-                .FindByCondition(l => l.TaskId == taskId)
-                .Include(v => v.Schedule)
-                .FirstOrDefaultAsync();
-
-            var healthLog = await _unitOfWork.HealthLogs
-                .FindByCondition(l => l.TaskId == taskId)
-                .FirstOrDefaultAsync();
-
-            return new TaskLogResponse
+            try
             {
-                FoodLog = foodLog == null ? null : new DailyFoodUsageLogModel
+                var task = await _unitOfWork.Tasks.FindByCondition(t => t.Id == taskId)
+                                                  .Include(t => t.TaskType)
+                                                  .FirstOrDefaultAsync();
+
+                if (task == null)
                 {
-                    Id = foodLog.Id,
-                    StageId = foodLog.StageId,
-                    RecommendedWeight = foodLog.RecommendedWeight,
-                    ActualWeight = foodLog.ActualWeight,
-                    Notes = foodLog.Notes,
-                    LogTime = foodLog.LogTime,
-                    Photo = foodLog.Photo,
-                    TaskId = foodLog.TaskId
-                },
-                VaccineLog = vaccineLog == null ? null : new VaccineScheduleLogModel
-                {
-                    Id = vaccineLog.Id,
-                    ScheduleId = vaccineLog.ScheduleId,
-                    Date = vaccineLog.Date,
-                    Notes = vaccineLog.Notes,
-                    Photo = vaccineLog.Photo,
-                    TaskId = vaccineLog.TaskId,
-                    Quantity = vaccineLog.Schedule?.Quantity,
-                    ToltalPrice = vaccineLog.Schedule?.ToltalPrice
-                },
-                HealthLog = healthLog == null ? null : new HealthLogModel
-                {
-                    Id = healthLog.Id,
-                    PrescriptionId = healthLog.PrescriptionId,
-                    Date = healthLog.Date,
-                    Notes = healthLog.Notes,
-                    Photo = healthLog.Photo,
-                    TaskId = healthLog.TaskId
+                    throw new KeyNotFoundException($"Không tìm thấy task với ID '{taskId}'.");
                 }
-            };
+                var statusLogs = await _unitOfWork.StatusLogs.FindByCondition(sl => sl.TaskId == taskId && sl.Status == TaskStatusEnum.Done)
+                                                            .OrderByDescending(sl => sl.UpdatedAt)
+                                                            .ToListAsync();
+
+                if (statusLogs == null || !statusLogs.Any())
+                {
+                    throw new KeyNotFoundException("Không tìm thấy logs với công việc này.");
+                }
+
+                var latestLog = statusLogs.FirstOrDefault();
+
+                if (latestLog == null || string.IsNullOrEmpty(latestLog.Log))
+                {
+                    throw new KeyNotFoundException("Log không có dữ liệu.");
+                }
+                var taskLogResponse = new TaskLogResponse();
+
+                if (task.TaskType?.TaskTypeName == "Bán vật nuôi")
+                {
+                    taskLogResponse.SaleLog = JsonConvert.DeserializeObject<AnimalSaleLogByTaskModel>(latestLog.Log);
+                }
+                else if (task.TaskType?.TaskTypeName == "Cho uống thuốc")
+                {
+                    taskLogResponse.HealthLog = JsonConvert.DeserializeObject<HealthLogInTaskModel>(latestLog.Log);
+                }
+                else if (task.TaskType?.TaskTypeName == "Cho ăn")
+                {
+                    taskLogResponse.FoodLog = JsonConvert.DeserializeObject<DailyFoodUsageLogInTaskModel>(latestLog.Log);
+                }else if (task.TaskType?.TaskTypeName == "Cân")
+                {
+                    taskLogResponse.WeightLog = JsonConvert.DeserializeObject<WeightAnimalLogModel>(latestLog.Log);
+                }
+                return taskLogResponse;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Lỗi: {ex.Message}");
+            }
         }
+
 
 
 

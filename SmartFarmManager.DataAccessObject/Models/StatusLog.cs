@@ -8,10 +8,8 @@ namespace SmartFarmManager.DataAccessObject.Models;
 public partial class StatusLog : EntityBase
 {
     public Guid TaskId { get; set; }
-
     public DateTime? UpdatedAt { get; set; }
-
     public string Status { get; set; }
-
+    public string? Log { get; set; }
     public virtual Task Task { get; set; }
 }

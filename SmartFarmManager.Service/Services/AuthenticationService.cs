@@ -182,7 +182,7 @@ namespace SmartFarmManager.Service.Services
             if (string.IsNullOrWhiteSpace(token))
                 return false;
 
-            var tokenHandler = new JwtSecurityTokenHandler();
+            var tokenHandler = new JwtSecurityTokenHandler();   
             var key = Encoding.ASCII.GetBytes(_jwtSettings.Key);
 
             try
