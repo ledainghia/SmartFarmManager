@@ -26,6 +26,7 @@ public partial class Task : EntityBase
     public string Status { get; set; }
     public int Session { get; set; }
     public bool IsWarning { get;set; } 
+    public Guid? MedicalSymptomId { get; set; }
     public DateTime? CompletedAt { get; set; }
     public DateTime? CreatedAt { get; set; }
 
