@@ -77,7 +77,7 @@ namespace SmartFarmManager.Service.Services
         {
             // Check for duplicate Vaccine
             var existingVaccine = await _unitOfWork.Vaccines
-                .FindByCondition(v => v.Name == model.Name)
+                .FindByCondition(v => v.Name == model.Name && v.IsDeleted==false)
                 .FirstOrDefaultAsync();
 
             if (existingVaccine != null)
@@ -148,8 +148,8 @@ namespace SmartFarmManager.Service.Services
             {
                 throw new KeyNotFoundException($"Vaccine with ID {id} not found.");
             }
-
-            await _unitOfWork.Vaccines.DeleteAsync(vaccine);
+            vaccine.IsDeleted = true;
+            await _unitOfWork.Vaccines.UpdateAsync(vaccine);
             await _unitOfWork.CommitAsync();
 
             return true;

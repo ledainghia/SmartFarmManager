@@ -1,8 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using SmartFarmManager.Repository.Interfaces;
+using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Sensor;
 using SmartFarmManager.Service.BusinessModels.SensorDataLog;
+using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -145,6 +147,132 @@ namespace SmartFarmManager.Service.Services
                 }).ToList();
 
             return groupedLogs;
+        }
+
+
+        public async Task<PagedResult<SensorItemModel>> GetSensorsAsync(SensorFilterModel filter)
+        {
+            var query = _unitOfWork.Sensors
+                .FindByCondition(s => s.Cage.FarmId == filter.FarmId)
+                .Include(s => s.SensorType)
+                .Include(s => s.Cage)
+                .AsQueryable();
+            if (!string.IsNullOrEmpty(filter.KeySearch))
+            {
+                query = query.Where(s => s.SensorCode.Contains(filter.KeySearch) || s.Name.Contains(filter.KeySearch)||
+                s.Cage.Name.Contains(filter.KeySearch)||
+                s.SensorType.Name.Contains(filter.KeySearch));
+            }
+            if (!string.IsNullOrEmpty(filter.Status))
+            {
+                query = query.Where(s => s.Status.ToString() == filter.Status);
+            }
+            if (filter.SensorTypeId.HasValue)
+            {
+                query = query.Where(s => s.SensorTypeId == filter.SensorTypeId.Value);
+            }
+
+            if (filter.NodeId.HasValue)
+            {
+                query = query.Where(s => s.NodeId == filter.NodeId.Value);
+            }
+
+            var totalItems = await query.CountAsync();
+
+            var items = await query
+                .Skip((filter.PageNumber - 1) * filter.PageSize)
+                .Take(filter.PageSize)
+                .Select(s => new SensorItemModel
+                {
+                    Id = s.Id,
+                    SensorTypeId = s.SensorTypeId,
+                    SensorTypeName = s.SensorType.Name,
+                    CageId = s.CageId,
+                    CageName = s.Cage.Name,
+                    NodeId = s.NodeId,
+                    PinCode = s.PinCode,
+                    IsDeleted = s.IsDeleted,
+                    DeletedDate = s.DeletedDate,
+                    SensorCode = s.SensorCode,
+                    Name = s.Name,
+                    Status = s.Status
+                })
+                .ToListAsync();
+
+            var result = new PaginatedList<SensorItemModel>(items, totalItems, filter.PageNumber, filter.PageSize);
+            return new PagedResult<SensorItemModel>
+            {
+                Items = result.Items,
+                TotalItems = result.TotalCount,
+                PageSize = result.PageSize,
+                CurrentPage = result.CurrentPage,
+                TotalPages = result.TotalPages,
+                HasNextPage = result.HasNextPage,
+                HasPreviousPage = result.HasPreviousPage
+            };
+        }
+
+        public async Task<bool> UpdateSensorAsync(Guid id, UpdateSensorModel model)
+        {
+            var existingSensor = await _unitOfWork.Sensors
+                .FindByCondition(s => s.Id == id)
+                .FirstOrDefaultAsync();
+            if (existingSensor == null)
+            {
+                throw new KeyNotFoundException($"Sensor với  ID {id} không tìm thấy .");
+            }
+
+            if (model.CageId.HasValue)
+            {
+                var existingCage = await _unitOfWork.Cages
+                    .FindByCondition(c => c.Id == model.CageId)
+                    .FirstOrDefaultAsync();
+
+                if (existingCage == null)
+                {
+                    throw new KeyNotFoundException($"Chuồng với ID {model.CageId} không tìm thấy .");
+
+                }
+            }
+            if (model.SensorTypeId.HasValue)
+            {
+                var existingSensorType = await _unitOfWork.SensorTypes
+                    .FindByCondition(st => st.Id == model.SensorTypeId)
+                    .FirstOrDefaultAsync();
+                if (existingSensorType == null)
+                {
+                    throw new KeyNotFoundException($"Loại cảm biến với {model.SensorTypeId} không tìm thấy.");
+                }
+            }
+            existingSensor.SensorTypeId = model.SensorTypeId ?? existingSensor.SensorTypeId;
+            existingSensor.CageId = model.CageId ?? existingSensor.CageId;
+            existingSensor.Name = model.Name ?? existingSensor.Name;
+            existingSensor.PinCode = model.PinCode ??existingSensor.PinCode;
+            existingSensor.Status = model.Status ?? existingSensor.Status;
+            existingSensor.NodeId = model.NodeId ?? existingSensor.NodeId;
+
+            await _unitOfWork.Sensors.UpdateAsync(existingSensor);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
+        public async Task<bool> DeleteSensorAsync(Guid id)
+        {
+            var existingSensor = await _unitOfWork.Sensors
+                .FindByCondition(s => s.Id == id)
+                .FirstOrDefaultAsync();
+
+            if (existingSensor == null)
+            {
+                throw new KeyNotFoundException($"Cảm biến với Id {id} không tìm thấy!.");
+            }
+            existingSensor.IsDeleted = true;
+            existingSensor.DeletedDate =DateTimeUtils.GetServerTimeInVietnamTime(); 
+
+            await _unitOfWork.Sensors.UpdateAsync(existingSensor);
+            await _unitOfWork.CommitAsync();
+
+            return true;
         }
     }
 }

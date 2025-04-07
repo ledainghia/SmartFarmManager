@@ -33,7 +33,7 @@ namespace SmartFarmManager.Service.Services
             }
 
             // Kiểm tra xem FoodStack có tồn tại trong Farm này chưa
-            var foodStackExist = await _unitOfWork.FoodStacks.FindByCondition(f => f.FoodType == model.FoodType && f.FarmId == model.FarmId).FirstOrDefaultAsync();
+            var foodStackExist = await _unitOfWork.FoodStacks.FindByCondition(f => f.FoodType == model.FoodType && f.FarmId == model.FarmId && !f.IsDeleted).FirstOrDefaultAsync();
             if (foodStackExist != null)
             {
                 throw new InvalidOperationException($"Food Stack with Food Type: {model.FoodType} already exists in this farm!");
@@ -66,18 +66,45 @@ namespace SmartFarmManager.Service.Services
                 CostPerKg = model.CostPerKg,
                 DateAdded = DateOnly.FromDateTime(DateTimeUtils.GetServerTimeInVietnamTime())
             };
-
-            // Lưu StockLog và commit các thay đổi trong một lần duy nhất
             await _unitOfWork.StockLogs.CreateAsync(stockLog);
-            await _unitOfWork.CommitAsync();  // Gọi commit một lần duy nhất cho tất cả các thao tác
+            await _unitOfWork.CommitAsync();
 
             return true;
         }
+        public async Task<bool> UpdateFoodStackAsync(Guid id, UpdateFoodStockModel model)
+        {
+            var foodStack = await _unitOfWork.FoodStacks.FindByCondition(f => f.Id == id && !f.IsDeleted).FirstOrDefaultAsync();
+            if (foodStack == null)
+            {
+                return false;
+            }
+            foodStack.FoodType = model.FoodType ?? foodStack.FoodType;
+            await _unitOfWork.FoodStacks.UpdateAsync(foodStack);
+            await _unitOfWork.CommitAsync();
+            return true;
+        }
+        public async Task<bool> DeleteFoodStackAsync(Guid id)
+        {
+            var foodStack = await _unitOfWork.FoodStacks.FindByCondition(f => f.Id == id && !f.IsDeleted).FirstOrDefaultAsync();
+            if (foodStack == null)
+            {
+                return false;
+            }
+            foodStack.IsDeleted = true;
+
+            await _unitOfWork.FoodStacks.UpdateAsync(foodStack);
+            await _unitOfWork.CommitAsync();
+            return true;
+        }
+
 
         public async Task<PagedResult<FoodStackItemModel>> GetFoodStacksAsync(FoodStackFilterModel filter)
         {
             var query = _unitOfWork.FoodStacks.FindAll(false).AsQueryable();
 
+            if (!string.IsNullOrEmpty(filter.KeySearch)){
+                query = query.Where(f => f.FoodType.Contains(filter.KeySearch));
+            }
             if (filter.FarmId.HasValue)
             {
                 query = query.Where(f => f.FarmId == filter.FarmId.Value);
@@ -88,6 +115,10 @@ namespace SmartFarmManager.Service.Services
                 query = query.Where(f => f.FoodType.Contains(filter.FoodType));
             }
             var totalItems = await query.CountAsync();
+            if(filter.IsDeleted.HasValue)
+            {
+                query = query.Where(f => f.IsDeleted == filter.IsDeleted.Value);
+            }
 
             // Paginate and fetch the data
             var items = await query
@@ -101,7 +132,8 @@ namespace SmartFarmManager.Service.Services
                     FoodType = f.FoodType,
                     Quantity = (decimal)f.Quantity,
                     CurrentStock = (decimal)f.CurrentStock,
-                    CostPerKg = (decimal)f.CostPerKg
+                    CostPerKg = (decimal)f.CostPerKg,
+                    IsDeleted = f.IsDeleted
                 })
                 .ToListAsync();
 

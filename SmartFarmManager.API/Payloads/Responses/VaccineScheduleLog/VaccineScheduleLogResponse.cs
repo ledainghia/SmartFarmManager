@@ -8,5 +8,7 @@
         public string Notes { get; set; }
         public string Photo { get; set; }
         public Guid? TaskId { get; set; }
+        public int? Quantity { get; set; }
+        public decimal? ToltalPrice { get; set; }
     }
 }

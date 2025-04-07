@@ -15,7 +15,7 @@ public partial class AnimalSale : EntityBase
     public double Total { get; set; }
     public double? UnitPrice { get; set; }
     public int Quantity { get; set; }
-    public Guid StaffId { get; set; }
+    public Guid StaffId { get; set; }   
     public Guid SaleTypeId { get; set; }
 
 

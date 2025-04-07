@@ -1224,6 +1224,11 @@ public partial class SmartFarmContext : DbContext
                 .HasColumnType("int");
             entity.Property(e => e.AgeStart)
                 .HasColumnType("int");
+            entity.Property(e=>e.TotalDose)
+                .HasColumnType("int");
+            entity.Property(e => e.PricePerDose)
+                .HasColumnType("decimal(10, 2)");
+
             entity.Property(e => e.Method).HasMaxLength(50);
             entity.Property(e => e.Name).HasMaxLength(100);
         });

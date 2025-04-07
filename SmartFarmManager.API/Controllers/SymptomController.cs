@@ -27,10 +27,29 @@ namespace SmartFarmManager.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetSymptoms([FromQuery] string? name, [FromQuery] int page = 1, [FromQuery] int pageSize = 10000)
+        public async Task<IActionResult> GetSymptoms([FromQuery] SymptomFilterModel filter)
         {
-            var pagedSymptoms = await _symptomService.GetPagedSymptomsAsync(name, page, pageSize);
-            return Ok(ApiResult<PagedResult<SymptomModel>>.Succeed(pagedSymptoms));
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                                               .Select(e => e.ErrorMessage)
+                                               .ToList();
+
+                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
+        {
+            { "Errors", errors.ToArray() }
+        }));
+            }
+
+            try
+            {
+                var result = await _symptomService.GetSymptomsAsync(filter);
+                return Ok(ApiResult<PagedResult<SymptomModel>>.Succeed(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+            }
         }
 
         [HttpGet("{id}")]
@@ -90,10 +109,10 @@ namespace SmartFarmManager.API.Controllers
             var result = await _symptomService.DeleteSymptomAsync(id);
             if (!result)
             {
-                return NotFound(ApiResult<object>.Fail("Symptom not found."));
+                return Ok(ApiResult<object>.Succeed("Khôi phục thành công!"));
             }
 
-            return Ok(ApiResult<object>.Succeed("Symptom deleted successfully."));
+            return Ok(ApiResult<object>.Succeed("Xóa thành công!"));
         }
 
     }

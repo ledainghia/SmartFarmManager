@@ -12,6 +12,10 @@ using System.Threading.Tasks;
 using SmartFarmManager.Service.BusinessModels.TaskDaily;
 using SmartFarmManager.Service.BusinessModels.VaccineSchedule;
 using SmartFarmManager.Service.Shared;
+using SmartFarmManager.Service.BusinessModels.AnimalSale;
+using Newtonsoft.Json;
+using SmartFarmManager.DataAccessObject.Models;
+using SmartFarmManager.Service.BusinessModels.Log;
 
 namespace SmartFarmManager.Service.Services
 {
@@ -278,6 +282,7 @@ namespace SmartFarmManager.Service.Services
             return new GrowthStageDetailModel
             {
                 Id = growthStage.Id,
+                FarmingBatchId = farmingBatch.Id,
                 Name = growthStage.Name,
                 WeightAnimal = growthStage.WeightAnimal,
                 Quantity = growthStage.Quantity,
@@ -289,7 +294,8 @@ namespace SmartFarmManager.Service.Services
                 AgeEndDate = growthStage.AgeEndDate,
                 Status = growthStage.Status,
                 RecommendedWeightPerSession = growthStage.RecommendedWeightPerSession,
-                WeightBasedOnBodyMass = growthStage.WeightBasedOnBodyMass
+                WeightBasedOnBodyMass = growthStage.WeightBasedOnBodyMass,
+                FoodType = growthStage.FoodType,
             };
         }
         public async Task<bool> UpdateWeightAnimalAsync(UpdateGrowthStageRequest request)
@@ -300,25 +306,44 @@ namespace SmartFarmManager.Service.Services
                 .FirstOrDefaultAsync();
 
             if (growthStage == null)
-                return false; // Không tìm thấy GrowthStage
+                return false;
 
-            // 2️⃣ Cập nhật WeightAnimal với giá trị mới từ request
+            var oldWeightAnimal = growthStage.WeightAnimal;
             growthStage.WeightAnimal = request.WeightAnimal;
 
-            // 3️⃣ Tính lại RecommendedWeightPerSession
             if (growthStage.WeightBasedOnBodyMass.HasValue)
             {
                 growthStage.RecommendedWeightPerSession = request.WeightAnimal * growthStage.WeightBasedOnBodyMass.Value;
             }
-
-            // 4️⃣ Cập nhật lại GrowthStage trong database
             await _unitOfWork.GrowthStages.UpdateAsync(growthStage);
+
+            var task = await _unitOfWork.Tasks.FindByCondition(t => t.Id == request.TaskId).FirstOrDefaultAsync();
+            if (task != null)
+            {
+                var statusLog = new StatusLog
+                {
+                    TaskId = task.Id,
+                    UpdatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                    Status = TaskStatusEnum.Done,  // Trạng thái Done khi hoàn thành công việc cập nhật cân nặng
+                    Log = JsonConvert.SerializeObject(new
+                    WeightAnimalLogModel {
+                        GrowthStageId = growthStage.Id,
+                        GrowthStageName=growthStage.Name,
+                        OldWeight = oldWeightAnimal,
+                        NewWeight = growthStage.WeightAnimal,
+                        LogTime=DateTimeUtils.GetServerTimeInVietnamTime(),
+                        TaskId=request.TaskId
+                    })  
+                };
+
+                await _unitOfWork.StatusLogs.CreateAsync(statusLog);
+            }
             await _unitOfWork.CommitAsync();
 
             return true; // Cập nhật thành công
         }
 
-        public async Task UpdateGrowthStagesStatusAsync()
+        public async System.Threading.Tasks.Task UpdateGrowthStagesStatusAsync()
         {
             var activeFarmingBatches = await _unitOfWork.FarmingBatches
            .FindByCondition(fb => fb.Status == FarmingBatchStatusEnum.Active)
@@ -384,6 +409,65 @@ namespace SmartFarmManager.Service.Services
                 }
             }
         }
+        public async Task<List<AnimalSaleGroupedByTypeModel>> GetAnimalSalesByGrowthStageAsync(Guid growthStageId)
+        {
+            // 1️⃣ Lấy giai đoạn phát triển
+            var growthStage = await _unitOfWork.GrowthStages
+                .FindByCondition(gs => gs.Id == growthStageId)
+                .Include(gs => gs.FarmingBatch)
+                .FirstOrDefaultAsync();
+
+            if (growthStage == null || !growthStage.AgeStartDate.HasValue)
+                throw new ArgumentException("Không tìm thấy giai đoạn phát triển hợp lệ.");
+
+            var farmingBatchId = growthStage.FarmingBatchId;
+            var startDate = growthStage.AgeStartDate.Value;
+
+            // 2️⃣ Lấy tất cả các giai đoạn khác của vụ nuôi để xác định có phải là giai đoạn cuối không
+            var allStages = await _unitOfWork.GrowthStages
+                .FindByCondition(gs => gs.FarmingBatchId == farmingBatchId)
+                .ToListAsync();
+
+            var isLastStage = !allStages.Any(gs => gs.AgeStartDate > growthStage.AgeStartDate);
+            DateTime? endDate = isLastStage ? null : growthStage.AgeEndDate;
+
+            // 3️⃣ Lọc các bản ghi AnimalSales trong giai đoạn đó
+            var query = _unitOfWork.AnimalSales
+                .FindByCondition(s => s.FarmingBatchId == farmingBatchId && s.SaleDate >= startDate);
+
+            if (endDate.HasValue)
+            {
+                query = query.Where(s => s.SaleDate <= endDate.Value);
+            }
+
+            var animalSales = await query
+                .Include(s => s.SaleType)
+                .ToListAsync();
+
+            // 4️⃣ Group theo SaleType
+            var grouped = animalSales
+                .GroupBy(s => s.SaleType.StageTypeName)
+                .Select(g => new AnimalSaleGroupedByTypeModel
+                {
+                    SaleType = g.Key,
+                    TotalQuantity = g.Sum(x => x.Quantity),
+                    TotalRevenue = g.Sum(x => x.Total),
+                    UnitPriceAverage = g.Average(x => x.UnitPrice ?? 0),
+                    Logs = g.Select(x => new AnimalSaleLogModel
+                    {
+                        SaleDate = x.SaleDate,
+                        Quantity = x.Quantity,
+                        UnitPrice = x.UnitPrice,
+                        Total = x.Total
+                    }).ToList()
+                })
+                .ToList();
+
+            return grouped;
+        }
+
+
+
 
     }
 }

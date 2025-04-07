@@ -7,6 +7,7 @@ using SmartFarmManager.Service.BusinessModels.Farm;
 using SmartFarmManager.Service.BusinessModels.Users;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
+using Sprache;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -273,7 +274,11 @@ namespace SmartFarmManager.Service.Services
                 if (activeUserCount > 0)
                     throw new ArgumentException($"{role.RoleName} can only have one active account.");
             }
-
+            var exitingEmail = await _unitOfWork.Users.FindByCondition(u => u.Email == request.Email).FirstOrDefaultAsync();
+            if(exitingEmail != null)
+            {
+                throw new ArgumentException($"{request.Email} already exit.");
+            }
             // Tạo Username tự động
             var username = await GenerateUniqueUsernameAsync(request.FullName);
 
@@ -287,7 +292,7 @@ namespace SmartFarmManager.Service.Services
                 Address = request.Address,
                 RoleId = request.RoleId,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
                 PasswordHash = SecurityUtil.Hash("123@123Aa")
             };
 
@@ -297,6 +302,7 @@ namespace SmartFarmManager.Service.Services
             return new BusinessModels.Users.UserModel
             {
                 Id = newUser.Id,
+                Username = username,
                 FullName = newUser.FullName,
                 Email = newUser.Email,
                 PhoneNumber = newUser.PhoneNumber,
@@ -333,6 +339,8 @@ namespace SmartFarmManager.Service.Services
 
         private string RemoveDiacritics(string text)
         {
+            // Thay thế đặc biệt cho chữ Đ/đ trước khi loại dấu
+            text = text.Replace("Đ", "D").Replace("đ", "d");
             var normalizedString = text.Normalize(NormalizationForm.FormD);
             var stringBuilder = new StringBuilder();
 
@@ -443,46 +451,89 @@ namespace SmartFarmManager.Service.Services
             }
             return true;
         }
-        public async Task<IEnumerable<BusinessModels.Users.UserModel>> GetUsersAsync(string? username, string? email, string? phoneNumber, Guid? roleId, bool? isActive, string? fullName, string? address)
+        public async Task<PagedResult<BusinessModels.Users.UserModel>> GetUsersAsync(UserFilterModel filter)
         {
-            var query = _unitOfWork.Users.FindAll();
+            var query = _unitOfWork.Users.FindAll()
+                .Include(u => u.Role)
+                .Include(u => u.CageStaffs)
+                    .ThenInclude(cs => cs.Cage)
+                        .ThenInclude(c => c.Farm)
+                .Include(u => u.FarmAdmins)
+                    .ThenInclude(fa => fa.Farm).AsQueryable(); ;
 
-            if (!string.IsNullOrWhiteSpace(username))
-                query = query.Where(u => u.Username.Contains(username));
+            // Apply filters
+            if (!string.IsNullOrWhiteSpace(filter.Username))
+                query = query.Where(u => u.Username.Contains(filter.Username));
 
-            if (!string.IsNullOrWhiteSpace(email))
-                query = query.Where(u => u.Email.Contains(email));
+            if (!string.IsNullOrWhiteSpace(filter.Email))
+                query = query.Where(u => u.Email.Contains(filter.Email));
 
-            if (!string.IsNullOrWhiteSpace(phoneNumber))
-                query = query.Where(u => u.PhoneNumber.Contains(phoneNumber));
+            if (!string.IsNullOrWhiteSpace(filter.PhoneNumber))
+                query = query.Where(u => u.PhoneNumber.Contains(filter.PhoneNumber));
 
-            if (roleId.HasValue)
-                query = query.Where(u => u.RoleId == roleId.Value);
+            if (filter.RoleId.HasValue)
+                query = query.Where(u => u.RoleId == filter.RoleId.Value);
 
-            if (isActive.HasValue)
-                query = query.Where(u => u.IsActive == isActive.Value);
+            if (filter.IsActive.HasValue)
+                query = query.Where(u => u.IsActive == filter.IsActive.Value);
 
-            if (!string.IsNullOrWhiteSpace(fullName))
-                query = query.Where(u => u.FullName.Contains(fullName));
+            if (!string.IsNullOrWhiteSpace(filter.FullName))
+                query = query.Where(u => u.FullName.Contains(filter.FullName));
 
-            if (!string.IsNullOrWhiteSpace(address))
-                query = query.Where(u => u.Address.Contains(address));
+            if (!string.IsNullOrWhiteSpace(filter.Address))
+                query = query.Where(u => u.Address.Contains(filter.Address));
 
-            var users = await query.ToListAsync();
-
-            return users.Select(user => new BusinessModels.Users.UserModel
+            if (!string.IsNullOrWhiteSpace(filter.Search))
             {
-                Id = user.Id,
-                Username = user.Username,
-                FullName = user.FullName,
-                Email = user.Email,
-                PhoneNumber = user.PhoneNumber,
-                Address = user.Address,
-                IsActive = user.IsActive,
-                CreatedAt = user.CreatedAt,
-                RoleId = user.RoleId
-            });
+                string keyword = filter.Search.Trim().ToLower();
+                query = query.Where(u =>
+                    u.Username.ToLower().Contains(keyword) ||
+                    u.FullName.ToLower().Contains(keyword) ||
+                    u.Email.ToLower().Contains(keyword) ||
+                    u.PhoneNumber.ToLower().Contains(keyword) ||
+                    u.Address.ToLower().Contains(keyword)
+                );
+            }
+
+            // Pagination
+            var totalItems = await query.CountAsync();
+
+            var items = await query
+                .Skip((filter.PageNumber - 1) * filter.PageSize)
+                .Take(filter.PageSize)
+                .Select(u => new BusinessModels.Users.UserModel
+                {
+                    Id = u.Id,
+                    Username = u.Username,
+                    FullName = u.FullName,
+                    Email = u.Email,
+                    PhoneNumber = u.PhoneNumber,
+                    Address = u.Address,
+                    IsActive = u.IsActive,
+                    CreatedAt = u.CreatedAt,
+                    RoleId = u.RoleId,
+                    RoleName = u.Role.RoleName,
+                    FarmName = u.FarmAdmins.Select(fa => fa.Farm.Name)
+                                 .Union(u.CageStaffs.Select(cs => cs.Cage.Farm.Name))
+                                 .Distinct()
+                                 .First(),
+                    CageNames = u.CageStaffs.Select(cs => cs.Cage.Name).Distinct().ToList()
+                })
+                .ToListAsync();
+
+            return new PagedResult<BusinessModels.Users.UserModel>
+            {
+                Items = items,
+                TotalItems = totalItems,
+                PageSize = filter.PageSize,
+                CurrentPage = filter.PageNumber,
+                TotalPages = (int)Math.Ceiling(totalItems / (double)filter.PageSize),
+                HasNextPage = filter.PageNumber * filter.PageSize < totalItems,
+                HasPreviousPage = filter.PageNumber > 1
+            };
         }
+
+
 
         public async Task<IEnumerable<BusinessModels.Users.UserModel>> GetUsersAsync(string? roleName, bool? isActive, string? search)
         {
@@ -557,5 +608,74 @@ namespace SmartFarmManager.Service.Services
 
             return true;
         }
+
+        public async Task<bool> AssignCagesToStaffAsync(Guid staffId, List<Guid> newCageIds)
+        {
+            // 1. Kiểm tra User
+            var user = await _unitOfWork.Users
+                .FindByCondition(u => u.Id == staffId)
+                .Include(u => u.Role)
+                .Include(u => u.CageStaffs)
+                .FirstOrDefaultAsync();
+
+            if (user == null)
+                throw new ArgumentException("Người dùng không tồn tại.");
+
+            if (user.Role.RoleName != "Staff Farm")
+                throw new InvalidOperationException("Chỉ nhân viên trang trại mới được gán chuồng.");
+
+            // 2. Lấy FarmConfig
+            var farmConfig = await _unitOfWork.FarmConfigs.FindAll().FirstOrDefaultAsync();
+            if (farmConfig == null)
+                throw new InvalidOperationException("Không tìm thấy cấu hình trang trại.");
+
+            int maxCages = farmConfig.MaxCagesPerStaff;
+            var distinctNewCageIds = newCageIds.Distinct().ToList();
+
+            if (distinctNewCageIds.Count > maxCages)
+                throw new InvalidOperationException($"Vượt quá số chuồng tối đa cho phép ({maxCages}). Đã chọn {distinctNewCageIds.Count} chuồng.");
+
+            // 3. Xóa các chuồng cũ đã gán
+            var oldAssignments = await _unitOfWork.CageStaffs
+                .FindByCondition(cs => cs.StaffFarmId == staffId)
+                .ToListAsync();
+
+            if (oldAssignments.Any())
+                await _unitOfWork.CageStaffs.DeleteListAsync(oldAssignments);
+
+            // 4. Gán các chuồng mới
+            var newAssignments = distinctNewCageIds.Select(cageId => new CageStaff
+            {
+                Id = Guid.NewGuid(),
+                StaffFarmId = staffId,
+                CageId = cageId,
+                AssignedDate = DateTimeUtils.GetServerTimeInVietnamTime()
+            }).ToList();
+
+            await _unitOfWork.CageStaffs.CreateListAsync(newAssignments);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
+
+
+        public async Task<bool> ToggleUserStatusAsync(Guid userId)
+        {
+            var user = await _unitOfWork.Users.FindByCondition(u => u.Id == userId).FirstOrDefaultAsync();
+
+            if (user == null)
+            {
+                throw new KeyNotFoundException($"Người dùng với Id là {userId} không tìm thấy !.");
+            }
+
+            // Toggle the IsActive status
+            user.IsActive = !user.IsActive;
+
+            await _unitOfWork.Users.UpdateAsync(user);
+            await _unitOfWork.CommitAsync();
+
+            return true;
+        }
+
     }
 }

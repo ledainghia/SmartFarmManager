@@ -403,22 +403,15 @@ namespace SmartFarmManager.API.Controllers
             return Unauthorized(ApiResult<SendOtpResponse>.Fail(new Exception("Invalid OTP.")));
         }
 
-
         [HttpGet]
-        public async Task<IActionResult> GetUsers(
-    [FromQuery] string? username,
-    [FromQuery] string? email,
-    [FromQuery] string? phoneNumber,
-    [FromQuery] Guid? roleId,
-    [FromQuery] bool? isActive,
-    [FromQuery] string? fullName,
-    [FromQuery] string? address)
+        public async Task<IActionResult> GetUsers([FromQuery] UserFilterModel filter)
         {
-            var users = await _userService.GetUsersAsync(username, email, phoneNumber, roleId, isActive, fullName, address);
-            return Ok(ApiResult<IEnumerable<UserModel>>.Succeed(users));
+            var users = await _userService.GetUsersAsync(filter);
+            return Ok(ApiResult<PagedResult<UserModel>>.Succeed(users));
         }
 
-    [HttpGet("/filter")]
+
+        [HttpGet("/filter")]
         public async Task<IActionResult> GetUsers(
 
         [FromQuery] string? roleName,
@@ -478,5 +471,46 @@ namespace SmartFarmManager.API.Controllers
             await _otpPhoneService.SendOtpViaSmsAsync(phoneNumber, otp);
             return Ok(new { message = "OTP sent successfully." });
         }
+
+        [HttpPost("assign-staffFarm-cages")]
+        public async Task<IActionResult> AssignCages([FromBody] AssignStaffToCagesRequest request)
+        {
+            try
+            {
+                var result = await _userService.AssignCagesToStaffAsync(request.StaffId, request.CageIds);
+                if (result)
+                    return Ok(ApiResult<object>.Succeed("Gán chuồng cho nhân viên thành công."));
+                else
+                    return BadRequest(ApiResult<object>.Fail("Gán chuồng thất bại."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<object>.Fail(ex));
+            }
+        }
+        [HttpPost("active-inactive/{id}")]
+        public async Task<IActionResult> ToggleUserStatus(Guid id)
+        {
+            try
+            {
+                var result = await _userService.ToggleUserStatusAsync(id);
+
+                if (!result)
+                {
+                    return BadRequest("Error occurred while toggling user status.");
+                }
+
+                return Ok(ApiResult<string>.Succeed("User status updated successfully."));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+            }
+        }
+
     }
 }

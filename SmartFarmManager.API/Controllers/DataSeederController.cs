@@ -315,18 +315,18 @@ namespace SmartFarmManager.API.Controllers
                         Id = Guid.NewGuid(),
                         FarmId = Guid.Parse("7b0ad5a5-ca3e-45b1-9519-d42135d5bea4"),
                         FoodType = "Dạng mảnh",
-                        Quantity = 10000000m,
+                        Quantity = 1000m,
                         CostPerKg = 15000m,
-                        CurrentStock = 10000000m
+                        CurrentStock = 1000m
                     },
                     new FoodStack
                     {
                         Id = Guid.NewGuid(),
                         FarmId = Guid.Parse("7b0ad5a5-ca3e-45b1-9519-d42135d5bea4"),
                         FoodType = "Dạng viên",
-                        Quantity = 20000000m,
+                        Quantity = 2000m,
                         CostPerKg = 17000m,
-                        CurrentStock = 20000000m
+                        CurrentStock = 2000m
                     }
                 };
 
@@ -622,7 +622,7 @@ namespace SmartFarmManager.API.Controllers
                                     AssignedToUserId = assignedUserId,
                                     TaskName = "Cho ăn",
                                     PriorityNum = feedingTaskType.PriorityNum.Value,
-                                    Description = $"Cho ăn gà tại {batch.Name} - {batch.CageId}",
+                                    Description = $"Cho gà ăn",
                                     DueDate = date,
                                     Status = "Done",
                                     Session = session,
@@ -644,7 +644,7 @@ namespace SmartFarmManager.API.Controllers
                                 AssignedToUserId = assignedUserId,
                                 TaskName = "Dọn chuồng",
                                 PriorityNum = cleaningTaskType.PriorityNum.Value,
-                                Description = $"Dọn chuồng tại {batch.Name} - {batch.CageId}",
+                                Description = $"Dọn chuồng",
                                 DueDate = date,
                                 Status = "Done",
                                 Session = 1,
@@ -663,7 +663,7 @@ namespace SmartFarmManager.API.Controllers
                             AssignedToUserId = assignedUserId,
                             TaskName = "Cân",
                             PriorityNum = weighingTaskType.PriorityNum.Value,
-                            Description = $"Cân gà vào cuối giai đoạn {stage.Name} tại {batch.Name} - {batch.CageId}",
+                            Description = $"Cân gà vào cuối giai đoạn {stage.Name}",
                             DueDate = stageEndDate,
                             Session = 1,
                             IsTreatmentTask = false,
@@ -686,7 +686,7 @@ namespace SmartFarmManager.API.Controllers
                                 AssignedToUserId = assignedUserId,
                                 TaskName = "Tiêm vắc xin",
                                 PriorityNum = vaccinationTaskType.PriorityNum.Value,
-                                Description = $"Tiêm vắc xin {vaccine.Name} cho gà tại {batch.Name}",
+                                Description = $"Tiêm vắc xin {vaccine.Name}",
                                 DueDate = vaccineSchedule.Date.Value,
                                 Status = "Done",
                                 Session = vaccineSchedule.Session,
@@ -752,8 +752,8 @@ namespace SmartFarmManager.API.Controllers
                                 {
                                     Id = Guid.NewGuid(),
                                     StageId = stage.Id,
-                                    RecommendedWeight = stage.Quantity * stage.RecommendedWeightPerSession,
-                                    ActualWeight = stage.Quantity * stage.RecommendedWeightPerSession,
+                                    RecommendedWeight = stage.Quantity * stage.RecommendedWeightPerSession * 0.5m,
+                                    ActualWeight = stage.Quantity * stage.RecommendedWeightPerSession * 0.5m,
                                     Notes = "Ghi nhận lượng thức ăn tiêu thụ",
                                     LogTime = date,
                                     UnitPrice = 15000, // Giá đại diện
@@ -1213,7 +1213,7 @@ namespace SmartFarmManager.API.Controllers
                         {
                             BeginTime = beginTime,  // Thời gian bắt đầu của mỗi giờ
                             EndTime = endTime,      // Thời gian kết thúc của mỗi giờ
-                            Value = Math.Round(random.NextDouble() * 500, 2),  // Giá trị random cho điện tiêu thụ (từ 0 - 500)
+                            Value = Math.Round(random.NextDouble() * 300, 2),  // Giá trị random cho điện tiêu thụ (từ 0 - 500)
                             Date = DateTime.UtcNow.Date.AddHours(hour)  // Ngày và giờ ghi nhận (cùng ngày)
                         };
 
@@ -1281,7 +1281,7 @@ namespace SmartFarmManager.API.Controllers
                         {
                             BeginTime = beginTime,  // Thời gian bắt đầu của mỗi giờ
                             EndTime = endTime,      // Thời gian kết thúc của mỗi giờ
-                            Value = Math.Round(random.NextDouble() * 1000, 2),  // Giá trị random cho nước tiêu thụ (từ 0 - 1000)
+                            Value = Math.Round(random.NextDouble() * 300, 2),  // Giá trị random cho nước tiêu thụ (từ 0 - 1000)
                             Date = DateTime.UtcNow.Date.AddHours(hour)  // Ngày và giờ ghi nhận (cùng ngày)
                         };
 

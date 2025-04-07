@@ -10,6 +10,8 @@ namespace SmartFarmManager.Service.BusinessModels.GrowthStage
     {
         public Guid GrowthStageId { get; set; }
         public decimal WeightAnimal { get; set; }
+        public Guid TaskId { get; set; }
+
     }
 
 }

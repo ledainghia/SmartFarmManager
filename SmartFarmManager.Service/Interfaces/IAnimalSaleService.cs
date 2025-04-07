@@ -10,5 +10,6 @@ namespace SmartFarmManager.Service.Interfaces
     public interface IAnimalSaleService
     {
         Task<bool> CreateAnimalSaleAsync(CreateAnimalSaleRequest request);
+        Task<AnimalSaleLogByTaskModel> GetAnimalSaleLogByTaskId(Guid taskId);
     }
 }

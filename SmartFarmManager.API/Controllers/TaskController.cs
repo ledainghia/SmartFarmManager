@@ -344,9 +344,9 @@ namespace SmartFarmManager.API.Controllers
         }
 
         [HttpPut("{taskId}/set-treatment")]
-        public async Task<IActionResult> MarkAsTreatmentTask(Guid taskId)
+        public async Task<IActionResult> MarkAsTreatmentTask(Guid taskId, [FromQuery]Guid medicalSymptomId)
         {
-            var result = await _taskService.SetIsTreatmentTaskTrueAsync(taskId);
+            var result = await _taskService.SetIsTreatmentTaskTrueAsync(taskId,medicalSymptomId);
 
             if (!result)
                 return NotFound(ApiResult<object>.Fail("Task not found or update failed."));
@@ -354,6 +354,19 @@ namespace SmartFarmManager.API.Controllers
             return Ok(ApiResult<object>.Succeed("Task marked as treatment task successfully."));
         }
 
+        [HttpGet("{taskId}/logs")]
+        public async Task<IActionResult> GetLogsByTaskId(Guid taskId)
+        {
+            try
+            {
+                var logs = await _taskService.GetLogsByTaskIdAsync(taskId);
+                return Ok(ApiResult<TaskLogResponse>.Succeed(logs));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail($"{ex.Message}"));
+            }
+        }
 
     }
 }

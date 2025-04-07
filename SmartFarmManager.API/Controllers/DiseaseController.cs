@@ -107,10 +107,10 @@ namespace SmartFarmManager.API.Controllers
 
                 if (!result)
                 {
-                    throw new Exception("Error while deleting Disease!");
+                    return Ok(ApiResult<string>.Succeed("Khôi phục thành công!"));
                 }
 
-                return Ok(ApiResult<string>.Succeed("Disease deleted successfully!"));
+                return Ok(ApiResult<string>.Succeed("Đã xóa thành công!"));
             }
             catch (KeyNotFoundException ex)
             {
@@ -140,7 +140,8 @@ namespace SmartFarmManager.API.Controllers
             {
                 var filterModel = new DiseaseFilterModel
                 {
-                    Name = filterRequest.Name,
+                    KeySearch = filterRequest.KeySearch,
+                    IsDeleted = filterRequest.IsDeleted,
                     PageNumber = filterRequest.PageNumber,
                     PageSize = filterRequest.PageSize
                 };

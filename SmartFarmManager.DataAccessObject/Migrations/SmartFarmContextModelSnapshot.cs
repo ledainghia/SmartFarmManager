@@ -69,6 +69,9 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("(newid())");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -416,6 +419,9 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -790,6 +796,9 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     b.Property<string>("FoodType")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<decimal?>("Quantity")
                         .HasColumnType("decimal(10, 2)");
@@ -1260,6 +1269,9 @@ namespace SmartFarmManager.DataAccessObject.Migrations
 
                     b.Property<int?>("DoseWeight")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .HasMaxLength(100)
@@ -1757,6 +1769,9 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     b.Property<Guid>("DiseaseId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Notes")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -1812,6 +1827,9 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("(newid())");
+
+                    b.Property<string>("Log")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
                         .HasColumnType("nvarchar(max)");
@@ -1897,6 +1915,9 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("(newid())");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("SymptomName")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -1943,6 +1964,9 @@ namespace SmartFarmManager.DataAccessObject.Migrations
 
                     b.Property<bool>("IsWarning")
                         .HasColumnType("bit");
+
+                    b.Property<Guid?>("MedicalSymptomId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("PrescriptionId")
                         .HasColumnType("uniqueidentifier");
@@ -2189,6 +2213,9 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     b.Property<int?>("AgeStart")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Method")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -2199,6 +2226,12 @@ namespace SmartFarmManager.DataAccessObject.Migrations
 
                     b.Property<double>("Price")
                         .HasColumnType("float");
+
+                    b.Property<decimal>("PricePerDose")
+                        .HasColumnType("decimal(10, 2)");
+
+                    b.Property<int?>("TotalDose")
+                        .HasColumnType("int");
 
                     b.HasKey("Id")
                         .HasName("PK__Vaccines__45DC6889A12FCD5C");

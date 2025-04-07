@@ -25,4 +25,4 @@ public partial class GrowthStageTemplate : EntityBase
     public ICollection<TaskDailyTemplate> TaskDailyTemplates { get; set; } = new List<TaskDailyTemplate>();
 
     public virtual AnimalTemplate Template { get; set; }
-}
+}   

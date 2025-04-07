@@ -68,7 +68,7 @@ namespace SmartFarmManager.Service.Services
 
         public SecurityToken CreateJwtToken(User user)
         {
-            var utcNow = DateTimeUtils.GetServerTimeInVietnamTime();
+            var utcNow = DateTime.UtcNow;
             var authClaims = new List<Claim>
     {
         new(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
@@ -97,7 +97,7 @@ namespace SmartFarmManager.Service.Services
 
         private SecurityToken CreateJwtRefreshToken(User user)
         {
-            var utcNow = DateTimeUtils.GetServerTimeInVietnamTime();
+            var utcNow = DateTime.UtcNow;
             var authClaims = new List<Claim>
     {
         new(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
@@ -182,7 +182,7 @@ namespace SmartFarmManager.Service.Services
             if (string.IsNullOrWhiteSpace(token))
                 return false;
 
-            var tokenHandler = new JwtSecurityTokenHandler();
+            var tokenHandler = new JwtSecurityTokenHandler();   
             var key = Encoding.ASCII.GetBytes(_jwtSettings.Key);
 
             try
@@ -193,8 +193,8 @@ namespace SmartFarmManager.Service.Services
                     ValidateIssuer = false,
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateLifetime = true, // Kiểm tra token hết hạn
-                    ClockSkew = TimeSpan.Zero // Không cho phép chênh lệch thời gian
+                    ValidateLifetime = false, // Kiểm tra token hết hạn
+                    ClockSkew = TimeSpan.Zero // Không cho phép chênh lệch thời gianA
                 };
 
                 var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out var securityToken);

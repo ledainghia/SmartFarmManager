@@ -236,6 +236,7 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IStockLogRepository, StockLogRepository>();
             services.AddScoped<IEggHarvestRepository, EggHarvestRepository>();
             services.AddScoped<IFarmConfigRepository, FarmConfigRepository>();
+            services.AddScoped<IStandardPrescriptionMedicationRepository, StandardPrescriptionMedicationRepository>();
             return services;
         }
 
@@ -339,6 +340,9 @@ namespace SmartFarmManager.API.Extensions
             services.AddTransient<SmartFarmManager.Service.Jobs.UpdateEveningTaskStatusesJob>();
             services.AddTransient<SmartFarmManager.Service.Jobs.MedicalSymptomReminderJob>();
             services.AddTransient<SmartFarmManager.Service.Jobs.CalculateDailyCostJob>();
+            services.AddTransient<SmartFarmManager.Service.Jobs.UpdateGrowthStagesStatusJob>();
+            services.AddTransient<SmartFarmManager.Service.Jobs.CheckAndNotifyAdminForUpcomingFarmingBatchesJob>();
+            services.AddTransient<SmartFarmManager.Service.Jobs.UpdateFarmingBatchStatusForTodayJob>();
             return services;
         }
 

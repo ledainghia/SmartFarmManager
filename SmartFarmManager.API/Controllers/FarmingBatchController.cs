@@ -300,5 +300,23 @@ namespace SmartFarmManager.API.Controllers
                 return BadRequest(new { Message = ex.Message });
             }
         }
+
+        [HttpGet("{farmingBatchId}")]
+        public async Task<IActionResult> GetFarmingBatchDetail(Guid farmingBatchId)
+        {
+            try
+            {
+                var result = await _farmingBatchService.GetFarmingBatchDetailAsync(farmingBatchId);
+                return Ok(ApiResult<FarmingBatchDetailModel>.Succeed(result));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail($"An error occurred: {ex.Message}"));
+            }
+        }
     }
 }

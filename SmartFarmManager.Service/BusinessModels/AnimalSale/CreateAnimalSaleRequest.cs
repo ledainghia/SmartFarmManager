@@ -14,5 +14,6 @@ namespace SmartFarmManager.Service.BusinessModels.AnimalSale
         public int Quantity { get; set; }
         public Guid StaffId { get; set; }
         public Guid SaleTypeId { get; set; }
+        public Guid TaskId { get; set; }
     }
 }

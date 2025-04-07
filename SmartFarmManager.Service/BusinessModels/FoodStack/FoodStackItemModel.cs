@@ -14,6 +14,7 @@ namespace SmartFarmManager.Service.BusinessModels.FoodStack
         public decimal Quantity { get; set; }
         public decimal CurrentStock { get; set; }
         public decimal CostPerKg { get; set; }
+        public bool IsDeleted { get; set; }
     }
 
 }
