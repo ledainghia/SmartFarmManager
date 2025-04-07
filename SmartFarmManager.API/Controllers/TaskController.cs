@@ -364,7 +364,7 @@ namespace SmartFarmManager.API.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ApiResult<string>.Fail($"Lỗi: {ex.Message}"));
+                return StatusCode(500, ApiResult<string>.Fail($"{ex.Message}"));
             }
         }
 

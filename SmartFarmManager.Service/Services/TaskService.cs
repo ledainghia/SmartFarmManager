@@ -2283,14 +2283,14 @@ namespace SmartFarmManager.Service.Services
 
                 if (statusLogs == null || !statusLogs.Any())
                 {
-                    throw new KeyNotFoundException("Không tìm thấy logs với công việc này.");
-                }
+                    throw new KeyNotFoundException("Không tìm thấy logs với công việc này hoặc công việc chưa hoàn thành.");
+                } 
 
                 var latestLog = statusLogs.FirstOrDefault();
 
                 if (latestLog == null || string.IsNullOrEmpty(latestLog.Log))
                 {
-                    throw new KeyNotFoundException("Log không có dữ liệu.");
+                    return null;
                 }
                 var taskLogResponse = new TaskLogResponse();
 
@@ -2309,6 +2309,11 @@ namespace SmartFarmManager.Service.Services
                 {
                     taskLogResponse.WeightLog = JsonConvert.DeserializeObject<WeightAnimalLogModel>(latestLog.Log);
                 }
+                else if (task.TaskType?.TaskTypeName == "Tiêm vắc xin")
+                {
+                    taskLogResponse.VaccineLog = JsonConvert.DeserializeObject<VaccineScheduleLogInTaskModel>(latestLog.Log);
+                }
+                
                 return taskLogResponse;
             }
             catch (Exception ex)
