@@ -139,6 +139,8 @@ namespace SmartFarmManager.Service.Services
                 .FindByCondition(vs => vs.Date.Value.Date == request.Date.Date &&
                                        vs.Session == request.Session &&
                                        vs.VaccineId == request.VaccineId)
+                .Include(vs=>vs.Vaccine)
+                .Include(vs=>vs.Stage)
                 .FirstOrDefaultAsync();
 
             if (vaccineSchedule == null)
