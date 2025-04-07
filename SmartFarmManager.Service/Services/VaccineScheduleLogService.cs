@@ -167,7 +167,39 @@ namespace SmartFarmManager.Service.Services
             vaccineSchedule.Quantity = request.Quantity;
             vaccineSchedule.ToltalPrice = request.Quantity * (decimal)vaccine.Price;
 
+            
             await _unitOfWork.VaccineSchedules.UpdateAsync(vaccineSchedule);
+
+            var newVaccineScheduleLogInTask = new VaccineScheduleLogInTaskModel
+            {
+                ScheduleId = newLog.ScheduleId,
+                ApplicationAge = vaccineSchedule.ApplicationAge,
+                Date = vaccineSchedule.Date,
+                GrowthStageName = vaccineSchedule.Stage.Name,
+                Quantity = vaccineSchedule.Quantity,
+                Session = vaccineSchedule.Session,
+                TotalPrice = vaccineSchedule.ToltalPrice,
+                VaccineName = vaccineSchedule.Vaccine.Name,
+                TaskId = newLog.TaskId,
+                Notes = newLog.Notes,
+                Photo = newLog.Photo,
+                LogTime = DateTimeUtils.GetServerTimeInVietnamTime(),
+
+
+            };
+            var task = await _unitOfWork.Tasks.FindByCondition(t => t.Id == request.TaskId).FirstOrDefaultAsync();
+            if (task != null)
+            {
+                var statusLog = new StatusLog
+                {
+                    TaskId = task.Id,
+                    UpdatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                    Status = TaskStatusEnum.Done,
+                    Log = JsonConvert.SerializeObject(newVaccineScheduleLogInTask)
+                };
+                await _unitOfWork.StatusLogs.CreateAsync(statusLog);
+            }
+
             await _unitOfWork.CommitAsync();
 
             return true;
