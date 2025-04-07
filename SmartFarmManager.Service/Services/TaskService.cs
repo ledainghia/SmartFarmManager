@@ -2320,10 +2320,18 @@ namespace SmartFarmManager.Service.Services
                     var medicalSymptom = await _unitOfWork.MedicalSymptom
                         .FindByCondition(ms => ms.Id == task.MedicalSymptomId.Value)
                         .Include(ms => ms.FarmingBatch)
+                        .Include(ms=>ms.MedicalSymptomDetails)
+                        .ThenInclude(msd=>msd.Symptom)
                         .FirstOrDefaultAsync();
 
                     if (medicalSymptom != null)
                     {
+
+                        var symptoms = medicalSymptom.MedicalSymptomDetails.Select(msd => new SymptomLogInTaskModel
+                        {
+                            SymptomId = msd.Symptom.Id,
+                            SymptomName = msd.Symptom.SymptomName
+                        }).ToList();
                         taskLogResponse.MedicalSymptomLog = new MedicalSymptomLogInTaskModel
                         {
                             MedicalSymptomId = medicalSymptom.Id,
@@ -2335,8 +2343,11 @@ namespace SmartFarmManager.Service.Services
                             IsEmergency = medicalSymptom.IsEmergency,
                             QuantityInCage = medicalSymptom.QuantityInCage,
                             Notes = medicalSymptom.Notes,
-                            CreateAt = medicalSymptom.CreateAt
+                            CreateAt = medicalSymptom.CreateAt,
+                            Symptoms= symptoms,
                         };
+                        
+
                     }
                 }
 

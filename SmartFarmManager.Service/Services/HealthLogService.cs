@@ -33,6 +33,7 @@ namespace SmartFarmManager.Service.Services
             var prescription = await _unitOfWork.Prescription
                 .FindByCondition(p => p.Id == prescriptionId && p.Status == PrescriptionStatusEnum.Active)
                 .Include(p => p.PrescriptionMedications)
+                .ThenInclude(pm=>pm.Medication)
                 .Include(p => p.MedicalSymtom)
                 .ThenInclude(p => p.FarmingBatch)
                 .FirstOrDefaultAsync();
@@ -65,10 +66,38 @@ namespace SmartFarmManager.Service.Services
                 Price = prescription.Price,
                 QuantityAnimal = prescription.QuantityAnimal,
                 RemainingQuantity = prescription.RemainingQuantity,
-                Status = prescription.Status
+                Status = prescription.Status,
+                PrescriptionMedications = new List<PrescriptionMedicationInHealthLogModel> ()
+                
             }
+
+
             
             };
+
+            foreach (var prescriptionMedication in prescription.PrescriptionMedications)
+            {
+                newHealthLogInTask.Prescription.PrescriptionMedications.Add(new PrescriptionMedicationInHealthLogModel
+                {
+                    MedicationId = prescriptionMedication.MedicationId,
+                    Notes = prescriptionMedication.Notes,
+                    Morning = prescriptionMedication.Morning,
+                    Afternoon = prescriptionMedication.Afternoon,
+                    Evening = prescriptionMedication.Evening,
+                    Noon = prescriptionMedication.Noon,                   
+                    Medication = new MedicationInHealthLogModel
+                    {
+                        Name = prescriptionMedication.Medication.Name,
+                        UsageInstructions = prescriptionMedication.Medication.UsageInstructions,
+                        Price = prescriptionMedication.Medication.Price,
+                        DoseWeight = prescriptionMedication.Medication.DoseWeight,
+                        Weight = prescriptionMedication.Medication.Weight,
+                        DoseQuantity = prescriptionMedication.Medication.DoseQuantity,
+                        PricePerDose = prescriptionMedication.Medication.PricePerDose
+                        
+                    }
+                });
+            }
             var task = await _unitOfWork.Tasks.FindByCondition(t => t.Id == model.TaskId).FirstOrDefaultAsync();
             if (task != null)
             {

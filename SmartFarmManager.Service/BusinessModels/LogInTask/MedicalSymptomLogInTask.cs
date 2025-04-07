@@ -18,6 +18,13 @@ namespace SmartFarmManager.Service.BusinessModels.LogInTask
         public int? QuantityInCage { get; set; }
         public string Notes { get; set; }
         public DateTime? CreateAt { get; set; }
+        public List<SymptomLogInTaskModel> Symptoms { get; set; } = new List<SymptomLogInTaskModel>();
+
+    }
+    public class SymptomLogInTaskModel
+    {
+        public Guid SymptomId { get; set; }
+        public string SymptomName { get; set; }
 
     }
 }

@@ -27,6 +27,33 @@ namespace SmartFarmManager.Service.BusinessModels.LogInTask
         public string Status { get; set; }
         public int? DaysToTake { get; set; }
         public decimal? Price { get; set; }
+        public List<PrescriptionMedicationInHealthLogModel> PrescriptionMedications { get; set; } = new List<PrescriptionMedicationInHealthLogModel>();
+    }
+    public class PrescriptionMedicationInHealthLogModel
+    {
+        public Guid MedicationId { get; set; }    
+        public string Notes { get; set; }
+        public int Morning { get; set; } = 0;
+        public int Afternoon { get; set; } = 0;
+        public int Evening { get; set; } = 0;
+        public int Noon { get; set; } = 0;
+        public MedicationInHealthLogModel Medication { get; set; }
+    }
+    public class MedicationInHealthLogModel
+    {
+        public string Name { get; set; }
+
+        public string UsageInstructions { get; set; }
+
+        public decimal? Price { get; set; }
+
+        public int? DoseWeight { get; set; }
+
+        public int? Weight { get; set; } 
+
+        public int? DoseQuantity { get; set; } 
+
+        public decimal? PricePerDose { get; set; }
     }
 
 }
