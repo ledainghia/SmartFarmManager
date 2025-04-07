@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
+using SmartFarmManager.Service.BusinessModels.LogInTask;
 using SmartFarmManager.Service.BusinessModels.VaccineScheduleLog;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
@@ -64,8 +66,29 @@ namespace SmartFarmManager.Service.Services
                 Date = currentDate,
                 TaskId = model.TaskId
             };
-
             await _unitOfWork.VaccineScheduleLogs.CreateAsync(newLog);
+            var newVaccineScheduleLogInTask = new VaccineScheduleLogInTaskModel
+            {
+                ScheduleId = newLog.ScheduleId,
+                TaskId = newLog.TaskId,
+                Notes = newLog.Notes,
+                Photo = newLog.Photo,
+                LogTime = DateTimeUtils.GetServerTimeInVietnamTime(),
+
+
+            };
+            var task = await _unitOfWork.Tasks.FindByCondition(t => t.Id == model.TaskId).FirstOrDefaultAsync();
+            if (task != null)
+            {
+                var statusLog = new StatusLog
+                {
+                    TaskId = task.Id,
+                    UpdatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                    Status = TaskStatusEnum.Done,  
+                    Log = JsonConvert.SerializeObject(newVaccineScheduleLogInTask)
+                };
+                await _unitOfWork.StatusLogs.CreateAsync(statusLog);
+            }
             await _unitOfWork.CommitAsync();
 
             return newLog.Id;
