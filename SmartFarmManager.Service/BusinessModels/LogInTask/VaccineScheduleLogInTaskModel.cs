@@ -9,6 +9,14 @@ namespace SmartFarmManager.Service.BusinessModels.LogInTask
     public class VaccineScheduleLogInTaskModel
     {
         public Guid ScheduleId { get; set; }
+        public string GrowthStageName { get; set; }
+        public string VaccineName { get; set; }
+        public DateTime? Date { get; set; }
+        public int? Quantity { get; set; }
+        public int? ApplicationAge { get; set; }
+        public decimal? TotalPrice { get; set; }
+        public int Session { get; set; }
+        
 
         public DateTime LogTime { get; set; }
 
@@ -18,4 +26,5 @@ namespace SmartFarmManager.Service.BusinessModels.LogInTask
 
         public Guid? TaskId { get; set; }
     }
+    
 }

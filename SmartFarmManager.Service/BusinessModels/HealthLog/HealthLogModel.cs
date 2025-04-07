@@ -1,4 +1,5 @@
-﻿using SmartFarmManager.Service.BusinessModels.Prescription;
+﻿using SmartFarmManager.DataAccessObject.Models;
+using SmartFarmManager.Service.BusinessModels.Prescription;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,4 +18,9 @@ namespace SmartFarmManager.Service.BusinessModels.HealthLog
         public PrescriptionModel? Prescriptions { get; set; }
         public Guid? TaskId { get; set; }
     }
+
+    
+
+   
+
 }

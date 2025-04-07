@@ -10,7 +10,6 @@ namespace SmartFarmManager.Service.BusinessModels.LogInTask
     {
         public Guid GrowthStageId { get; set; } 
         public string? GrowthStageName { get; set; }
-
         public decimal? RecommendedWeight { get; set; } 
         public decimal? ActualWeight { get; set; }
         public string? Notes { get; set; }

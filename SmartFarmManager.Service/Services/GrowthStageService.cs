@@ -328,6 +328,7 @@ namespace SmartFarmManager.Service.Services
                     Log = JsonConvert.SerializeObject(new
                     WeightAnimalLogModel {
                         GrowthStageId = growthStage.Id,
+                        GrowthStageName=growthStage.Name,
                         OldWeight = oldWeightAnimal,
                         NewWeight = growthStage.WeightAnimal,
                         LogTime=DateTimeUtils.GetServerTimeInVietnamTime(),

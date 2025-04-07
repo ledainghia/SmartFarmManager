@@ -9,6 +9,7 @@ namespace SmartFarmManager.Service.BusinessModels.Log
     public class WeightAnimalLogModel
     {
         public Guid GrowthStageId { get; set; }
+        public string GrowthStageName { get; set; }
         public decimal? OldWeight { get; set; }
         public decimal? NewWeight { get; set; }
         public DateTime LogTime { get; set; }

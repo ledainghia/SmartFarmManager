@@ -33,6 +33,16 @@ namespace SmartFarmManager.Service.Services
             if (growthStage == null)
                 return false;
 
+            var staff = await _unitOfWork.Users
+                .FindByCondition(s => s.Id == request.StaffId)
+                .FirstOrDefaultAsync();
+            if (staff ==null )
+            {
+                return false;
+            }
+            var typeSale = await _unitOfWork.SaleTypes
+                .FindByCondition(s => s.Id == request.SaleTypeId)
+                .FirstOrDefaultAsync();
             var newAnimalSale = new AnimalSale
             {
                 Id = Guid.NewGuid(),
@@ -48,11 +58,14 @@ namespace SmartFarmManager.Service.Services
             var newAnimalSaleLogByTask = new AnimalSaleLogByTaskModel
             {
                 GrowthStageId = request.GrowthStageId,
-                LogTime=DateTimeUtils.GetServerTimeInVietnamTime(),
+                GrowthStageName = growthStage.Name,
+                LogTime =DateTimeUtils.GetServerTimeInVietnamTime(),                
                 Quantity = request.Quantity,
                 SaleDate = request.SaleDate,
                 SaleTypeId = request.SaleTypeId,
+                SaleTypeName = typeSale.StageTypeName,
                 StaffId = request.StaffId,
+                StaffName=staff.FullName,
                 Total = request.UnitPrice * request.Quantity,
                 UnitPrice = request.UnitPrice               
             };

@@ -45,6 +45,7 @@ namespace SmartFarmManager.Service.Services
                 Notes = model.Notes,
                 Photo = model.Photo,
                 TaskId = model.TaskId
+                
             };
 
             await _unitOfWork.HealthLogs.CreateAsync(newLog);
@@ -54,7 +55,19 @@ namespace SmartFarmManager.Service.Services
             Notes = model.Notes,
             LogTime = DateTimeUtils.GetServerTimeInVietnamTime(),
             Photo = model.Photo,
-            TaskId = model.TaskId
+            TaskId = model.TaskId,
+            Prescription=new PrescriptionInHealthLogModel
+            {
+                Notes = prescription.Notes,
+                DaysToTake = prescription.DaysToTake,
+                EndDate = prescription.EndDate,
+                PrescribedDate = prescription.PrescribedDate,
+                Price = prescription.Price,
+                QuantityAnimal = prescription.QuantityAnimal,
+                RemainingQuantity = prescription.RemainingQuantity,
+                Status = prescription.Status
+            }
+            
             };
             var task = await _unitOfWork.Tasks.FindByCondition(t => t.Id == model.TaskId).FirstOrDefaultAsync();
             if (task != null)

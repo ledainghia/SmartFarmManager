@@ -52,7 +52,10 @@ namespace SmartFarmManager.Service.Services
             var vaccineSchedule = await _unitOfWork.VaccineSchedules.FindByCondition(
                 vs => vs.StageId == growthStage.Id && DateOnly.FromDateTime(vs.Date.Value) == currentDate,
                 trackChanges: false
-            ).FirstOrDefaultAsync();
+            )
+                .Include(vs => vs.Vaccine)
+                .Include(vs => vs.Stage)    
+                .FirstOrDefaultAsync();
 
             if (vaccineSchedule == null)
                 return null;
@@ -61,6 +64,7 @@ namespace SmartFarmManager.Service.Services
             var newLog = new VaccineScheduleLog
             {
                 ScheduleId = vaccineSchedule.Id,
+                
                 Notes = model.Notes,
                 Photo = model.Photo,
                 Date = currentDate,
@@ -70,6 +74,13 @@ namespace SmartFarmManager.Service.Services
             var newVaccineScheduleLogInTask = new VaccineScheduleLogInTaskModel
             {
                 ScheduleId = newLog.ScheduleId,
+                ApplicationAge=vaccineSchedule.ApplicationAge,
+                Date = vaccineSchedule.Date,
+                GrowthStageName=vaccineSchedule.Stage.Name,
+                Quantity = vaccineSchedule.Quantity,
+                Session = vaccineSchedule.Session,
+                TotalPrice=vaccineSchedule.ToltalPrice,
+                VaccineName=vaccineSchedule.Vaccine.Name,
                 TaskId = newLog.TaskId,
                 Notes = newLog.Notes,
                 Photo = newLog.Photo,
