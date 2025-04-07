@@ -1,181 +1,270 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using MQTTnet.Packets;
-using MQTTnet.Protocol;
-using MQTTnet.Client;
-using MQTTnet;
-using SmartFarmManager.Service.Settings;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿//using Microsoft.Extensions.Logging;
+//using Microsoft.Extensions.Options;
+//using MQTTnet.Packets;
+//using MQTTnet.Protocol;
+//using MQTTnet.Client;
+//using MQTTnet;
+//using SmartFarmManager.Service.Settings;
+//using System;
+//using System.Collections.Generic;
+//using System.Linq;
+//using System.Text;
+//using System.Threading.Tasks;
+//using Microsoft.Extensions.DependencyInjection;
+//using Newtonsoft.Json;
+//using SmartFarmManager.DataAccessObject.Models;
+//using SmartFarmManager.Repository.Interfaces;
+//using SmartFarmManager.Service.Helpers;
+//using Sprache;
 
-namespace SmartFarmManager.Service.MQTT
-{
-    public class MqttService : IMqttService
-    {
-        private readonly MqttClientSetting _setting;
-        private readonly IMqttClient _mqttClient;
-        private readonly ILogger<MqttService> _logger;
+//namespace SmartFarmManager.Service.MQTT
+//{
+//    public class MqttService : IMqttService
+//    {
+//        //    public bool IsConnected => _mqttClient.IsConnected;
 
-        public event EventHandler<string> OnMessageReceived;
+//        //    private readonly MqttClientSetting _setting;
+//        //    private readonly IMqttClient _mqttClient;
+//        //    private readonly ILogger<MqttService> _logger;
+//        //    private readonly IServiceProvider _serviceProvider;
 
-        public bool IsConnected => _mqttClient.IsConnected;
+//        //    public event EventHandler<(string macAddress, double data)> OnElectricityDataReceived;
+//        //    public event EventHandler<(string macAddress, double data)> OnWaterDataReceived;
 
-        public MqttService(IOptions<MqttClientSetting> options, ILogger<MqttService> logger)
-        {
-            _setting = options.Value;
-            _logger = logger;
-            _mqttClient = new MqttFactory().CreateMqttClient();
-        }
+//        //    public MqttService(IOptions<MqttClientSetting> options, ILogger<MqttService> logger, IServiceProvider serviceProvider)
+//        //    {
+//        //        _logger = logger;
+//        //        _serviceProvider = serviceProvider;
+//        //        _mqttClient = new MqttFactory().CreateMqttClient();
+//        //        _setting = options.Value;
+//        //    }
 
-        // Cấu hình MQTT client
-        private MqttClientOptions ConfigureMqttClientOptions()
-        {
-            return new MqttClientOptionsBuilder()
-                .WithClientId(_setting.ClientId)
-                .WithTcpServer(_setting.BrokerAddress, _setting.Port)
-                .WithCredentials(_setting.UserName, _setting.Password)
-                .WithCleanSession(_setting.CleanSession)
-                .WithKeepAlivePeriod(TimeSpan.FromSeconds(_setting.KeepAlive))
-                .Build();
-        }
+//        //    public async System.Threading.Tasks.Task ConnectBrokerAsync(CancellationToken cancellationToken)
+//        //    {
+//        //        try
+//        //        {
+//        //            var options = new MqttClientOptionsBuilder()
+//        //                .WithClientId(_setting.ClientId)
+//        //                .WithTcpServer(_setting.BrokerAddress, _setting.Port)
+//        //                .WithCredentials(_setting.UserName, _setting.Password)
+//        //                .WithCleanSession()
+//        //                .WithKeepAlivePeriod(TimeSpan.FromSeconds(_setting.KeepAlive))
+//        //                .Build();
 
-        // Kết nối tới MQTT broker
-        public async Task<bool> ConnectAsync(CancellationToken cancellationToken)
-        {
-            try
-            {
-                _logger.LogInformation("Attempting to connect to MQTT broker at {BrokerAddress}:{Port}",
-                    _setting.BrokerAddress, _setting.Port);
+//        //            _logger.LogInformation("Connecting to MQTT broker...");
+//        //            await _mqttClient.ConnectAsync(options, cancellationToken);
+//        //            _logger.LogInformation("MQTT broker connected");
 
-                var options = ConfigureMqttClientOptions();
-                await _mqttClient.ConnectAsync(options, cancellationToken);
+//        //            _mqttClient.ApplicationMessageReceivedAsync += OnMessageReceived;
+//        //            _mqttClient.DisconnectedAsync += async (args) => await Reconnect();
+//        //           await SubscribeToDefaultTopicsAsync(cancellationToken);
+//        //        }
+//        //        catch (Exception ex)
+//        //        {
+//        //            _logger.LogError(ex, "MQTT broker connection error");
+//        //        }
+//        //    }
 
-                _mqttClient.ApplicationMessageReceivedAsync += OnMessageReceivedHandler;
+//        //    public async Task DisconnectBrokerAsync(CancellationToken cancellationToken)
+//        //    {
+//        //        if (!IsConnected) return;
+//        //        await _mqttClient.DisconnectAsync(new MqttClientDisconnectOptions(), cancellationToken);
+//        //        _logger.LogInformation("Disconnected from MQTT broker");
+//        //    }
 
-                _logger.LogInformation("Connected to MQTT broker");
+//        //    public async Task PublishMessageAsync(string topic, string payload, CancellationToken cancellationToken)
+//        //    {
+//        //        if (!IsConnected)
+//        //        {
+//        //            _logger.LogError("MQTT client is not connected");
+//        //            return;
+//        //        }
 
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error connecting to MQTT broker");
-                return false;
-            }
-        }
+//        //        var message = new MqttApplicationMessageBuilder()
+//        //            .WithTopic(topic)
+//        //            .WithPayload(payload)
+//        //            .WithQualityOfServiceLevel(MqttQualityOfServiceLevel.AtMostOnce)
+//        //            .Build();
 
-        // Đăng ký topic để nhận thông điệp
-        public async Task<bool> SubscribeTopicAsync(string topic, CancellationToken cancellationToken)
-        {
-            try
-            {
-                if (!IsConnected) return false;
+//        //        await _mqttClient.PublishAsync(message, cancellationToken);
+//        //        _logger.LogInformation("Published message to {Topic}", topic);
+//        //    }
 
-                _logger.LogInformation("Subscribing to topic {Topic}", topic);
-                await _mqttClient.SubscribeAsync(new MqttTopicFilter
-                {
-                    Topic = topic,
-                    QualityOfServiceLevel = MqttQualityOfServiceLevel.AtMostOnce
-                }, cancellationToken);
+//        //    public async System.Threading.Tasks.Task SubscribeTopicAsync(string topic, CancellationToken cancellationToken)
+//        //    {
+//        //        if (!IsConnected) return;
+//        //        await _mqttClient.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic(topic).Build(), cancellationToken);
+//        //        _logger.LogInformation("Subscribed to topic {Topic}", topic);
+//        //    }
 
-                _logger.LogInformation("Successfully subscribed to topic {Topic}", topic);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error subscribing to topic {Topic}", topic);
-                return false;
-            }
-        }
+//        //    public async System.Threading.Tasks.Task SubscribeTopicsAsync(List<string> topics, CancellationToken cancellationToken)
+//        //    {
+//        //        if (!IsConnected) return;
+//        //        foreach (var topic in topics)
+//        //        {
+//        //            await SubscribeTopicAsync(topic, cancellationToken);
+//        //        }
+//        //    }
 
-        // Gửi thông điệp đến topic
-        public async Task<bool> PublishMessageAsync(string topic, string payload, CancellationToken cancellationToken)
-        {
-            try
-            {
-                if (!IsConnected) return false;
+//        //    public async Task UnsubscribeTopicAsync(string topic, CancellationToken cancellationToken)
+//        //    {
+//        //        if (!IsConnected) return;
+//        //        await _mqttClient.UnsubscribeAsync(topic, cancellationToken);
+//        //        _logger.LogInformation("Unsubscribed from topic {Topic}", topic);
+//        //    }
 
-                var message = new MqttApplicationMessage
-                {
-                    Topic = topic,
-                    PayloadSegment = Encoding.UTF8.GetBytes(payload),
-                    QualityOfServiceLevel = MqttQualityOfServiceLevel.AtMostOnce,
-                };
+//        //    private async Task Reconnect()
+//        //    {
+//        //        if (IsConnected) return;
+//        //        _logger.LogInformation("Reconnecting to MQTT broker...");
+//        //        await ConnectBrokerAsync(default);
+//        //    }
 
-                await _mqttClient.PublishAsync(message, cancellationToken);
-                _logger.LogInformation("Published to topic {Topic}", topic);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error publishing to topic {Topic}", topic);
-                return false;
-            }
-        }
+//        //    private async System.Threading.Tasks.Task OnMessageReceived(MqttApplicationMessageReceivedEventArgs arg)
+//        //    {
+//        //        var message = arg.ApplicationMessage;
+//        //        var topic = message.Topic ?? string.Empty;
+//        //        var payload = Encoding.UTF8.GetString(message.PayloadSegment);
+//        //        _logger.LogInformation("Received message from {Topic}: {Payload}", topic, payload);
+//        //        await RouteTopicHandlerAsync(topic, payload);
+//        //    }
 
-        // Ngắt kết nối
-        public async Task<bool> DisconnectAsync(CancellationToken cancellationToken)
-        {
-            try
-            {
-                if (!IsConnected) return false;
+//        //    public void Dispose()
+//        //    {
+//        //        _mqttClient.Dispose();
+//        //        GC.SuppressFinalize(this);
+//        //    }
 
-                _logger.LogInformation("Attempting to disconnect from MQTT broker...");
-                var disconnectOptions = new MqttClientDisconnectOptions
-                {
-                    Reason = MqttClientDisconnectOptionsReason.NormalDisconnection
-                };
+//        //    public System.Threading.Tasks.Task SendCommandAsync(string macAddress, int pinCode, string command, CancellationToken cancellationToken = default)
+//        //    {
+//        //        throw new NotImplementedException();
+//        //    }
 
-                // Ngắt kết nối với MQTT broker
-                await _mqttClient.DisconnectAsync(disconnectOptions, cancellationToken);
-                _logger.LogInformation("Successfully disconnected from MQTT broker");
+//        //    private async System.Threading.Tasks.Task RouteTopicHandlerAsync(string topic, string payload)
+//        //    {
+//        //        using var scope = _serviceProvider.CreateScope();
 
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error disconnecting from MQTT broker");
-                return false;
-            }
-        }
-        public async Task<bool> UnsubscribeTopicAsync(string topic, CancellationToken cancellationToken)
-        {
-            try
-            {
-                if (!IsConnected) return false;
+//        //        if (topic.MatchMqttPattern(MqttDefaultTopics.NodeSensorDataResponseTopic))
+//        //        {
+//        //            _logger.LogInformation("Xử lý dữ liệu cảm biến từ Node");
+//        //            await HandleNodeSensorDataResponse(topic, payload, scope);
+//        //        }
+//        //        else if (topic.MatchMqttPattern(MqttDefaultTopics.ElectricityResponseTopic))
+//        //        {
+//        //            _logger.LogInformation("Xử lý dữ liệu điện");
+//        //            await HandleElectricityResponse(topic, payload, scope);
+//        //        }
+//        //        else if (topic.MatchMqttPattern(MqttDefaultTopics.WaterResponseTopic))
+//        //        {
+//        //            _logger.LogInformation("Xử lý dữ liệu nước");
+//        //            await HandleWaterResponse(topic, payload, scope);
+//        //        }
+//        //        else
+//        //        {
+//        //            _logger.LogWarning("Không xác định topic: {Topic}", topic);
+//        //        }
+//        //     }
+//        //    private Task HandleNodeSensorDataResponse(string topic, string payload)
+//        //    {
+//        //        using var scope = _serviceProvider.CreateScope();
+//        //        var mqttProducer = scope.ServiceProvider.GetRequiredService<IMqttProducerService>();
+//        //        var message = new MqttRabbitMqMessage
+//        //        {
+//        //            Topic = topic,
+//        //            Payload = payload
+//        //        };
+//        //        // let the queue handle the message
+//        //        mqttProducer.SendMessage(message);
+//        //        _logger.LogInformation("Sensor data sent to queue");
+//        //        return Task.CompletedTask;
+//        //    }
 
-                _logger.LogInformation("Unsubscribing from topic {Topic}", topic);
-                await _mqttClient.UnsubscribeAsync(topic, cancellationToken);
-                _logger.LogInformation("Successfully unsubscribed from topic {Topic}", topic);
+//        //    private async Task HandleElectricityResponse(string topic, string payload, IServiceScope scope)
+//        //    {
+//        //        var electricityLogRepository = scope.ServiceProvider.GetRequiredService<IElectricityLogRepository>();
+//        //        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error unsubscribing from topic {Topic}", topic);
-                return false;
-            }
-        }
+//        //        var model = JsonConvert.DeserializeObject<ElectricityWaterModel>(payload);
+//        //        if (model == null)
+//        //        {
+//        //            _logger.LogError("Payload không hợp lệ: {Payload}", payload);
+//        //            return;
+//        //        }
 
-        // Nhận thông điệp từ MQTT broker
-        private Task OnMessageReceivedHandler(MqttApplicationMessageReceivedEventArgs e)
-        {
-            // Lấy thông điệp MQTT và nội dung của nó
-            var message = e.ApplicationMessage;
-            var payload = Encoding.UTF8.GetString(message.PayloadSegment);  // Chuyển payload từ byte sang string
+//        //        var electricityLog = new ElectricityLog
+//        //        {
+//        //            Data = model.Data,
+//        //            BeginTime = model.BeginTime,
+//        //            EndTime = model.EndTime,
+//        //            CreatedDate = DateTime.UtcNow
+//        //        };
+//        //        electricityLogRepository.Add(electricityLog);
+//        //        await unitOfWork.SaveChangesAsync();
+//        //    }
 
-            // Lấy topic mà thông điệp đã được gửi tới
-            var topic = message.Topic ?? string.Empty;
+//        //    private async Task HandleWaterResponse(string topic, string payload, IServiceScope scope)
+//        //    {
+//        //        var waterLogRepository = scope.ServiceProvider.GetRequiredService<IWaterLogRepository>();
+//        //        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-            // Log thông tin thông điệp nhận được
-            _logger.LogInformation("Received message from topic: {Topic}, Message: {Message}", topic, payload);
+//        //        var model = JsonConvert.DeserializeObject<ElectricityWaterModel>(payload);
+//        //        if (model == null)
+//        //        {
+//        //            _logger.LogError("Payload không hợp lệ: {Payload}", payload);
+//        //            return;
+//        //        }
 
-            // Gọi event để thông báo cho các phần khác trong hệ thống về thông điệp
-            OnMessageReceived?.Invoke(this, payload);
+//        //        var waterLog = new WaterLog
+//        //        {
+//        //            Data = model.Data,
+//        //            BeginTime = model.BeginTime,
+//        //            EndTime = model.EndTime,
+//        //            CreatedDate = DateTime.UtcNow
+//        //        };
+//        //        waterLogRepository.Add(waterLog);
+//        //        await unitOfWork.SaveChangesAsync();
+//        //    }
 
-            return Task.CompletedTask;
-        }
-    }
-}
+//        //    private async System.Threading.Tasks.Task SubscribeToDefaultTopicsAsync(CancellationToken cancellationToken)
+//        //    {
+//        //        try
+//        //        {
+//        //            var topics = new List<string>
+//        //            {
+//        //        MqttDefaultTopics.NodeSensorDataResponseTopic,
+//        //        MqttDefaultTopics.FarmControlStateResponseTopic,
+//        //        MqttDefaultTopics.SingleControlStateResponseTopic,
+//        //        MqttDefaultTopics.ElectricityResponseTopic,
+//        //        MqttDefaultTopics.LastElectricityIndexResponseTopic,
+//        //        MqttDefaultTopics.WaterResponseTopic,
+//        //        MqttDefaultTopics.LastWaterIndexResponseTopic
+//        //    };
+
+//        //            await SubscribeTopicsAsync(topics, cancellationToken);
+//        //        }
+//        //        catch (Exception ex)
+//        //        {
+//        //            _logger.LogError(ex, "Error subscribing to topics");
+//        //        }
+//        //    }
+
+//        //    System.Threading.Tasks.Task IMqttService.DisconnectBrokerAsync(CancellationToken cancellationToken)
+//        //    {
+//        //        throw new NotImplementedException();
+//        //    }
+
+//        //    System.Threading.Tasks.Task IMqttService.UnsubscribeTopicAsync(string topic, CancellationToken cancellationToken)
+//        //    {
+//        //        throw new NotImplementedException();
+//        //    }
+
+//        //    System.Threading.Tasks.Task IMqttService.PublishMessageAsync(string topic, string payload, CancellationToken cancellationToken)
+//        //    {
+//        //        throw new NotImplementedException();
+//        //    }
+//        //public void Dispose()
+//        //{
+//        //    throw new NotImplementedException();
+//        //}
+//    }
+//}

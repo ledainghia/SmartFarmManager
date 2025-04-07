@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels.HealthLog;
+using SmartFarmManager.Service.BusinessModels.LogInTask;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Shared;
@@ -31,47 +33,12 @@ namespace SmartFarmManager.Service.Services
             var prescription = await _unitOfWork.Prescription
                 .FindByCondition(p => p.Id == prescriptionId && p.Status == PrescriptionStatusEnum.Active)
                 .Include(p => p.PrescriptionMedications)
+                .ThenInclude(pm=>pm.Medication)
                 .Include(p => p.MedicalSymtom)
                 .ThenInclude(p => p.FarmingBatch)
                 .FirstOrDefaultAsync();
             if (prescription == null)
-                return null;
-            // Kiểm tra đơn thuốc có thuốc kê cho các buổi sáng, trưa, chiều, tối hay không
-            var hasMorningMedication = prescription.PrescriptionMedications.Any(m => m.Morning > 0);
-            var hasNoonMedication = prescription.PrescriptionMedications.Any(m => m.Noon > 0);
-            var hasAfternoonMedication = prescription.PrescriptionMedications.Any(m => m.Afternoon > 0);
-            var hasEveningMedication = prescription.PrescriptionMedications.Any(m => m.Evening > 0);
-
-            // Lấy thời gian hiện tại
-            var now = DateTimeUtils.GetServerTimeInVietnamTime();
-            var currentTime = now.TimeOfDay;
-            var currentSession = SessionTime.GetCurrentSession(currentTime);
-
-            // Nếu ngày hiện tại trùng với EndDate và là buổi cuối cùng được kê thuốc
-            if (prescription.EndDate.HasValue && now.Date == prescription.EndDate.Value.Date)
-            {
-                var isLastSession = currentSession switch
-                {
-                    1 => !hasNoonMedication && !hasAfternoonMedication && !hasEveningMedication,  // Morning là buổi cuối
-                    2 => !hasAfternoonMedication && !hasEveningMedication,                      // Noon là buổi cuối
-                    3 => !hasEveningMedication,                                                // Afternoon là buổi cuối
-                    4 => true,                                                                 // Evening là buổi cuối
-                    _ => false
-                };
-
-                if (isLastSession)
-                {
-                    // Cập nhật trạng thái Prescription thành Completed
-                    prescription.Status = PrescriptionStatusEnum.Completed;
-                    await _unitOfWork.Prescription.UpdateAsync(prescription);
-                    var farmingBatch = await _unitOfWork.FarmingBatches.FindByCondition(f => f.Id == prescription.MedicalSymtom.FarmingBatchId).FirstOrDefaultAsync();
-                    if (farmingBatch != null) {
-                        farmingBatch.AffectedQuantity -= prescription.QuantityAnimal;
-                        await _unitOfWork.FarmingBatches.UpdateAsync(farmingBatch);
-                    }
-                }
-            }
-            // Tạo log
+                return null;           
             var newLog = new HealthLog
             {
                 PrescriptionId = prescription.Id,
@@ -79,10 +46,73 @@ namespace SmartFarmManager.Service.Services
                 Notes = model.Notes,
                 Photo = model.Photo,
                 TaskId = model.TaskId
+                
             };
 
             await _unitOfWork.HealthLogs.CreateAsync(newLog);
-            await _unitOfWork.CommitAsync();
+
+            var newHealthLogInTask = new HealthLogInTaskModel {
+            PrescriptionId = prescription.Id,
+            Notes = model.Notes,
+            LogTime = DateTimeUtils.GetServerTimeInVietnamTime(),
+            Photo = model.Photo,
+            TaskId = model.TaskId,
+            Prescription=new PrescriptionInHealthLogModel
+            {
+                Notes = prescription.Notes,
+                DaysToTake = prescription.DaysToTake,
+                EndDate = prescription.EndDate,
+                PrescribedDate = prescription.PrescribedDate,
+                Price = prescription.Price,
+                QuantityAnimal = prescription.QuantityAnimal,
+                RemainingQuantity = prescription.RemainingQuantity,
+                Status = prescription.Status,
+                PrescriptionMedications = new List<PrescriptionMedicationInHealthLogModel> ()
+                
+            }
+
+
+            
+            };
+
+            foreach (var prescriptionMedication in prescription.PrescriptionMedications)
+            {
+                newHealthLogInTask.Prescription.PrescriptionMedications.Add(new PrescriptionMedicationInHealthLogModel
+                {
+                    MedicationId = prescriptionMedication.MedicationId,
+                    Notes = prescriptionMedication.Notes,
+                    Morning = prescriptionMedication.Morning,
+                    Afternoon = prescriptionMedication.Afternoon,
+                    Evening = prescriptionMedication.Evening,
+                    Noon = prescriptionMedication.Noon,                   
+                    Medication = new MedicationInHealthLogModel
+                    {
+                        Name = prescriptionMedication.Medication.Name,
+                        UsageInstructions = prescriptionMedication.Medication.UsageInstructions,
+                        Price = prescriptionMedication.Medication.Price,
+                        DoseWeight = prescriptionMedication.Medication.DoseWeight,
+                        Weight = prescriptionMedication.Medication.Weight,
+                        DoseQuantity = prescriptionMedication.Medication.DoseQuantity,
+                        PricePerDose = prescriptionMedication.Medication.PricePerDose
+                        
+                    }
+                });
+            }
+            var task = await _unitOfWork.Tasks.FindByCondition(t => t.Id == model.TaskId).FirstOrDefaultAsync();
+            if (task != null)
+            {
+
+                var statusLog = new StatusLog
+                {
+                    TaskId = task.Id,
+                    UpdatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                    Status = TaskStatusEnum.Done,
+                    Log = JsonConvert.SerializeObject(newHealthLogInTask)
+                };
+                await _unitOfWork.StatusLogs.CreateAsync(statusLog);
+            }
+
+                await _unitOfWork.CommitAsync();
 
             return newLog.Id;
         }

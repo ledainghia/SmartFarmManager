@@ -11,6 +11,7 @@
         public Guid? CageId { get; set; }
         public int? DaysToTake { get; set; }
         public DateTime? EndDate { get; set; }
+        public string? Symptoms { get; set; }
         public List<PrescriptionMedicationResponse> Medications { get; set; }
     }
 

@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SmartFarmManager.Service.BusinessModels.TaskDaily;
 using SmartFarmManager.Service.BusinessModels.VaccineSchedule;
+using SmartFarmManager.Service.BusinessModels.AnimalSale;
 
 namespace SmartFarmManager.Service.Interfaces
 {
@@ -17,6 +18,9 @@ namespace SmartFarmManager.Service.Interfaces
         Task<PagedResult<TaskDailyModel>> GetTaskDailiesByGrowthStageIdAsync(TaskDailyFilterModel filter);
         Task<PagedResult<VaccineScheduleModel>> GetVaccineSchedulesByGrowthStageIdAsync(VaccineScheduleFilterModel filter);
         Task<GrowthStageDetailModel> GetActiveGrowthStageByCageIdAsync(Guid cageId);
+        Task<bool> UpdateWeightAnimalAsync(UpdateGrowthStageRequest request);
+        Task UpdateGrowthStagesStatusAsync();
+        Task<List<AnimalSaleGroupedByTypeModel>> GetAnimalSalesByGrowthStageAsync(Guid growthStageId);
     }
       
 }

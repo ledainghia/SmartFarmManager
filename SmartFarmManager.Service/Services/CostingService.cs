@@ -81,7 +81,7 @@ namespace SmartFarmManager.Service.Services
                 .FindByCondition(e => e.FarmId == farmId && e.CreatedDate.Date == date)
                 .ToListAsync();
 
-            var electricityUsage = electricityLogs.Sum(e => e.Data);
+            var electricityUsage = electricityLogs.Sum(e => e.TotalConsumption);
             var electricityPrice = await _unitOfWork.MasterData
                 .FindByCondition(m => m.FarmId == farmId && m.CostType == "Điện")
                 .Select(m => m.UnitPrice)
@@ -99,7 +99,7 @@ namespace SmartFarmManager.Service.Services
                 .FindByCondition(w => w.FarmId == farmId && w.CreatedDate.Date == date)
                 .ToListAsync();
 
-            var waterUsage = waterLogs.Sum(w => w.Data);
+            var waterUsage = waterLogs.Sum(w => w.TotalConsumption);
             var waterPrice = await _unitOfWork.MasterData
                 .FindByCondition(m => m.FarmId == farmId && m.CostType == "Nước")
                 .Select(m => m.UnitPrice)
@@ -131,14 +131,14 @@ namespace SmartFarmManager.Service.Services
                 .FindByCondition(v => v.Schedule.Stage.FarmingBatch.FarmId == farmId && v.Date.Value == DateOnly.FromDateTime(date))
                 .ToListAsync();
 
-            //var totalVaccineCost = vaccineLogs.Sum(v => v.Schedule.TotalPrice);
+            var totalVaccineCost = vaccineLogs.Sum(v => v.Schedule.ToltalPrice);
 
-            //costReports.Add(new CostingReport
-            //{
-            //    CostType = "Vaccine",
-            //    TotalQuantity = vaccineLogs.Count(),
-            //    TotalCost = totalVaccineCost
-            //});
+            costReports.Add(new CostingReport
+            {
+                CostType = "Vaccine",
+                TotalQuantity = vaccineLogs.Count(),
+                TotalCost = totalVaccineCost.Value
+            });
 
             // 5️⃣ Chi phí thuốc
             var prescriptionLogs = await _unitOfWork.Prescription

@@ -12,9 +12,12 @@ public partial class Vaccine : EntityBase
 
     public string Method { get; set; }
     public double Price { get; set; }
+    public double PricePerDose { get; set; }
+    public int? TotalDose { get; set; }
     public int? AgeStart { get; set; }
 
     public int? AgeEnd { get; set; }
+    public bool IsDeleted { get; set; } = false;
 
     public virtual ICollection<VaccineSchedule> VaccineSchedules { get; set; } = new List<VaccineSchedule>();
 }

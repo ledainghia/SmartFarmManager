@@ -11,7 +11,7 @@ namespace SmartFarmManager.DataAccessObject.Models
         public string Name { get; set; }
 
         public string Description { get; set; }
-
+        public bool IsDeleted { get; set; } = false;
         public virtual ICollection<StandardPrescription> StandardPrescriptions { get; set; } = new List<StandardPrescription>();
 
         public virtual ICollection<MedicalSymptom> MedicalSymptoms { get; set; } = new List<MedicalSymptom>();

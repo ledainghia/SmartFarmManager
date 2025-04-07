@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
+using SmartFarmManager.Service.BusinessModels.LogInTask;
 using SmartFarmManager.Service.BusinessModels.VaccineScheduleLog;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
@@ -50,7 +52,10 @@ namespace SmartFarmManager.Service.Services
             var vaccineSchedule = await _unitOfWork.VaccineSchedules.FindByCondition(
                 vs => vs.StageId == growthStage.Id && DateOnly.FromDateTime(vs.Date.Value) == currentDate,
                 trackChanges: false
-            ).FirstOrDefaultAsync();
+            )
+                .Include(vs => vs.Vaccine)
+                .Include(vs => vs.Stage)    
+                .FirstOrDefaultAsync();
 
             if (vaccineSchedule == null)
                 return null;
@@ -59,13 +64,42 @@ namespace SmartFarmManager.Service.Services
             var newLog = new VaccineScheduleLog
             {
                 ScheduleId = vaccineSchedule.Id,
+                
                 Notes = model.Notes,
                 Photo = model.Photo,
                 Date = currentDate,
                 TaskId = model.TaskId
             };
-
             await _unitOfWork.VaccineScheduleLogs.CreateAsync(newLog);
+            var newVaccineScheduleLogInTask = new VaccineScheduleLogInTaskModel
+            {
+                ScheduleId = newLog.ScheduleId,
+                ApplicationAge=vaccineSchedule.ApplicationAge,
+                Date = vaccineSchedule.Date,
+                GrowthStageName=vaccineSchedule.Stage.Name,
+                Quantity = vaccineSchedule.Quantity,
+                Session = vaccineSchedule.Session,
+                TotalPrice=vaccineSchedule.ToltalPrice,
+                VaccineName=vaccineSchedule.Vaccine.Name,
+                TaskId = newLog.TaskId,
+                Notes = newLog.Notes,
+                Photo = newLog.Photo,
+                LogTime = DateTimeUtils.GetServerTimeInVietnamTime(),
+
+
+            };
+            var task = await _unitOfWork.Tasks.FindByCondition(t => t.Id == model.TaskId).FirstOrDefaultAsync();
+            if (task != null)
+            {
+                var statusLog = new StatusLog
+                {
+                    TaskId = task.Id,
+                    UpdatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                    Status = TaskStatusEnum.Done,  
+                    Log = JsonConvert.SerializeObject(newVaccineScheduleLogInTask)
+                };
+                await _unitOfWork.StatusLogs.CreateAsync(statusLog);
+            }
             await _unitOfWork.CommitAsync();
 
             return newLog.Id;
@@ -81,10 +115,7 @@ namespace SmartFarmManager.Service.Services
         public async Task<VaccineScheduleLogModel> GetVaccineScheduleLogByTaskIdAsync(Guid taskId)
         {
             // Tìm VaccineScheduleLog dựa trên TaskId
-            var log = await _unitOfWork.VaccineScheduleLogs.FindByCondition(
-                log => log.TaskId == taskId,
-                trackChanges: false
-            ).FirstOrDefaultAsync();
+            var log = await _unitOfWork.VaccineScheduleLogs.FindByCondition(log => log.TaskId == taskId).Include(vsl => vsl.Schedule).FirstOrDefaultAsync();
 
             if (log == null)
                 return null;
@@ -96,8 +127,84 @@ namespace SmartFarmManager.Service.Services
                 Date = log.Date,
                 Notes = log.Notes,
                 Photo = log.Photo,
-                TaskId = log.TaskId
+                TaskId = log.TaskId,
+                Quantity = log.Schedule.Quantity,
+                ToltalPrice = log.Schedule.ToltalPrice,
             };
+        }
+        public async Task<bool> CreateVaccineLogAsync(CreateVaccineLogRequest request)
+        {
+            // 1️⃣ Tìm VaccineSchedule theo Date, Session, VaccineId
+            var vaccineSchedule = await _unitOfWork.VaccineSchedules
+                .FindByCondition(vs => vs.Date.Value.Date == request.Date.Date &&
+                                       vs.Session == request.Session &&
+                                       vs.VaccineId == request.VaccineId)
+                .Include(vs=>vs.Vaccine)
+                .Include(vs=>vs.Stage)
+                .FirstOrDefaultAsync();
+
+            if (vaccineSchedule == null)
+                throw new ArgumentException("No matching VaccineSchedule found.");
+
+            // 2️⃣ Lấy thông tin giá vaccine
+            var vaccine = await _unitOfWork.Vaccines.FindByCondition(v => v.Id == request.VaccineId).FirstOrDefaultAsync();
+            if (vaccine == null)
+                throw new ArgumentException("Vaccine not found.");
+
+            // 3️⃣ Tạo log mới trong VaccineScheduleLog
+            var newLog = new VaccineScheduleLog
+            {
+                Id = Guid.NewGuid(),
+                ScheduleId = vaccineSchedule.Id,
+                Date = DateOnly.FromDateTime(request.Date),
+                Notes = request.Notes,
+                Photo = request.Photo,
+                TaskId = request.TaskId
+            };
+
+            await _unitOfWork.VaccineScheduleLogs.CreateAsync(newLog);
+
+            // 4️⃣ Cập nhật VaccineSchedule
+            vaccineSchedule.Status = VaccineScheduleStatusEnum.Completed;
+            vaccineSchedule.Quantity = request.Quantity;
+            vaccineSchedule.ToltalPrice = request.Quantity * (decimal)vaccine.Price;
+
+            
+            await _unitOfWork.VaccineSchedules.UpdateAsync(vaccineSchedule);
+
+            var newVaccineScheduleLogInTask = new VaccineScheduleLogInTaskModel
+            {
+                ScheduleId = newLog.ScheduleId,
+                ApplicationAge = vaccineSchedule.ApplicationAge,
+                Date = vaccineSchedule.Date,
+                GrowthStageName = vaccineSchedule.Stage.Name,
+                Quantity = vaccineSchedule.Quantity,
+                Session = vaccineSchedule.Session,
+                TotalPrice = vaccineSchedule.ToltalPrice,
+                VaccineName = vaccineSchedule.Vaccine.Name,
+                TaskId = newLog.TaskId,
+                Notes = newLog.Notes,
+                Photo = newLog.Photo,
+                LogTime = DateTimeUtils.GetServerTimeInVietnamTime(),
+
+
+            };
+            var task = await _unitOfWork.Tasks.FindByCondition(t => t.Id == request.TaskId).FirstOrDefaultAsync();
+            if (task != null)
+            {
+                var statusLog = new StatusLog
+                {
+                    TaskId = task.Id,
+                    UpdatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                    Status = TaskStatusEnum.Done,
+                    Log = JsonConvert.SerializeObject(newVaccineScheduleLogInTask)
+                };
+                await _unitOfWork.StatusLogs.CreateAsync(statusLog);
+            }
+
+            await _unitOfWork.CommitAsync();
+
+            return true;
         }
 
     }

@@ -11,6 +11,7 @@ namespace SmartFarmManager.DataAccessObject.Models
     {
         public  Guid GrowthStageId { get; set; }
         public DateTime DateCollected { get; set; }
+        public Guid TaskId { get; set; }
         public int EggCount { get; set; }
         public string? Notes { get; set; }
         [ForeignKey(nameof(GrowthStageId))]

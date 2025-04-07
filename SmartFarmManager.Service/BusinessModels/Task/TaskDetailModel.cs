@@ -21,6 +21,9 @@ namespace SmartFarmManager.Service.BusinessModels.Task
         public DateTime? CreatedAt { get; set; }
         public bool IsTreatmentTask { get; set; }
         public Guid? PrescriptionId { get; set; }
+        public string? CageAnimalName { get; set; }
+        public bool? HasAnimalDesease { get; set; }
+        public bool? IsWarning { get; set; }
 
         public UserResponseModel AssignedToUser { get; set; }
 

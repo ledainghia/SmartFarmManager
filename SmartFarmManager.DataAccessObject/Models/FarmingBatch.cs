@@ -11,15 +11,15 @@ public partial class FarmingBatch : EntityBase
     public Guid TemplateId { get; set; }
 
     public Guid CageId { get; set; }
-
+    public string FarmingBatchCode { get; set; }
     public string Name { get; set; }
-    public DateTime? StartDate { get; set; }
-    public DateTime? CompleteAt { get; set; }
-    public DateTime? EndDate { get; set; }
+    public DateTime? StartDate { get; set; } // Ngày vụ nuôi băt đầu
+    public DateTime? CompleteAt { get; set; } // Ngày vụ nuôi hoàn thành
+    public DateTime? EstimatedTimeStart { get; set; } // Thời gian dự kiến
+    public DateTime? EndDate { get; set; } // Ngày kết thúc dự kiến
     public string Status { get; set; }
-
     public int CleaningFrequency { get; set; }
-    public int AffectedQuantity { get; set; } = 0;
+    public int DeadQuantity { get; set; } = 0;
 
     public int? Quantity { get; set; }
     public Guid FarmId { get; set; }

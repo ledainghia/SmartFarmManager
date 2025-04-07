@@ -21,7 +21,6 @@ using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Newtonsoft.Json;
 using SmartFarmManager.Service.Configuration;
-using SmartFarmManager.Service.MQTT;
 using SmartFarmManager.Service.Helpers;
 using Quartz.Impl;
 using SmartFarmManager.API.HostedServices;
@@ -177,9 +176,10 @@ namespace SmartFarmManager.API.Extensions
             services.AddRepositories();
             services.AddApplicationServices();
             services.AddConfigurations();
+            
             services.AddQuartzServices();
             services.AddAppHostedService();
-            services.AddMqttClientService(configuration);
+            //services.AddMqttClientService(configuration);
 
             return services;
         }
@@ -229,6 +229,14 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<IElectricityLogsRepository, ElectricityLogsRepository>();
             services.AddScoped<IMasterDataRepository, MasterDataRepository>();
             services.AddScoped<IWaterLogsRepository, WaterLogsRepository>();
+            services.AddScoped<IWhiteListDomainRepository, WhiteListDomainRepository>();
+            services.AddScoped<ISensorRepository, SensorRepository>();
+            services.AddScoped<ISensorTypeRepository, SensorTypeRepository>();
+            services.AddScoped<ISensorDataLogRepository,SensorDataLogRepository>();
+            services.AddScoped<IStockLogRepository, StockLogRepository>();
+            services.AddScoped<IEggHarvestRepository, EggHarvestRepository>();
+            services.AddScoped<IFarmConfigRepository, FarmConfigRepository>();
+            services.AddScoped<IStandardPrescriptionMedicationRepository, StandardPrescriptionMedicationRepository>();
             return services;
         }
 
@@ -271,7 +279,19 @@ namespace SmartFarmManager.API.Extensions
             services.AddScoped<ISaleTypeService, SaleTypeService>();
             services.AddScoped<EmailService>();
             services.AddScoped<ICostingService, CostingService>();
-
+            services.AddScoped<IWebhookService, WebhookService>();
+            services.AddScoped<IWhitelistDomainService, WhitelistDomainService>();
+            services.AddScoped<IVaccineScheduleService, VaccineScheduleService>();
+            services.AddScoped<IAnimalSaleService, AnimalSaleService>();
+            services.AddScoped<OTPPhoneService>();
+            services.AddScoped<IFoodStackService, FoodStackService>();
+            services.AddScoped<IStockLogService, StockLogService>();
+            services.AddScoped<IEggHarvestService, EggHarvestService>();
+            services.AddScoped<IFarmConfigService, FarmConfigService>();
+            services.AddScoped<IElectricityLogService, ElectricityLogService>();
+            services.AddScoped<IWaterLogService, WaterLogService>();
+            services.AddScoped<ISensorService, SensorService>();
+            services.AddScoped<IFarmDashboardService,FarmDashboardService>();
 
             return services;
         }
@@ -284,15 +304,13 @@ namespace SmartFarmManager.API.Extensions
             services.AddSingleton<SystemConfigurationService>();
             return services;
         }
-        private static void AddMqttClientService(this IServiceCollection services, IConfiguration configuration)
-        {
-            services.Configure<MqttClientSetting>(configuration.GetSection(MqttClientSetting.Section));
-
-         
-            services.AddSingleton<IMqttService, MqttService>();
+        //private static void AddMqttClientService(this IServiceCollection services, IConfiguration configuration)
+        //{
+        //    services.Configure<MqttClientSetting>(configuration.GetSection(MqttClientSetting.Section));        
+        //    //services.AddSingleton<IMqttService, MqttService>();
 
             
-        }
+        //}
 
 
         public static IServiceCollection AddQuartzServices(this IServiceCollection services)
@@ -303,7 +321,6 @@ namespace SmartFarmManager.API.Extensions
                 config.UseMicrosoftDependencyInjectionJobFactory();
             });
 
-            // Đăng ký Job Factory
             services.AddSingleton<IJobFactory, ScopedJobFactory>();
 
             // Đăng ký Scheduler Factory
@@ -322,6 +339,10 @@ namespace SmartFarmManager.API.Extensions
             services.AddTransient<SmartFarmManager.Service.Jobs.UpdateTaskStatusesJob>();
             services.AddTransient<SmartFarmManager.Service.Jobs.UpdateEveningTaskStatusesJob>();
             services.AddTransient<SmartFarmManager.Service.Jobs.MedicalSymptomReminderJob>();
+            services.AddTransient<SmartFarmManager.Service.Jobs.CalculateDailyCostJob>();
+            services.AddTransient<SmartFarmManager.Service.Jobs.UpdateGrowthStagesStatusJob>();
+            services.AddTransient<SmartFarmManager.Service.Jobs.CheckAndNotifyAdminForUpcomingFarmingBatchesJob>();
+            services.AddTransient<SmartFarmManager.Service.Jobs.UpdateFarmingBatchStatusForTodayJob>();
             return services;
         }
 
@@ -351,5 +372,6 @@ namespace SmartFarmManager.API.Extensions
                 ProjectId = configuration["CLOUDMESSAGE_PROJECT_ID"]
             });
         }
+      
     }
 }

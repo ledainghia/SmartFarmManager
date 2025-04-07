@@ -1,4 +1,5 @@
 ﻿using Quartz;
+using SmartFarmManager.Service.Configuration;
 using SmartFarmManager.Service.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -11,23 +12,33 @@ namespace SmartFarmManager.Service.Services
     public class QuartzService : IQuartzService
     {
         private readonly IScheduler _scheduler;
+        private readonly SystemConfigurationService _systemConfigurationService;
 
-        public QuartzService(IScheduler scheduler)
+        public QuartzService(IScheduler scheduler,SystemConfigurationService systemConfigurationService)
         {
             _scheduler = scheduler;
+            _systemConfigurationService = systemConfigurationService;
         }
 
         public async Task LoadBackgroundJobDefault(CancellationToken cancellationToken)
         {
             var serverTimeZone = TimeZoneInfo.Local;
 
+            if (!_scheduler.IsStarted)
+            {
+                await _scheduler.Start();
+                Console.WriteLine("Scheduler started manually.");
+            }
             // Danh sách các jobs mặc định
             await ScheduleJob<Jobs.GenerateTasksForTomorrowJob>("GenerateTasksForTomorrowJob", "0 0 1 * * ?", serverTimeZone, cancellationToken);
+            await ScheduleJob<Jobs.UpdateFarmingBatchStatusForTodayJob>("UpdateFarmingBatchStatusForTodayJob", "0 0 1 * * ?", serverTimeZone, cancellationToken);
+            await ScheduleJob<Jobs.UpdateGrowthStagesStatusJob>("UpdateGrowthStagesStatusJob", "0 0 23 * * ?", serverTimeZone, cancellationToken);
             await ScheduleJob<Jobs.UpdateTaskStatusesJob>("UpdateTaskStatusesJob-Morning", "0 0 6 * * ?", serverTimeZone, cancellationToken);
             await ScheduleJob<Jobs.UpdateTaskStatusesJob>("UpdateTaskStatusesJob-Noon", "0 0 12 * * ?", serverTimeZone, cancellationToken);
             await ScheduleJob<Jobs.UpdateTaskStatusesJob>("UpdateTaskStatusesJob-Afternoon", "0 0 14 * * ?", serverTimeZone, cancellationToken);
             await ScheduleJob<Jobs.UpdateTaskStatusesJob>("UpdateTaskStatusesJob-Evening", "0 0 18 * * ?", serverTimeZone, cancellationToken);
-            await ScheduleJob<Jobs.UpdateEveningTaskStatusesJob>("UpdateEveningTaskStatusesJob", "0 0 23 * * ?", serverTimeZone, cancellationToken);
+            await ScheduleJob<Jobs.UpdateTaskStatusesJob>("UpdateTaskStatusesJob-Night", "0 0 23 * * ?", serverTimeZone, cancellationToken);
+            //await ScheduleJob<Jobs.UpdateEveningTaskStatusesJob>("UpdateEveningTaskStatusesJob", "0 0 23 * * ?", serverTimeZone, cancellationToken);
             //await ScheduleJob<Jobs.HelloWorldJob>("HelloWorldJob", "*/5 * * * * ?", serverTimeZone, cancellationToken);
             // Job tính toán chi phí hàng ngày, chạy lúc 11h đêm
             await ScheduleJob<Jobs.CalculateDailyCostJob>("CalculateDailyCostJob", "0 0 23 * * ?", serverTimeZone, cancellationToken);
@@ -38,9 +49,9 @@ namespace SmartFarmManager.Service.Services
         /// </summary>
         public async Task CreateReminderJobs(Guid medicalSymptomId, DateTime reportDate)
         {
-            var firstReminderTime = DateTimeOffset.Now.AddMinutes(1); // Chạy lần 1 sau 1 phút
-            var secondReminderTime = DateTimeOffset.Now.AddMinutes(2); // Chạy lần 2 sau 2 phút
-
+            var config = await _systemConfigurationService.GetConfigurationAsync();
+            var firstReminderTime = DateTimeOffset.Now.AddHours(config.FirstReminderTimeHours); 
+            var secondReminderTime = DateTimeOffset.Now.AddHours(config.SecondReminderTimeHours);
             // ✅ Tạo Job lần 1
             var firstReminderJob = JobBuilder.Create<Jobs.MedicalSymptomReminderJob>()
                 .WithIdentity($"MedicalSymptomReminderJob-{medicalSymptomId}")
@@ -134,10 +145,23 @@ namespace SmartFarmManager.Service.Services
 
             var trigger = TriggerBuilder.Create()
                 .WithIdentity($"{jobName}@Trigger")
-                .WithCronSchedule(cronExpression, x => x.InTimeZone(timeZone))
+                
+                .WithCronSchedule(cronExpression, x => { x.InTimeZone(timeZone);
+                    //x.WithMisfireHandlingInstructionIgnoreMisfires();
+                })
+                
+                
                 .Build();
+            Console.WriteLine($"Job {jobName} scheduled successfully.");
 
             await _scheduler.ScheduleJob(job, trigger, cancellationToken);
+        }
+        public async Task<bool> CheckSchedulerRunningAsync()
+        {
+            bool isRunning = _scheduler.IsStarted;
+            Console.WriteLine($"Scheduler running status: {isRunning} at {DateTime.Now}");
+            await Task.CompletedTask; // Để tương thích với async
+            return isRunning;
         }
     }
 }

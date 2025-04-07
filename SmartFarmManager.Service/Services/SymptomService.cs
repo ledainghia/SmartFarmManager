@@ -2,6 +2,7 @@
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Symptom;
+using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -47,6 +48,11 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<Guid> CreateSymptomAsync(SymptomModel symptomModel)
         {
+            var symptomExist =  _unitOfWork.Symptoms.FindByCondition(s => s.SymptomName.Equals(symptomModel.SymptomName) && s.IsDeleted == false);
+            if(symptomExist != null)
+            {
+                throw new ArgumentException($" Symptom with name '{symptomModel.SymptomName}' already exists.");
+            }
             var symptom = new DataAccessObject.Models.Symptom
             {
                 SymptomName = symptomModel.SymptomName
@@ -78,37 +84,79 @@ namespace SmartFarmManager.Service.Services
             var symptom = await _unitOfWork.Symptoms.GetByIdAsync(id);
             if (symptom == null)
             {
-                return false;
+                throw new KeyNotFoundException($"Triệu chứng với ID {id} không tồn tại.");
+            }
+            if (symptom.IsDeleted)
+            {
+                var symptomWithSameName = await _unitOfWork.Symptoms
+                    .FindByCondition(s => s.SymptomName == symptom.SymptomName && s.IsDeleted == false)
+                    .FirstOrDefaultAsync();
+
+                if (symptomWithSameName != null)
+                {
+                    throw new InvalidOperationException($"Triệu chứng với tên '{symptom.SymptomName}' đã tồn tại nên không thể khôi phục.");
+                }
+                symptom.IsDeleted = false;
+            }
+            else
+            {
+                symptom.IsDeleted = true;
             }
 
-            await _unitOfWork.Symptoms.DeleteAsync(symptom);
+            await _unitOfWork.Symptoms.UpdateAsync(symptom);
             await _unitOfWork.CommitAsync();
 
-            return true;
+            if (symptom.IsDeleted)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
-        public async Task<PagedResult<SymptomModel>> GetPagedSymptomsAsync(string? name, int page, int pageSize)
+        public async Task<PagedResult<SymptomModel>> GetSymptomsAsync(SymptomFilterModel filter)
         {
-            var (items, totalCount) = await _unitOfWork.Symptoms.GetPagedAsync(
-                filter: s => string.IsNullOrEmpty(name) || s.SymptomName.Contains(name),
-                orderBy: q => q.OrderBy(s => s.SymptomName),
-                page: page,
-                pageSize: pageSize
-            );
+            var query = _unitOfWork.Symptoms
+                .FindAll(false)
+                .AsQueryable();
+
+            // Tìm kiếm theo tên triệu chứng nếu có
+            if (!string.IsNullOrEmpty(filter.KeySearch))
+            {
+                query = query.Where(s => s.SymptomName.Contains(filter.KeySearch));
+            }
+            if (filter.IsDeleted.HasValue)
+            {
+                query = query.Where(s => s.IsDeleted == filter.IsDeleted);
+            }
+
+            var totalItems = await query.CountAsync();
+
+            var symptoms = await query
+                .Skip((filter.PageNumber - 1) * filter.PageSize)
+                .Take(filter.PageSize)
+                .Select(s => new SymptomModel
+                {
+                    Id = s.Id,
+                    SymptomName = s.SymptomName,
+                    IsDeleted = s.IsDeleted
+                })
+                .ToListAsync();
+
+            var result = new PaginatedList<SymptomModel>(symptoms, totalItems, filter.PageNumber, filter.PageSize);
 
             return new PagedResult<SymptomModel>
             {
-                Items = items.Select(s => new SymptomModel
-                {
-                    Id = s.Id,
-                    SymptomName = s.SymptomName
-                }),
-                TotalItems = totalCount,
-                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
-                CurrentPage = page,
-                PageSize = pageSize,
-                HasNextPage = page < (int)Math.Ceiling(totalCount / (double)pageSize),
-                HasPreviousPage = page > 1
+                Items = result.Items,
+                TotalItems = result.TotalCount,
+                PageSize = result.PageSize,
+                CurrentPage = result.CurrentPage,
+                TotalPages = result.TotalPages,
+                HasNextPage = result.HasNextPage,
+                HasPreviousPage = result.HasPreviousPage,
             };
         }
+
     }
 }

@@ -10,7 +10,7 @@ public partial class WaterLog : EntityBase
 
     public Guid FarmId { get; set; }
 
-    public double Data { get; set; }
+    public string Data { get; set; }
 
     public DateTime CreatedDate { get; set; }
 
@@ -19,6 +19,7 @@ public partial class WaterLog : EntityBase
     public double? FirstIndexData { get; set; }
 
     public double? LastIndexData { get; set; }
+    public decimal TotalConsumption { get; set; }
 
     public virtual Farm Farm { get; set; }
 }

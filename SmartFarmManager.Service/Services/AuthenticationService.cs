@@ -35,7 +35,7 @@ namespace SmartFarmManager.Service.Services
 
         public async Task<LoginResult> Login(string username, string password)
         {
-            var user = await _unitOfWork.Users.FindByCondition(x=>x.Username==username,false,x=>x.Role).FirstOrDefaultAsync();
+            var user = await _unitOfWork.Users.FindByCondition(x => x.Username == username, false, x => x.Role).FirstOrDefaultAsync();
             if (user == null)
             {
                 throw new Exception("Username not found.");
@@ -50,6 +50,20 @@ namespace SmartFarmManager.Service.Services
                 Token = CreateJwtToken(user),
                 RefreshToken = CreateJwtRefreshToken(user)
             };
+        }
+
+        public async System.Threading.Tasks.Task Logout(Guid userId)
+        {
+            var user = await _unitOfWork.Users.FindByCondition(u => u.Id == userId).FirstOrDefaultAsync();
+
+            if (user == null)
+            {
+                throw new Exception("User not found.");
+            }
+            user.DeviceId = null;
+
+            await _unitOfWork.Users.UpdateAsync(user);
+            await _unitOfWork.CommitAsync();
         }
 
         public SecurityToken CreateJwtToken(User user)
@@ -70,6 +84,7 @@ namespace SmartFarmManager.Service.Services
             {
                 Subject = new ClaimsIdentity(authClaims),
                 Expires = utcNow.Add(TimeSpan.FromMinutes(1)),
+
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256)
             };
 
@@ -78,6 +93,7 @@ namespace SmartFarmManager.Service.Services
 
             return token;
         }
+
 
         private SecurityToken CreateJwtRefreshToken(User user)
         {
@@ -166,7 +182,7 @@ namespace SmartFarmManager.Service.Services
             if (string.IsNullOrWhiteSpace(token))
                 return false;
 
-            var tokenHandler = new JwtSecurityTokenHandler();
+            var tokenHandler = new JwtSecurityTokenHandler();   
             var key = Encoding.ASCII.GetBytes(_jwtSettings.Key);
 
             try
@@ -177,8 +193,8 @@ namespace SmartFarmManager.Service.Services
                     ValidateIssuer = false,
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateLifetime = true, // Kiểm tra token hết hạn
-                    ClockSkew = TimeSpan.Zero // Không cho phép chênh lệch thời gian
+                    ValidateLifetime = false, // Kiểm tra token hết hạn
+                    ClockSkew = TimeSpan.Zero // Không cho phép chênh lệch thời gianA
                 };
 
                 var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out var securityToken);

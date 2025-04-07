@@ -30,10 +30,23 @@ namespace SmartFarmManager.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] CageFilterPagingRequest request)
         {
+            if (!ModelState.IsValid)
+            {
+                // Collect validation errors
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                                               .Select(e => e.ErrorMessage)
+                                               .ToList();
+
+                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
+        {
+            { "Errors", errors.ToArray() }
+        }));
+            }
+
             try
             {
-                var cages = await _cageService.GetCagesAsync(request.MapToModel());
-                return Ok(ApiResult<PagedResult<CageResponseModel>>.Succeed(cages));
+                var result = await _cageService.GetCagesAsync(request.MapToModel());
+                return Ok(ApiResult<PagedResult<CageResponseModel>>.Succeed(result));
             }
             catch (Exception ex)
             {

@@ -1,11 +1,16 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SmartFarmManager.API.Common;
+using SmartFarmManager.API.Payloads.Requests.MedicalSymptom;
 using SmartFarmManager.API.Payloads.Requests.Prescription;
 using SmartFarmManager.API.Payloads.Responses.Prescription;
+using SmartFarmManager.Service.BusinessModels;
+using SmartFarmManager.Service.BusinessModels.MedicalSymptom;
 using SmartFarmManager.Service.BusinessModels.Prescription;
 using SmartFarmManager.Service.BusinessModels.PrescriptionMedication;
+using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
+using SmartFarmManager.Service.Services;
 
 namespace SmartFarmManager.API.Controllers
 {
@@ -51,6 +56,7 @@ namespace SmartFarmManager.API.Controllers
                     Price = prescription.Price,
                     CageId = prescription.CageId,
                     DaysToTake = prescription.DaysToTake,
+                    Symptoms = prescription.Symptoms,
                     Medications = prescription.Medications.Select(m => new PrescriptionMedicationResponse
                     {
                         MedicationId = m.MedicationId,
@@ -240,5 +246,120 @@ namespace SmartFarmManager.API.Controllers
             }
         }
 
+        [HttpGet("{prescriptionId}/is-last-session")]
+        public async Task<IActionResult> CheckLastPrescriptionSession(Guid prescriptionId)
+        {
+            try
+            {
+                var result = await _prescriptionService.IsLastPrescriptionSessionAsync(prescriptionId);
+                return Ok(ApiResult<bool>.Succeed(result));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResult<bool>.Fail(ex.Message));
+            }
+        }
+        [HttpPut("{prescriptionId}/status")]
+        public async Task<IActionResult> UpdatePrescriptionStatus(Guid prescriptionId, [FromBody] UpdatePrescriptionModel request)
+        {
+            try
+            {
+                var result = await _prescriptionService.UpdatePrescriptionStatusAsync(prescriptionId, request);
+                if (!result)
+                    return BadRequest(ApiResult<bool>.Fail("Failed to update prescription status."));
+
+                return Ok(ApiResult<bool>.Succeed(true));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResult<bool>.Fail(ex.Message));
+            }
+        }
+        [HttpPost("{medicalSymptomId}/create-new-prescription")]
+        public async Task<IActionResult> CreateNewPrescription([FromBody] UpdateMedicalSymptomRequest request, Guid medicalSymptomId)
+        {
+            try
+            {
+                if (request == null)
+                    return BadRequest(ApiResult<object>.Fail("Invalid request data."));
+
+                // Chuyển đổi từ CreatePrescriptionRequest sang PrescriptionModel
+                var prescriptionModel = new UpdateMedicalSymptomModel
+                {
+                    Id = medicalSymptomId,
+                    Diagnosis = request.Diagnosis,
+                    Status = request.Status,
+                    Notes = request.Notes,
+                    Prescriptions = request.CreatePrescriptionRequest != null ? new PrescriptionModel
+                    {
+                        RecordId = request.CreatePrescriptionRequest.MedicalSymptomId,
+                        PrescribedDate = request.CreatePrescriptionRequest.PrescribedDate,
+                        Notes = request.CreatePrescriptionRequest.Notes,
+                        CageId = request.CreatePrescriptionRequest.CageId,
+                        DaysToTake = request.CreatePrescriptionRequest.DaysToTake,
+                        QuantityAnimal = request.CreatePrescriptionRequest.QuantityAnimal,
+                        Status = request.CreatePrescriptionRequest.Status,
+                        Medications = request.CreatePrescriptionRequest.Medications.Select(m => new PrescriptionMedicationModel
+                        {
+                            MedicationId = m.MedicationId,
+                            Morning = m.Morning,
+                            Afternoon = m.Afternoon,
+                            Evening = m.Evening,
+                            Noon = m.Noon,
+                            Notes = m.Notes
+                        }).ToList()
+                    } : null
+                };
+                var result = await _prescriptionService.CreateNewPrescriptionAsync(prescriptionModel);
+
+                if (!result)
+                    return BadRequest(ApiResult<object>.Fail("Failed to create new prescription."));
+
+                return Ok(ApiResult<object>.Succeed("New prescription created successfully."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail($"An error occurred: {ex.Message}"));
+            }
+        }
+
+        [HttpGet("vet")]
+        public async Task<IActionResult> GetPrescriptions(
+    [FromQuery] DateTime? startDate,
+    [FromQuery] DateTime? endDate,
+    [FromQuery] string? status,
+    [FromQuery] string? cageName,
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                var result = await _prescriptionService.GetPrescriptionsAsync(startDate, endDate, status, cageName, pageNumber, pageSize);
+                return Ok(ApiResult<PagedResult<PrescriptionList>>.Succeed(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail($"An error occurred: {ex.Message}"));
+            }
+        }
+
+
+        [HttpGet("{medicalSymptomId}/prescriptions-history")]
+        public async Task<IActionResult> GetPrescriptionsHistory(Guid medicalSymptomId)
+        {
+            try
+            {
+                var result = await _prescriptionService.GetPrescriptionsHistoryAsync(medicalSymptomId);
+
+                if (result == null || !result.Any())
+                    return NotFound(ApiResult<List<PrescriptionModel>>.Fail("No prescription history found."));
+
+                return Ok(ApiResult<List<PrescriptionModel>>.Succeed(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail($"An error occurred: {ex.Message}"));
+            }
+        }
     }
 }

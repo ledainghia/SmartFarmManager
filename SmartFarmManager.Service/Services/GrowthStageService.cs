@@ -12,10 +12,14 @@ using System.Threading.Tasks;
 using SmartFarmManager.Service.BusinessModels.TaskDaily;
 using SmartFarmManager.Service.BusinessModels.VaccineSchedule;
 using SmartFarmManager.Service.Shared;
+using SmartFarmManager.Service.BusinessModels.AnimalSale;
+using Newtonsoft.Json;
+using SmartFarmManager.DataAccessObject.Models;
+using SmartFarmManager.Service.BusinessModels.Log;
 
 namespace SmartFarmManager.Service.Services
 {
-    public class GrowthStageService:IGrowthStageService
+    public class GrowthStageService : IGrowthStageService
     {
         private readonly IUnitOfWork _unitOfWork;
 
@@ -278,19 +282,192 @@ namespace SmartFarmManager.Service.Services
             return new GrowthStageDetailModel
             {
                 Id = growthStage.Id,
+                FarmingBatchId = farmingBatch.Id,
                 Name = growthStage.Name,
                 WeightAnimal = growthStage.WeightAnimal,
                 Quantity = growthStage.Quantity,
-                AffectQuantity = farmingBatch.AffectedQuantity,
+                AffectQuantity = growthStage.AffectedQuantity,
+                DeadQuantity = growthStage.DeadQuantity,
                 AgeStart = growthStage.AgeStart,
                 AgeEnd = growthStage.AgeEnd,
                 AgeStartDate = growthStage.AgeStartDate,
                 AgeEndDate = growthStage.AgeEndDate,
                 Status = growthStage.Status,
                 RecommendedWeightPerSession = growthStage.RecommendedWeightPerSession,
-                WeightBasedOnBodyMass = growthStage.WeightBasedOnBodyMass
+                WeightBasedOnBodyMass = growthStage.WeightBasedOnBodyMass,
+                FoodType = growthStage.FoodType,
             };
         }
+        public async Task<bool> UpdateWeightAnimalAsync(UpdateGrowthStageRequest request)
+        {
+            // 1️⃣ Tìm GrowthStage theo ID
+            var growthStage = await _unitOfWork.GrowthStages
+                .FindByCondition(gs => gs.Id == request.GrowthStageId)
+                .FirstOrDefaultAsync();
+
+            if (growthStage == null)
+                return false;
+
+            var oldWeightAnimal = growthStage.WeightAnimal;
+            growthStage.WeightAnimal = request.WeightAnimal;
+
+            if (growthStage.WeightBasedOnBodyMass.HasValue)
+            {
+                growthStage.RecommendedWeightPerSession = request.WeightAnimal * growthStage.WeightBasedOnBodyMass.Value;
+            }
+            await _unitOfWork.GrowthStages.UpdateAsync(growthStage);
+
+            var task = await _unitOfWork.Tasks.FindByCondition(t => t.Id == request.TaskId).FirstOrDefaultAsync();
+            if (task != null)
+            {
+                var statusLog = new StatusLog
+                {
+                    TaskId = task.Id,
+                    UpdatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                    Status = TaskStatusEnum.Done,  // Trạng thái Done khi hoàn thành công việc cập nhật cân nặng
+                    Log = JsonConvert.SerializeObject(new
+                    WeightAnimalLogModel {
+                        GrowthStageId = growthStage.Id,
+                        GrowthStageName=growthStage.Name,
+                        OldWeight = oldWeightAnimal,
+                        NewWeight = growthStage.WeightAnimal,
+                        LogTime=DateTimeUtils.GetServerTimeInVietnamTime(),
+                        TaskId=request.TaskId
+                    })  
+                };
+
+                await _unitOfWork.StatusLogs.CreateAsync(statusLog);
+            }
+            await _unitOfWork.CommitAsync();
+
+            return true; // Cập nhật thành công
+        }
+
+        public async System.Threading.Tasks.Task UpdateGrowthStagesStatusAsync()
+        {
+            var activeFarmingBatches = await _unitOfWork.FarmingBatches
+           .FindByCondition(fb => fb.Status == FarmingBatchStatusEnum.Active)
+           .ToListAsync();
+
+            if (!activeFarmingBatches.Any())
+            {
+                throw new Exception("No active farming batches found.");
+            }
+
+            // Lấy ngày hôm nay
+            var today = DateTimeUtils.GetServerTimeInVietnamTime().Date;
+            foreach (var farmingBatch in activeFarmingBatches)
+            {
+                // Lấy tất cả các GrowthStage của FarmingBatch này
+                var growthStages = await _unitOfWork.GrowthStages
+                    .FindByCondition(gs => gs.FarmingBatchId == farmingBatch.Id)
+                    .OrderBy(gs => gs.AgeStartDate)  // Sắp xếp theo AgeStartDate
+                    .ToListAsync();
+
+                if (!growthStages.Any())
+                {
+                    throw new Exception($"No growth stages found for farming batch {farmingBatch.Id}.");
+                }
+
+                for (int i = 0; i < growthStages.Count; i++)
+                {
+                    var currentGrowthStage = growthStages[i];
+
+                    // Kiểm tra nếu hôm nay là ngày kết thúc của giai đoạn này
+                    if (currentGrowthStage.Status==GrowthStageStatusEnum.Active && currentGrowthStage.AgeEndDate.HasValue && currentGrowthStage.AgeEndDate.Value.Date == today)
+                    {
+                        // Cập nhật trạng thái của giai đoạn hiện tại thành Completed
+                        currentGrowthStage.Status = "Completed";
+                        await _unitOfWork.GrowthStages.UpdateAsync(currentGrowthStage);
+                    }
+                    else
+                    {
+                        // Nếu chưa tới ngày kết thúc, bỏ qua giai đoạn này
+                        continue;
+                    }
+
+                    if (i + 1 < growthStages.Count)
+                    {
+                        var nextGrowthStage = growthStages[i + 1];
+
+                        // Nếu giai đoạn tiếp theo có trạng thái "Upcoming" và AgeStart = AgeEnd của giai đoạn hiện tại + 1
+                        if (nextGrowthStage.Status == GrowthStageStatusEnum.Upcoming &&                 
+                            nextGrowthStage.AgeStart == currentGrowthStage.AgeEnd+1)
+                        {
+                            // Cập nhật trạng thái của giai đoạn tiếp theo thành Active
+                            nextGrowthStage.Status = GrowthStageStatusEnum.Active;
+
+                            // Cập nhật Quantity và AffectedQuantity cho giai đoạn mới
+                            nextGrowthStage.Quantity = currentGrowthStage.Quantity.GetValueOrDefault() - currentGrowthStage.DeadQuantity.GetValueOrDefault();
+                            nextGrowthStage.AffectedQuantity = 0;
+                            // Cập nhật giai đoạn phát triển tiếp theo
+                            await _unitOfWork.GrowthStages.UpdateAsync(nextGrowthStage);
+                        }
+                    }
+
+                    await _unitOfWork.CommitAsync();
+                }
+            }
+        }
+        public async Task<List<AnimalSaleGroupedByTypeModel>> GetAnimalSalesByGrowthStageAsync(Guid growthStageId)
+        {
+            // 1️⃣ Lấy giai đoạn phát triển
+            var growthStage = await _unitOfWork.GrowthStages
+                .FindByCondition(gs => gs.Id == growthStageId)
+                .Include(gs => gs.FarmingBatch)
+                .FirstOrDefaultAsync();
+
+            if (growthStage == null || !growthStage.AgeStartDate.HasValue)
+                throw new ArgumentException("Không tìm thấy giai đoạn phát triển hợp lệ.");
+
+            var farmingBatchId = growthStage.FarmingBatchId;
+            var startDate = growthStage.AgeStartDate.Value;
+
+            // 2️⃣ Lấy tất cả các giai đoạn khác của vụ nuôi để xác định có phải là giai đoạn cuối không
+            var allStages = await _unitOfWork.GrowthStages
+                .FindByCondition(gs => gs.FarmingBatchId == farmingBatchId)
+                .ToListAsync();
+
+            var isLastStage = !allStages.Any(gs => gs.AgeStartDate > growthStage.AgeStartDate);
+            DateTime? endDate = isLastStage ? null : growthStage.AgeEndDate;
+
+            // 3️⃣ Lọc các bản ghi AnimalSales trong giai đoạn đó
+            var query = _unitOfWork.AnimalSales
+                .FindByCondition(s => s.FarmingBatchId == farmingBatchId && s.SaleDate >= startDate);
+
+            if (endDate.HasValue)
+            {
+                query = query.Where(s => s.SaleDate <= endDate.Value);
+            }
+
+            var animalSales = await query
+                .Include(s => s.SaleType)
+                .ToListAsync();
+
+            // 4️⃣ Group theo SaleType
+            var grouped = animalSales
+                .GroupBy(s => s.SaleType.StageTypeName)
+                .Select(g => new AnimalSaleGroupedByTypeModel
+                {
+                    SaleType = g.Key,
+                    TotalQuantity = g.Sum(x => x.Quantity),
+                    TotalRevenue = g.Sum(x => x.Total),
+                    UnitPriceAverage = g.Average(x => x.UnitPrice ?? 0),
+                    Logs = g.Select(x => new AnimalSaleLogModel
+                    {
+                        SaleDate = x.SaleDate,
+                        Quantity = x.Quantity,
+                        UnitPrice = x.UnitPrice,
+                        Total = x.Total
+                    }).ToList()
+                })
+                .ToList();
+
+            return grouped;
+        }
+
+
+
 
     }
 }

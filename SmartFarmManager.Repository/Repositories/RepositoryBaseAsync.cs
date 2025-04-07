@@ -84,9 +84,24 @@ namespace SmartFarmManager.Repository.Repositories
             return System.Threading.Tasks.Task.CompletedTask;
         }
         public async System.Threading.Tasks.Task UpdateListAsync(IEnumerable<T> entities)
-        => await _dbContext.Set<T>().AddRangeAsync(entities);
+        {
+            foreach (var entity in entities)
+            {
+               
+                var entry = _dbContext.Entry(entity);
+                if (entry.State == EntityState.Detached)
+                {
+                    _dbContext.Set<T>().Attach(entity); 
+                    entry.State = EntityState.Modified;   
+                }
+            }
+        }
 
-
+        public async System.Threading.Tasks.Task UpdateListTaskAsync(IEnumerable<T> entities)
+        {
+            _dbContext.Set<T>().UpdateRange(entities);
+            await _dbContext.SaveChangesAsync();
+        }
 
         public System.Threading.Tasks.Task DeleteAsync(T entity)
         {

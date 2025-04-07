@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels.DailyFoodUsageLog;
+using SmartFarmManager.Service.BusinessModels.LogInTask;
 using SmartFarmManager.Service.BusinessModels.VaccineScheduleLog;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
@@ -45,7 +47,7 @@ namespace SmartFarmManager.Service.Services
 
             if (growthStage == null)
                 return null;
-
+            var food = await _unitOfWork.FoodStacks.FindByCondition(f => f.FoodType == growthStage.FoodType).FirstOrDefaultAsync();
             // Tạo log
             var newLog = new DailyFoodUsageLog
             {
@@ -56,9 +58,38 @@ namespace SmartFarmManager.Service.Services
                 Photo = model.Photo,
                 LogTime = DateTimeUtils.GetServerTimeInVietnamTime(),
                 TaskId = model.TaskId,
+                UnitPrice = (double)food.CostPerKg,
+            };
+            food.CurrentStock = food.CurrentStock - model.ActualWeight;
+            await _unitOfWork.FoodStacks.UpdateAsync(food);
+            await _unitOfWork.DailyFoodUsageLogs.CreateAsync(newLog);
+
+            var newLogUseageFoodInTask = new DailyFoodUsageLogInTaskModel
+            {
+                GrowthStageId = growthStage.Id,
+                GrowthStageName = growthStage.Name,
+                RecommendedWeight = model.RecommendedWeight,
+                ActualWeight = model.ActualWeight,
+                Notes = model.Notes,
+                Photo = model.Photo,
+                LogTime = DateTimeUtils.GetServerTimeInVietnamTime(),
+                TaskId = model.TaskId,
+                UnitPrice = (double)food.CostPerKg,
+
             };
 
-            await _unitOfWork.DailyFoodUsageLogs.CreateAsync(newLog);
+            var task = await _unitOfWork.Tasks.FindByCondition(t => t.Id == model.TaskId).FirstOrDefaultAsync();
+            if (task != null)
+            {
+                var statusLog = new StatusLog
+                {
+                    TaskId = task.Id,
+                    UpdatedAt = DateTimeUtils.GetServerTimeInVietnamTime(),
+                    Status = TaskStatusEnum.Done,
+                    Log = JsonConvert.SerializeObject(newLogUseageFoodInTask)
+                };
+                await _unitOfWork.StatusLogs.CreateAsync(statusLog);               
+            }
             await _unitOfWork.CommitAsync();
 
             return newLog.Id;

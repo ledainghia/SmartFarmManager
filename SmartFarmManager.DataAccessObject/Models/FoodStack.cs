@@ -17,6 +17,7 @@ public partial class FoodStack : EntityBase
     public decimal? CostPerKg { get; set; }
 
     public decimal? CurrentStock { get; set; }
+    public bool IsDeleted { get; set; } = false;
 
     public virtual Farm Farm { get; set; }
 

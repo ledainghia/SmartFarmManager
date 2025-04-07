@@ -80,12 +80,17 @@ namespace SmartFarmManager.Service.Services
             }
 
             // Check if cage is already assigned
-            var isAssigned = await _unitOfWork.CageStaffs.FindByCondition(cs => cs.CageId == cageId).AnyAsync();
+            var isAssigned = await _unitOfWork.CageStaffs.FindByCondition(cs => cs.CageId == cageId && cs.StaffFarmId==userId).AnyAsync();
             if (isAssigned)
             {
                 return (false, "Cage is already assigned to a staff.");
             }
-
+            var count = await _unitOfWork.CageStaffs.FindByCondition(cs => cs.StaffFarmId == userId).CountAsync();
+            var farmConfig = await _unitOfWork.FarmConfigs.FindAll().FirstOrDefaultAsync();
+            if(count >= farmConfig.MaxCagesPerStaff)
+            {
+                return (false, "Staff has reached the maximum number of cages.");
+            }
             // Assign staff to the cage
             var cageStaff = new CageStaff
             {
@@ -108,8 +113,9 @@ namespace SmartFarmManager.Service.Services
 
             // Truy vấn CageStaffs, bao gồm StaffFarm và Cage
             var usersQuery = _unitOfWork.CageStaffs
-                                        .FindByCondition(cs => cageIds.Contains(cs.CageId))
-                                        .Include(cs => cs.StaffFarm.Role)
+                                        .FindByCondition(cs => cageIds.Contains(cs.CageId))                                       
+                                        .Include(cs => cs.StaffFarm)
+                                        .ThenInclude(s=>s.Role)                                      
                                         .Include(cs => cs.Cage)
                                         .Select(cs => new
                                         {
@@ -118,7 +124,13 @@ namespace SmartFarmManager.Service.Services
                                             CageName = cs.Cage.Name
                                         });
 
-            // Nhóm theo StaffFarm và gộp danh sách Cage
+            var vetUsers = await _unitOfWork.Users.FindByCondition(u => u.Role.RoleName == "Vet")
+                .Include(u => u.Role).FirstOrDefaultAsync();
+            var adminFarmUsers = await _unitOfWork.FarmsAdmins.FindByCondition(fa => fa.FarmId == farmId)
+                .Include(fa => fa.Admin)
+                .ThenInclude(u => u.Role)
+                .Select(fa => fa.Admin)
+                .FirstOrDefaultAsync();
             var groupedUsers = await usersQuery
                 .GroupBy(u => u.StaffFarm)
                 .Select(group => new
@@ -147,14 +159,55 @@ namespace SmartFarmManager.Service.Services
                 Email = g.StaffFarm.Email,
                 PhoneNumber = g.StaffFarm.PhoneNumber,
                 Address = g.StaffFarm.Address,
-                Role = g.StaffFarm.Role != null ? g.StaffFarm.Role.RoleName : "No Role",
+                Role = g.StaffFarm.Role != null ? g.StaffFarm.Role.RoleName : "Staff Farm",
                 IsActive = g.StaffFarm.IsActive ?? false,
                 Cages = g.Cages.Select(c => new CageModel
                 {
                     Id = c.CageId,
                     Name = c.CageName
-                }).ToList()
+                }).ToList(),
+                TasksCountByStatus = new TaskStatusCountModel
+                {
+                    Pending = _unitOfWork.Tasks.FindByCondition(x=>x.AssignedToUserId==g.StaffFarm.Id && x.Status == "Pending").Count(),
+                    InProgress = _unitOfWork.Tasks.FindByCondition(x => x.AssignedToUserId == g.StaffFarm.Id && x.Status == "InProgress").Count(),
+                    Done = _unitOfWork.Tasks.FindByCondition(x => x.AssignedToUserId == g.StaffFarm.Id && x.Status == "Done").Count(),
+                    Overdue = _unitOfWork.Tasks.FindByCondition(x => x.AssignedToUserId == g.StaffFarm.Id && x.Status == "Overdue").Count(),
+                }
             }).ToList();
+
+            if (vetUsers != null)
+            {
+                userModels.Add(new UserModel
+                {
+                    Id = vetUsers.Id,
+                    Username = vetUsers.Username,
+                    FullName = vetUsers.FullName,
+                    Email = vetUsers.Email,
+                    PhoneNumber = vetUsers.PhoneNumber,
+                    Address = vetUsers.Address,
+                    Role = vetUsers.Role != null ? vetUsers.Role.RoleName : "Vet",
+                    IsActive = vetUsers.IsActive ?? false,
+                    Cages = null,
+                    TasksCountByStatus = null 
+                });
+            }
+
+            if (adminFarmUsers != null )
+            {
+                userModels.Add(new UserModel
+                {
+                    Id = adminFarmUsers.Id,
+                    Username = adminFarmUsers.Username,
+                    FullName = adminFarmUsers.FullName,
+                    Email = adminFarmUsers.Email,
+                    PhoneNumber = adminFarmUsers.PhoneNumber,
+                    Address = adminFarmUsers.Address,
+                    Role = adminFarmUsers.Role != null ? adminFarmUsers.Role.RoleName : "Admin Farm",
+                    IsActive = adminFarmUsers.IsActive ?? false,
+                    Cages = null,
+                    TasksCountByStatus = null
+                });
+            }
             var result= new PaginatedList<UserModel>(userModels, totalCount, pageIndex, pageSize);
             return new PagedResult<UserModel>()
             {

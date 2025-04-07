@@ -50,11 +50,111 @@ namespace SmartFarmManager.API.Controllers
 
         // GET: api/medications
         [HttpGet]
-        public async Task<IActionResult> GetMedications([FromQuery] string? name, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetMedications([FromQuery] MedicationFilterModel filter)
         {
-            var pagedMedications = await _medicationService.GetPagedMedicationsAsync(name, minPrice, maxPrice, page, pageSize);
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                                               .Select(e => e.ErrorMessage)
+                                               .ToList();
 
-            return Ok(ApiResult<PagedResult<MedicationModel>>.Succeed(pagedMedications));
+                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
+        {
+            { "Errors", errors.ToArray() }
+        }));
+            }
+
+            try
+            {
+                var result = await _medicationService.GetMedicationsAsync(filter);
+                return Ok(ApiResult<PagedResult<MedicationModel>>.Succeed(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+            }
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateMedication(Guid id, [FromBody] UpdateMedicationRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                                               .Select(e => e.ErrorMessage)
+                                               .ToList();
+                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
+            {
+                { "Errors", errors.ToArray() }
+            }));
+            }
+
+            try
+            {
+                var model = request.MapToModel();
+                var result = await _medicationService.UpdateMedicationAsync(id, model);
+
+                if (!result)
+                {
+                    throw new Exception("Error while updating Medication!");
+                }
+
+                return Ok(ApiResult<string>.Succeed("Medication updated successfully!"));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+            }
+        }
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetMedicationDetail(Guid id)
+        {
+            try
+            {
+                var result = await _medicationService.GetMedicationDetailAsync(id);
+
+                if (result == null)
+                {
+                    return NotFound(ApiResult<string>.Fail("Medication not found."));
+                }
+
+                return Ok(ApiResult<MedicationDetailResponseModel>.Succeed(result));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred."));
+            }
+        }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteMedication(Guid id)
+        {
+            try
+            {
+                var result = await _medicationService.DeleteMedicationAsync(id);
+
+                if (!result)
+                {
+                    return Ok(ApiResult<string>.Succeed("Khôi phục thành công!"));
+                }
+
+                return Ok(ApiResult<string>.Succeed("Xóa thành công!"));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+            }
         }
 
     }

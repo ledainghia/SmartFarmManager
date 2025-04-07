@@ -7,6 +7,9 @@ using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.BusinessModels.TaskDaily;
 using SmartFarmManager.Service.BusinessModels.VaccineSchedule;
+using Sprache;
+using SmartFarmManager.Service.BusinessModels.AnimalSale;
+using SmartFarmManager.Service.Services;
 
 namespace SmartFarmManager.API.Controllers
 {
@@ -186,6 +189,44 @@ namespace SmartFarmManager.API.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, ApiResult<string>.Fail(ex.Message));
+            }
+        }
+
+        [HttpPut("growth-stage/update-weight")]
+        public async Task<IActionResult> UpdateWeightAnimal([FromBody] UpdateGrowthStageRequest request)
+        {
+            try
+            {
+                bool isUpdated = await _growthStageService.UpdateWeightAnimalAsync(request);
+                return isUpdated
+        ? Ok(ApiResult<string>.Succeed("Weight animal updated successfully."))
+        : BadRequest(ApiResult<string>.Fail("Failed to update weight animal."));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ApiResult<string>.Fail(ex.Message)); // Trả về lỗi Conflict nếu trùng lặp
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred. Please contact support."));
+            }
+        }
+
+        [HttpGet("growth-stage/{growthStageId}/sales")]
+        public async Task<IActionResult> GetSalesByGrowthStage(Guid growthStageId)
+        {
+            try
+            {
+                var result = await _growthStageService.GetAnimalSalesByGrowthStageAsync(growthStageId);
+                return Ok(ApiResult<List<AnimalSaleGroupedByTypeModel>>.Succeed(result));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
             }
         }
 

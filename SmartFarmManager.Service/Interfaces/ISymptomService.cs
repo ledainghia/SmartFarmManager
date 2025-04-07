@@ -15,6 +15,6 @@ namespace SmartFarmManager.Service.Interfaces
         Task<Guid> CreateSymptomAsync(SymptomModel symptomModel);
         Task<bool> UpdateSymptomAsync(SymptomModel symptomModel);
         Task<bool> DeleteSymptomAsync(Guid id);
-        Task<PagedResult<SymptomModel>> GetPagedSymptomsAsync(string? name, int page, int pageSize);
+        Task<PagedResult<SymptomModel>> GetSymptomsAsync(SymptomFilterModel filter);
     }
 }

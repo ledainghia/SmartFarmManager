@@ -57,5 +57,22 @@ namespace SmartFarmManager.Service.Services
                 return false;
             }
         }
+
+        public async Task SendReminderEmailAsync(string emailToId, string emailToName, string emailSubject, string emailBody)
+        {
+            var mailData = new MailData
+            {
+                EmailToId = emailToId,
+                EmailToName = emailToName,
+                EmailSubject = emailSubject,
+                EmailBody = emailBody
+            };
+           bool success= await SendEmailAsync(mailData);
+            Console.WriteLine(success
+               ? $"Email sent successfully to {emailToId}"
+               : $"Failed to send email to {emailToId}");
+        }
+
+
     }
 }

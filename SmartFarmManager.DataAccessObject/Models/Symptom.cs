@@ -9,6 +9,7 @@ namespace SmartFarmManager.DataAccessObject.Models
     public partial class Symptom:EntityBase
     {
         public string SymptomName { get; set; }
+        public bool IsDeleted { get; set; } = false;
         public virtual ICollection<MedicalSymtomDetail> MedicalSymptomDetails { get; set; } = new List<MedicalSymtomDetail>();
     }
 }
