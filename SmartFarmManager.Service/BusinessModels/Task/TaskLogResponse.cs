@@ -19,6 +19,7 @@ namespace SmartFarmManager.Service.BusinessModels.Task
         public HealthLogInTaskModel? HealthLog { get; set; }
         public WeightAnimalLogModel? WeightLog { get; set; }
         public AnimalSaleLogByTaskModel? SaleLog { get; set; } 
+        public MedicalSymptomLogInTaskModel? MedicalSymptomLog { get; set; }
     }
 
 }

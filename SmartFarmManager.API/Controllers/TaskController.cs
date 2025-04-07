@@ -344,9 +344,9 @@ namespace SmartFarmManager.API.Controllers
         }
 
         [HttpPut("{taskId}/set-treatment")]
-        public async Task<IActionResult> MarkAsTreatmentTask(Guid taskId)
+        public async Task<IActionResult> MarkAsTreatmentTask(Guid taskId, [FromQuery]Guid medicalSymptomId)
         {
-            var result = await _taskService.SetIsTreatmentTaskTrueAsync(taskId);
+            var result = await _taskService.SetIsTreatmentTaskTrueAsync(taskId,medicalSymptomId);
 
             if (!result)
                 return NotFound(ApiResult<object>.Fail("Task not found or update failed."));

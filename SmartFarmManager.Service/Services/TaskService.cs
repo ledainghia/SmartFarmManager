@@ -2251,13 +2251,14 @@ namespace SmartFarmManager.Service.Services
             return totalTasksToCreate;
         }
 
-        public async Task<bool> SetIsTreatmentTaskTrueAsync(Guid taskId)
+        public async Task<bool> SetIsTreatmentTaskTrueAsync(Guid taskId,Guid medicalSymptomId)
         {
             var task = await _unitOfWork.Tasks.FindByCondition(t => t.Id == taskId).FirstOrDefaultAsync();
             if (task == null)
                 return false;
 
             task.IsWarning = true;
+            task.MedicalSymptomId=medicalSymptomId;
             await _unitOfWork.Tasks.UpdateAsync(task);
             await _unitOfWork.CommitAsync();
 
@@ -2313,7 +2314,32 @@ namespace SmartFarmManager.Service.Services
                 {
                     taskLogResponse.VaccineLog = JsonConvert.DeserializeObject<VaccineScheduleLogInTaskModel>(latestLog.Log);
                 }
-                
+
+                if (task.IsWarning && task.MedicalSymptomId.HasValue)
+                {
+                    var medicalSymptom = await _unitOfWork.MedicalSymptom
+                        .FindByCondition(ms => ms.Id == task.MedicalSymptomId.Value)
+                        .Include(ms => ms.FarmingBatch)
+                        .FirstOrDefaultAsync();
+
+                    if (medicalSymptom != null)
+                    {
+                        taskLogResponse.MedicalSymptomLog = new MedicalSymptomLogInTaskModel
+                        {
+                            MedicalSymptomId = medicalSymptom.Id,
+                            FarmingBatchId = medicalSymptom.FarmingBatchId,
+                            FarmingBatchName = medicalSymptom.FarmingBatch.Name, 
+                            Diagnosis = medicalSymptom.Diagnosis,
+                            Status = medicalSymptom.Status,
+                            AffectedQuantity = medicalSymptom.AffectedQuantity,
+                            IsEmergency = medicalSymptom.IsEmergency,
+                            QuantityInCage = medicalSymptom.QuantityInCage,
+                            Notes = medicalSymptom.Notes,
+                            CreateAt = medicalSymptom.CreateAt
+                        };
+                    }
+                }
+
                 return taskLogResponse;
             }
             catch (Exception ex)
