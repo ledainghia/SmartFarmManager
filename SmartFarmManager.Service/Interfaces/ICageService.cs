@@ -19,6 +19,6 @@ namespace SmartFarmManager.Service.Interfaces
         Task<IEnumerable<CageModel>> GetAllCagesAsync(string? search);
         Task<bool> UpdateCageAsync(Guid id, CageModel model);
         Task<bool> DeleteCageAsync(Guid id);
-        Task<List<PrescriptionResponseModel>> GetPrescriptionsWithTasksAsync(Guid cageId);
+        Task<CageIsolationResponseModel> GetPrescriptionsWithTasksAsync();
     }
 }

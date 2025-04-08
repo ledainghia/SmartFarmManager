@@ -195,13 +195,13 @@ namespace SmartFarmManager.API.Controllers
             }
         }
 
-        [HttpGet("{cageId}/prescriptions/tasks")]
-        public async Task<IActionResult> GetTasksForCage(Guid cageId)
+        [HttpGet("prescriptions/tasks")]
+        public async Task<IActionResult> GetTasksForCage()
         {
             try
             {
-                var result = await _cageService.GetPrescriptionsWithTasksAsync(cageId);
-                return Ok(ApiResult<IEnumerable<PrescriptionResponseModel>>.Succeed(result)); ;
+                var result = await _cageService.GetPrescriptionsWithTasksAsync();
+                return Ok(ApiResult<CageIsolationResponseModel>.Succeed(result)); ;
             }
             catch (KeyNotFoundException ex)
             {
