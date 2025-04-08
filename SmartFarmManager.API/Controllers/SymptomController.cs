@@ -71,12 +71,8 @@ namespace SmartFarmManager.API.Controllers
                 return BadRequest(ApiResult<object>.Fail("Invalid request data."));
             }
 
-            var symptomModel = new SymptomModel
-            {
-                SymptomName = request.SymptomName
-            };
 
-            var id = await _symptomService.CreateSymptomAsync(symptomModel);
+            var id = await _symptomService.CreateSymptomAsync(request.SymptomName);
             return CreatedAtAction(nameof(GetSymptomById), new { id }, ApiResult<object>.Succeed(new { id }));
         }
 

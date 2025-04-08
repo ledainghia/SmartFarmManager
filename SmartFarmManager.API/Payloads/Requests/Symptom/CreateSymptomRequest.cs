@@ -2,7 +2,6 @@
 {
     public class CreateSymptomRequest
     {
-        public Guid? Id { get; set; }
         public string SymptomName { get; set; }
     }
 }
