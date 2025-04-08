@@ -6,6 +6,8 @@ using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Cages;
 using SmartFarmManager.Service.BusinessModels.FarmingBatch;
 using SmartFarmManager.Service.BusinessModels.GrowthStage;
+using SmartFarmManager.Service.BusinessModels.Prescription;
+using SmartFarmManager.Service.BusinessModels.Task;
 using SmartFarmManager.Service.BusinessModels.TaskDaily;
 using SmartFarmManager.Service.BusinessModels.VaccineSchedule;
 using SmartFarmManager.Service.Helpers;
@@ -278,7 +280,82 @@ namespace SmartFarmManager.Service.Services
             await _unitOfWork.CommitAsync();
             return true;
         }
-        
+
+        public async Task<List<PrescriptionResponseModel>> GetPrescriptionsWithTasksAsync(Guid cageId)
+        {
+            // Step 1: Retrieve the cage and its tasks
+            var cage = await _unitOfWork.Cages.GetByIdAsync(cageId, c => c.Tasks);
+            if (cage == null) throw new KeyNotFoundException("Cage not found.");
+            if (!cage.IsSolationCage) throw new InvalidOperationException("Cage is not an isolation cage.");
+
+            // Step 2: Filter tasks for the current day
+            var today = DateTimeUtils.GetServerTimeInVietnamTime().Date;
+            var todayTasks = cage.Tasks.Where(t => t.DueDate.HasValue && t.DueDate.Value.Date == today).ToList();
+
+            // Step 3: Extract distinct Prescription IDs
+            var distinctPrescriptionIds = todayTasks
+                .Where(t => t.PrescriptionId.HasValue)
+                .Select(t => t.PrescriptionId.Value)
+                .Distinct()
+                .ToList();
+
+            if (!distinctPrescriptionIds.Any())
+                return new List<PrescriptionResponseModel>();
+
+            // Step 4: Retrieve prescriptions and their associated tasks
+            var prescriptions = await _unitOfWork.Prescription
+                .FindByCondition(p => distinctPrescriptionIds.Contains(p.Id)).Include(p => p.MedicalSymtom).ToListAsync();
+
+            // Step 5: Iterate through prescriptions and filter tasks based on DueDate
+            var response = new List<PrescriptionResponseModel>();
+            foreach (var prescription in prescriptions)
+            {
+                // Retrieve tasks for this prescription with today's DueDate
+                var prescriptionTasks = await _unitOfWork.Tasks
+                    .FindByCondition(t => t.PrescriptionId == prescription.Id && t.DueDate.HasValue && t.DueDate.Value.Date == today)
+                    .OrderBy(t => t.Session)
+                    .ToListAsync();
+                var farmingBatchAnimal = await _unitOfWork.FarmingBatches.FindByCondition(fb => fb.Id == prescription.MedicalSymtom.FarmingBatchId).Include(fb => fb.Cage).FirstOrDefaultAsync();
+
+                response.Add(new PrescriptionResponseModel
+                {
+                    Id = prescription.Id,
+                    MedicalSymptomId = prescription.MedicalSymtomId,
+                    CageId = prescription.CageId,
+                    PrescribedDate = prescription.PrescribedDate,
+                    EndDate = prescription.EndDate,
+                    Notes = prescription.Notes,
+                    QuantityAnimal = prescription.QuantityAnimal,
+                    RemainingQuantity = prescription.RemainingQuantity,
+                    Status = prescription.Status,
+                    DaysToTake = prescription.DaysToTake,
+                    Price = prescription.Price,
+                    cageAnimal = farmingBatchAnimal.Cage.Name,
+                    Tasks = prescriptionTasks.Select(t => new TaskResponseModel
+                    {
+                        Id = t.Id,
+                        TaskTypeId = t.TaskTypeId,
+                        CageId = t.CageId,
+                        AssignedToUserId = t.AssignedToUserId,
+                        CreatedByUserId = t.CreatedByUserId,
+                        TaskName = t.TaskName,
+                        PriorityNum = t.PriorityNum,
+                        Description = t.Description,
+                        DueDate = t.DueDate,
+                        Status = t.Status,
+                        Session = t.Session,
+                        IsWarning = t.IsWarning,
+                        MedicalSymptomId = t.MedicalSymptomId,
+                        CompletedAt = t.CompletedAt,
+                        CreatedAt = t.CreatedAt,
+                        IsTreatmentTask = t.IsTreatmentTask,
+                        PrescriptionId = t.PrescriptionId
+                    }).ToList()
+                });
+            }
+
+            return response;
+        }
 
     }
 }

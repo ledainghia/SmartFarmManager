@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Azure;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using SmartFarmManager.API.Common;
@@ -6,6 +7,7 @@ using SmartFarmManager.API.Payloads.Requests.Cages;
 using SmartFarmManager.API.Payloads.Responses.Cage;
 using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Cages;
+using SmartFarmManager.Service.BusinessModels.Prescription;
 using SmartFarmManager.Service.BusinessModels.Task;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
@@ -190,6 +192,28 @@ namespace SmartFarmManager.API.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, ApiResult<string>.Fail($"An error occurred: {ex.Message}"));
+            }
+        }
+
+        [HttpGet("{cageId}/prescriptions/tasks")]
+        public async Task<IActionResult> GetTasksForCage(Guid cageId)
+        {
+            try
+            {
+                var result = await _cageService.GetPrescriptionsWithTasksAsync(cageId);
+                return Ok(ApiResult<IEnumerable<PrescriptionResponseModel>>.Succeed(result)); ;
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { Message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred.", Details = ex.Message });
             }
         }
     }

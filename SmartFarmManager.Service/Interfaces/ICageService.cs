@@ -1,5 +1,6 @@
 ﻿using SmartFarmManager.Service.BusinessModels;
 using SmartFarmManager.Service.BusinessModels.Cages;
+using SmartFarmManager.Service.BusinessModels.Prescription;
 using SmartFarmManager.Service.Helpers;
 using System;
 using System.Collections.Generic;
@@ -18,5 +19,6 @@ namespace SmartFarmManager.Service.Interfaces
         Task<IEnumerable<CageModel>> GetAllCagesAsync(string? search);
         Task<bool> UpdateCageAsync(Guid id, CageModel model);
         Task<bool> DeleteCageAsync(Guid id);
+        Task<List<PrescriptionResponseModel>> GetPrescriptionsWithTasksAsync(Guid cageId);
     }
 }
