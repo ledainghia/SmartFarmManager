@@ -911,6 +911,7 @@ namespace SmartFarmManager.Service.Services
                     DateAdministered = vs.Date
                 })
                 .ToList();
+            farmingBatch.GrowthStages = farmingBatch.GrowthStages.OrderBy(gs => gs.AgeStart).ToList();
 
             var growthStageReports = farmingBatch.GrowthStages.Select(gs => new GrowthStageReportModel
             {
@@ -950,6 +951,7 @@ namespace SmartFarmManager.Service.Services
                 Symptoms = ms.MedicalSymptomDetails.Select(d => d.Symptom.SymptomName).ToList()
             }).ToList()
             }).ToList();
+            farmingBatch.MedicalSymptoms=farmingBatch.MedicalSymptoms.OrderBy(ms => ms.CreateAt).ToList();
 
             // Chi tiết đơn thuốc trong quá trình nuôi
             var prescriptionDetails = farmingBatch.MedicalSymptoms
