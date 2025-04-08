@@ -46,16 +46,16 @@ namespace SmartFarmManager.Service.Services
             };
         }
 
-        public async Task<Guid> CreateSymptomAsync(SymptomModel symptomModel)
+        public async Task<Guid> CreateSymptomAsync(string symptomName)
         {
-            var symptomExist =  _unitOfWork.Symptoms.FindByCondition(s => s.SymptomName.Equals(symptomModel.SymptomName) && s.IsDeleted == false);
+            var symptomExist = await  _unitOfWork.Symptoms.FindByCondition(s => s.SymptomName==symptomName && s.IsDeleted == false).FirstOrDefaultAsync();
             if(symptomExist != null)
             {
-                throw new ArgumentException($" Symptom with name '{symptomModel.SymptomName}' already exists.");
+                throw new ArgumentException($" Symptom with name '{symptomName}' already exists.");
             }
             var symptom = new DataAccessObject.Models.Symptom
             {
-                SymptomName = symptomModel.SymptomName
+                SymptomName = symptomName
             };
 
             await _unitOfWork.Symptoms.CreateAsync(symptom);

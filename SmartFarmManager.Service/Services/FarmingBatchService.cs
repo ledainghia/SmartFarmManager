@@ -910,7 +910,8 @@ namespace SmartFarmManager.Service.Services
                     TotalPrice = vs.ToltalPrice ?? 0,
                     DateAdministered = vs.Date
                 })
-                .ToList();
+                .OrderByDescending(vd=>vd.DateAdministered).ToList();
+            farmingBatch.GrowthStages = farmingBatch.GrowthStages.OrderBy(gs => gs.AgeStart).ToList();
 
             var growthStageReports = farmingBatch.GrowthStages.Select(gs => new GrowthStageReportModel
             {
@@ -929,7 +930,7 @@ namespace SmartFarmManager.Service.Services
                     Quantity = vs.Quantity,
                     TotalPrice = vs.ToltalPrice ?? 0,
                     DateAdministered = vs.Date
-                }).ToList(),
+                }).OrderByDescending(e=>e.DateAdministered).ToList(),
 
                 Foods = gs.DailyFoodUsageLogs.GroupBy(f => f.Stage.FoodType).Select(group => new FoodUsageDetail
                 {
@@ -950,6 +951,7 @@ namespace SmartFarmManager.Service.Services
                 Symptoms = ms.MedicalSymptomDetails.Select(d => d.Symptom.SymptomName).ToList()
             }).ToList()
             }).ToList();
+            farmingBatch.MedicalSymptoms=farmingBatch.MedicalSymptoms.OrderBy(ms => ms.CreateAt).ToList();
 
             // Chi tiết đơn thuốc trong quá trình nuôi
             var prescriptionDetails = farmingBatch.MedicalSymptoms

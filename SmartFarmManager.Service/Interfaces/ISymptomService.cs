@@ -12,7 +12,7 @@ namespace SmartFarmManager.Service.Interfaces
     {
         Task<List<SymptomModel>> GetAllSymptomsAsync();
         Task<SymptomModel> GetSymptomByIdAsync(Guid id);
-        Task<Guid> CreateSymptomAsync(SymptomModel symptomModel);
+        Task<Guid> CreateSymptomAsync(string symptomName);
         Task<bool> UpdateSymptomAsync(SymptomModel symptomModel);
         Task<bool> DeleteSymptomAsync(Guid id);
         Task<PagedResult<SymptomModel>> GetSymptomsAsync(SymptomFilterModel filter);
