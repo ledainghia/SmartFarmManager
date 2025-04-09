@@ -8,9 +8,10 @@ namespace SmartFarmManager.Service.BusinessModels.Vaccine
 {
     public class VaccineFilterModel
     {
-        public string? Name { get; set; }
+        public string? KeySearch { get; set; }
         public int? AgeStart { get; set; }
         public int? AgeEnd { get; set; }
+        public bool? IsDeleted { get; set; }
         public int PageNumber { get; set; }
         public int PageSize { get; set; }
     }

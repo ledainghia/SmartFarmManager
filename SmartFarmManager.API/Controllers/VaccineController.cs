@@ -185,7 +185,7 @@ namespace SmartFarmManager.API.Controllers
             {
                 var filterModel = new VaccineFilterModel
                 {
-                    Name = filterRequest.Name,
+                    KeySearch = filterRequest.KeySearch,
                     AgeStart = filterRequest.AgeStart,
                     AgeEnd = filterRequest.AgeEnd,
                     PageNumber = filterRequest.PageNumber,
