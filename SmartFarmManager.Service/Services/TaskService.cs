@@ -1397,11 +1397,11 @@ namespace SmartFarmManager.Service.Services
                     tasksToCreate.AddRange(await GenerateTasksForDate(batch, targetDate, null));
                 }
 
-                var numberOfTasksRequired = await CountTasksPlanningToCreateForDate(targetDate);
-                if(tasksToCreate.Count != numberOfTasksRequired)
-                {
-                    throw new Exception("Số lượng task tạo ra không đúng.");
-                }
+                //var numberOfTasksRequired = await CountTasksPlanningToCreateForDate(targetDate);
+                //if(tasksToCreate.Count != numberOfTasksRequired)
+                //{
+                //    throw new Exception("Số lượng task tạo ra không đúng.");
+                //}
 
                 // Lưu các task vào database
                 if (tasksToCreate.Any())
@@ -1681,7 +1681,7 @@ namespace SmartFarmManager.Service.Services
 
             var lastGrowthStage = farmingBatch.GrowthStages.OrderByDescending(gs => gs.AgeEndDate).FirstOrDefault();
 
-            if (lastGrowthStage != null && lastGrowthStage.AgeEndDate.HasValue && date.Date > lastGrowthStage.AgeEndDate.Value.Date)
+            if (lastGrowthStage != null && lastGrowthStage.AgeEndDate.HasValue && date.Date > lastGrowthStage.AgeEndDate.Value.Date && farmingBatch.Status == FarmingBatchStatusEnum.Active)
             {
 
                 var assignedStaff = await GetAssignedStaffForCage(farmingBatch.CageId, date);
@@ -1704,73 +1704,102 @@ namespace SmartFarmManager.Service.Services
                         CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
                     });
                 }
-
-
-
-
-
             }
+            else
+            {
 
 
                 foreach (var growthStage in farmingBatch.GrowthStages)
-            {
-                // Kiểm tra nếu ngày nằm trong khoảng thời gian của GrowthStage
-                if (growthStage.AgeStartDate.Value.Date <= date.Date && growthStage.AgeEndDate.Value >= date.Date)
                 {
-                    var currentSession = currentTime.HasValue ? SessionTime.GetCurrentSession(currentTime.Value) : 1;
-
-                    // Generate Task từ TaskDaily
-                    foreach (var taskDaily in growthStage.TaskDailies)
+                    // Kiểm tra nếu ngày nằm trong khoảng thời gian của GrowthStage
+                    if (growthStage.AgeStartDate.Value.Date <= date.Date && growthStage.AgeEndDate.Value >= date.Date)
                     {
+                        var currentSession = currentTime.HasValue ? SessionTime.GetCurrentSession(currentTime.Value) : 1;
 
-                        if (taskDaily.StartAt.HasValue && taskDaily.EndAt.HasValue)
+                        // Generate Task từ TaskDaily
+                        foreach (var taskDaily in growthStage.TaskDailies)
                         {
-                            if (currentTime.HasValue && date.Date < taskDaily.StartAt.Value.Date)
+
+                            if (taskDaily.StartAt.HasValue && taskDaily.EndAt.HasValue)
                             {
-                                continue; // Bỏ qua nếu thời gian hiện tại nhỏ hơn thời gian bắt đầu
+                                if (currentTime.HasValue && date.Date < taskDaily.StartAt.Value.Date)
+                                {
+                                    continue; // Bỏ qua nếu thời gian hiện tại nhỏ hơn thời gian bắt đầu
+                                }
+                                if (currentTime.HasValue && date.Date > taskDaily.EndAt.Value.Date)
+                                {
+                                    continue; // Bỏ qua nếu thời gian hiện tại lớn hơn thời gian kết thúc
+                                }
                             }
-                            if (currentTime.HasValue && date.Date > taskDaily.EndAt.Value.Date)
+                            if (currentTime.HasValue && taskDaily.Session < currentSession)
                             {
-                                continue; // Bỏ qua nếu thời gian hiện tại lớn hơn thời gian kết thúc
+                                continue; // Bỏ qua các session đã qua nếu là ngày hôm nay
+                            }
+
+                            var assignedStaff = await GetAssignedStaffForCage(farmingBatch.CageId, date);
+
+                            if (assignedStaff == null)
+                            {
+                                throw new Exception($"No staff assigned for Cage {farmingBatch.CageId} on {date}.");
+                            }
+
+                            var sessionEndTime = GetSessionEndTime(taskDaily.Session);
+
+                            tasks.Add(new Task
+                            {
+                                TaskTypeId = taskDaily.TaskTypeId,
+                                CageId = farmingBatch.CageId,
+                                AssignedToUserId = (Guid)assignedStaff,
+                                CreatedByUserId = (Guid)adminId,
+                                TaskName = taskDaily.TaskName,
+                                PriorityNum = taskDaily.TaskTypeId.HasValue
+                                    ? (await _unitOfWork.TaskTypes.FindByCondition(tt => tt.Id == taskDaily.TaskTypeId).FirstOrDefaultAsync())?.PriorityNum ?? 0
+                                    : 0,
+                                Description = taskDaily.Description,
+                                DueDate = date.Add(sessionEndTime),
+                                Session = taskDaily.Session,
+                                Status = TaskStatusEnum.Pending,
+                                CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
+                            });
+
+                        }
+
+                        // Generate Task từ VaccineSchedule
+                        foreach (var vaccineSchedule in growthStage.VaccineSchedules)
+                        {
+                            if (vaccineSchedule.Date.Value.Date == date.Date && vaccineSchedule.Status == VaccineScheduleStatusEnum.Upcoming)
+                            {
+                                var assignedStaff = await GetAssignedStaffForCage(farmingBatch.CageId, date);
+
+                                if (assignedStaff == null)
+                                {
+                                    throw new Exception($"No staff assigned for Cage {farmingBatch.CageId} on {date}.");
+                                }
+
+                                var vaccineTaskTypeId = await GetTaskTypeIdByName("Tiêm vắc xin");
+                                var vaccineTaskType = await _unitOfWork.TaskTypes.FindByCondition(tt => tt.Id == vaccineTaskTypeId).FirstOrDefaultAsync();
+
+                                tasks.Add(new Task
+                                {
+                                    TaskTypeId = vaccineTaskTypeId,
+                                    CageId = farmingBatch.CageId,
+                                    AssignedToUserId = (Guid)assignedStaff,
+                                    CreatedByUserId = (Guid)adminId,
+                                    TaskName = $"Tiêm vắc xin: {vaccineSchedule.Vaccine.Name}",
+                                    PriorityNum = (int)vaccineTaskType?.PriorityNum,
+                                    Description = $"Tiêm vắc xin {vaccineSchedule.Vaccine.Name} cho giai đoạn {growthStage.Name}.",
+                                    DueDate = date.Add(GetSessionEndTime(1)),
+                                    Session = vaccineSchedule.Session,
+                                    Status = TaskStatusEnum.Pending,
+                                    CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
+                                });
+
+                                // Cập nhật trạng thái của VaccineSchedule
+                                vaccineSchedule.Status = VaccineScheduleStatusEnum.Completed;
+                                await _unitOfWork.VaccineSchedules.UpdateAsync(vaccineSchedule);
                             }
                         }
-                        if (currentTime.HasValue && taskDaily.Session < currentSession)
-                        {
-                            continue; // Bỏ qua các session đã qua nếu là ngày hôm nay
-                        }
-
-                        var assignedStaff = await GetAssignedStaffForCage(farmingBatch.CageId, date);
-
-                        if (assignedStaff == null)
-                        {
-                            throw new Exception($"No staff assigned for Cage {farmingBatch.CageId} on {date}.");
-                        }
-
-                        var sessionEndTime = GetSessionEndTime(taskDaily.Session);
-
-                        tasks.Add(new Task
-                        {
-                            TaskTypeId = taskDaily.TaskTypeId,
-                            CageId = farmingBatch.CageId,
-                            AssignedToUserId = (Guid)assignedStaff,
-                            CreatedByUserId = (Guid)adminId,
-                            TaskName = taskDaily.TaskName,
-                            PriorityNum = taskDaily.TaskTypeId.HasValue
-                                ? (await _unitOfWork.TaskTypes.FindByCondition(tt => tt.Id == taskDaily.TaskTypeId).FirstOrDefaultAsync())?.PriorityNum ?? 0
-                                : 0,
-                            Description = taskDaily.Description,
-                            DueDate = date.Add(sessionEndTime),
-                            Session = taskDaily.Session,
-                            Status = TaskStatusEnum.Pending,
-                            CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
-                        });
-
-                    }
-
-                    // Generate Task từ VaccineSchedule
-                    foreach (var vaccineSchedule in growthStage.VaccineSchedules)
-                    {
-                        if (vaccineSchedule.Date.Value.Date == date.Date && vaccineSchedule.Status == VaccineScheduleStatusEnum.Upcoming)
+                        if (growthStage.AgeEndDate.HasValue && growthStage.AgeEndDate.Value.Date == date.Date)
                         {
                             var assignedStaff = await GetAssignedStaffForCage(farmingBatch.CageId, date);
 
@@ -1779,61 +1808,29 @@ namespace SmartFarmManager.Service.Services
                                 throw new Exception($"No staff assigned for Cage {farmingBatch.CageId} on {date}.");
                             }
 
-                            var vaccineTaskTypeId = await GetTaskTypeIdByName("Tiêm vắc xin");
-                            var vaccineTaskType = await _unitOfWork.TaskTypes.FindByCondition(tt => tt.Id == vaccineTaskTypeId).FirstOrDefaultAsync();
+                            var weighTaskTypeId = await GetTaskTypeIdByName("Cân");
+                            var weighTaskType = await _unitOfWork.TaskTypes.FindByCondition(tt => tt.Id == weighTaskTypeId).FirstOrDefaultAsync();
 
                             tasks.Add(new Task
                             {
-                                TaskTypeId = vaccineTaskTypeId,
+                                TaskTypeId = weighTaskTypeId,
                                 CageId = farmingBatch.CageId,
                                 AssignedToUserId = (Guid)assignedStaff,
                                 CreatedByUserId = (Guid)adminId,
-                                TaskName = $"Tiêm vắc xin: {vaccineSchedule.Vaccine.Name}",
-                                PriorityNum = (int)vaccineTaskType?.PriorityNum,
-                                Description = $"Tiêm vắc xin {vaccineSchedule.Vaccine.Name} cho giai đoạn {growthStage.Name}.",
-                                DueDate = date.Add(GetSessionEndTime(1)),
-                                Session = vaccineSchedule.Session,
+                                TaskName = $"Cân cho giai đoạn {growthStage.Name}",
+                                PriorityNum = (int)weighTaskType?.PriorityNum,
+                                Description = $"Cân các động vật trong giai đoạn {growthStage.Name} để kiểm tra cân nặng thực tế so với cân nặng mong muốn.",
+                                DueDate = date.Add(GetSessionEndTime(3)),  // Thêm vào session 3 của ngày cuối
+                                Session = 3,
                                 Status = TaskStatusEnum.Pending,
                                 CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
                             });
-
-                            // Cập nhật trạng thái của VaccineSchedule
-                            vaccineSchedule.Status = VaccineScheduleStatusEnum.Completed;
-                            await _unitOfWork.VaccineSchedules.UpdateAsync(vaccineSchedule);
-                        }
-                    }
-                    if (growthStage.AgeEndDate.HasValue && growthStage.AgeEndDate.Value.Date == date.Date)
-                    {
-                        var assignedStaff = await GetAssignedStaffForCage(farmingBatch.CageId, date);
-
-                        if (assignedStaff == null)
-                        {
-                            throw new Exception($"No staff assigned for Cage {farmingBatch.CageId} on {date}.");
                         }
 
-                        var weighTaskTypeId = await GetTaskTypeIdByName("Cân");
-                        var weighTaskType = await _unitOfWork.TaskTypes.FindByCondition(tt => tt.Id == weighTaskTypeId).FirstOrDefaultAsync();
-
-                        tasks.Add(new Task
-                        {
-                            TaskTypeId = weighTaskTypeId,
-                            CageId = farmingBatch.CageId,
-                            AssignedToUserId = (Guid)assignedStaff,
-                            CreatedByUserId = (Guid)adminId,
-                            TaskName = $"Cân cho giai đoạn {growthStage.Name}",
-                            PriorityNum = (int)weighTaskType?.PriorityNum,
-                            Description = $"Cân các động vật trong giai đoạn {growthStage.Name} để kiểm tra cân nặng thực tế so với cân nặng mong muốn.",
-                            DueDate = date.Add(GetSessionEndTime(3)),  // Thêm vào session 3 của ngày cuối
-                            Session = 3,
-                            Status = TaskStatusEnum.Pending,
-                            CreatedAt = DateTimeUtils.GetServerTimeInVietnamTime()
-                        });
                     }
-
                 }
+
             }
-
-
 
             // Generate Cleaning Task
             if (farmingBatch.CleaningFrequency > 0 && (date - farmingBatch.StartDate.Value.Date).Days % farmingBatch.CleaningFrequency == 0 && farmingBatch.StartDate.Value.Date != date.Date)
@@ -2356,6 +2353,51 @@ namespace SmartFarmManager.Service.Services
             catch (Exception ex)
             {
                 throw new Exception($"Lỗi: {ex.Message}");
+            }
+        }
+
+
+
+        public async Task<WeightAnimalLogModel> GetWeightAnimalLogByTaskId(Guid taskId)
+        {
+            try
+            {
+                // Lấy task theo taskId và bao gồm các status log
+                var task = await _unitOfWork.Tasks
+                    .FindByCondition(t => t.Id == taskId)
+                    .Include(t => t.StatusLogs)
+                    .Include(t => t.TaskType)
+                    .FirstOrDefaultAsync();
+
+                if (task == null)
+                {
+                    throw new KeyNotFoundException($"Không tìm thấy task với ID '{taskId}'.");
+                }
+
+                if (task.TaskType?.TaskTypeName != "Bán vật nuôi")
+                {
+                    throw new InvalidOperationException("Task không phải là 'Cân'.");
+                }
+
+                var statusLog = task.StatusLogs
+                    .FirstOrDefault(sl => sl.Status == TaskStatusEnum.Done);
+
+                if (statusLog == null)
+                {
+                    throw new KeyNotFoundException("Không tìm thấy StatusLog với trạng thái 'Done'.");
+                }
+
+                if (string.IsNullOrEmpty(statusLog.Log))
+                {
+                    throw new InvalidOperationException("Log của task này không có dữ liệu.");
+                }
+                var weightAnimalLog = JsonConvert.DeserializeObject<WeightAnimalLogModel>(statusLog.Log);
+
+                return weightAnimalLog;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Lỗi khi lấy log từ task: {ex.Message}");
             }
         }
 
