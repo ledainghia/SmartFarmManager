@@ -332,6 +332,7 @@ namespace SmartFarmManager.Service.Services
                     DaysToTake = prescription.DaysToTake,
                     Price = prescription.Price,
                     cageAnimal = farmingBatchAnimal.Cage.Name,
+                    Diagnosis = prescription.MedicalSymtom.Diagnosis,
                     Tasks = prescriptionTasks.Select(t => new TaskResponseModel
                     {
                         Id = t.Id,
