@@ -21,6 +21,8 @@ namespace SmartFarmManager.Service.BusinessModels.Prescription
         public int? DaysToTake { get; set; }
         public decimal? Price { get; set; }
         public string? cageAnimal { get; set; }
+        public string? Diagnosis { get; set; }
+
 
         public List<TaskResponseModel> Tasks { get; set; } = new List<TaskResponseModel>();
     }
