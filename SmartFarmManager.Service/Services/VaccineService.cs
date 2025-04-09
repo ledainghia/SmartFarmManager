@@ -97,7 +97,7 @@ namespace SmartFarmManager.Service.Services
                 Method = model.Method,
                 Price = model.Price,
                 AgeStart = model.AgeStart,
-                AgeEnd = model.AgeEnd
+                AgeEnd = model.AgeEnd,
             };
 
             await _unitOfWork.Vaccines.CreateAsync(vaccine);
@@ -158,9 +158,9 @@ namespace SmartFarmManager.Service.Services
         {
             var query = _unitOfWork.Vaccines.FindAll(false).AsQueryable();
 
-            if (!string.IsNullOrEmpty(filter.Name))
+            if (!string.IsNullOrEmpty(filter.KeySearch))
             {
-                query = query.Where(v => v.Name.Contains(filter.Name));
+                query = query.Where(v => v.Name.Contains(filter.KeySearch)||v.AgeStart.ToString().Contains(filter.KeySearch)||v.AgeEnd.ToString().Contains(filter.KeySearch));
             }
 
             if (filter.AgeStart.HasValue)
@@ -171,6 +171,10 @@ namespace SmartFarmManager.Service.Services
             if (filter.AgeEnd.HasValue)
             {
                 query = query.Where(v => v.AgeEnd <= filter.AgeEnd.Value);
+            }
+            if(filter.IsDeleted.HasValue)
+            {
+                query = query.Where(v => v.IsDeleted == filter.IsDeleted.Value);
             }
 
             var totalItems = await query.CountAsync();
@@ -185,7 +189,9 @@ namespace SmartFarmManager.Service.Services
                     Method = v.Method,
                     Price = v.Price,
                     AgeStart = v.AgeStart,
-                    AgeEnd = v.AgeEnd
+                    AgeEnd = v.AgeEnd,
+                    IsDeleted = v.IsDeleted
+
                 })
                 .ToListAsync();
 
@@ -220,7 +226,9 @@ namespace SmartFarmManager.Service.Services
                 Method = vaccine.Method,
                 Price = vaccine.Price,
                 AgeStart = vaccine.AgeStart,
-                AgeEnd = vaccine.AgeEnd
+                AgeEnd = vaccine.AgeEnd,
+                IsDeleted = vaccine.IsDeleted
+
             };
         }
 

@@ -14,5 +14,6 @@ namespace SmartFarmManager.Service.BusinessModels.Vaccine
         public double Price { get; set; }
         public int? AgeStart { get; set; }
         public int? AgeEnd { get; set; }
+        public bool? IsDeleted { get; set; }
     }
 }
