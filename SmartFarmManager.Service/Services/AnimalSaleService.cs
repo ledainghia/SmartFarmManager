@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Repository.Interfaces;
 using SmartFarmManager.Service.BusinessModels.AnimalSale;
+using SmartFarmManager.Service.BusinessModels.Log;
 using SmartFarmManager.Service.Helpers;
 using SmartFarmManager.Service.Interfaces;
 using SmartFarmManager.Service.Shared;
@@ -129,6 +130,7 @@ namespace SmartFarmManager.Service.Services
                 throw new Exception($"Lỗi khi lấy log từ task: {ex.Message}");
             }
         }
+     
 
 
     }
