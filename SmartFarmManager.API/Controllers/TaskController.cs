@@ -4,6 +4,7 @@ using SmartFarmManager.API.Common;
 using SmartFarmManager.API.Payloads.Requests.Task;
 using SmartFarmManager.DataAccessObject.Models;
 using SmartFarmManager.Service.BusinessModels;
+using SmartFarmManager.Service.BusinessModels.Log;
 using SmartFarmManager.Service.BusinessModels.Task;
 using SmartFarmManager.Service.Interfaces;
 
@@ -361,6 +362,20 @@ namespace SmartFarmManager.API.Controllers
             {
                 var logs = await _taskService.GetLogsByTaskIdAsync(taskId);
                 return Ok(ApiResult<TaskLogResponse>.Succeed(logs));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail($"{ex.Message}"));
+            }
+        }
+
+        [HttpGet("{taskId}/weight-animal-log")]
+        public async Task<IActionResult> GetWeightAnimalLogByTaskId(Guid taskId)
+        {
+            try
+            {
+                var logs = await _taskService.GetWeightAnimalLogByTaskId(taskId);
+                return Ok(ApiResult<WeightAnimalLogModel>.Succeed(logs));
             }
             catch (Exception ex)
             {

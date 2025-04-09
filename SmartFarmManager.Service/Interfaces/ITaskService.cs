@@ -1,4 +1,5 @@
 ﻿using SmartFarmManager.Service.BusinessModels;
+using SmartFarmManager.Service.BusinessModels.Log;
 using SmartFarmManager.Service.BusinessModels.Task;
 using SmartFarmManager.Service.BusinessModels.VaccineSchedule;
 using System;
@@ -37,6 +38,7 @@ namespace SmartFarmManager.Service.Interfaces
         Task<bool> RedoVaccineScheduleAsync(RedoVaccineScheduleRequest request);
         Task<bool> SetIsTreatmentTaskTrueAsync(Guid taskId,Guid MedicalSymptomId);
         Task<TaskLogResponse> GetLogsByTaskIdAsync(Guid taskId);
+        Task<WeightAnimalLogModel> GetWeightAnimalLogByTaskId(Guid taskId);
 
 
     }

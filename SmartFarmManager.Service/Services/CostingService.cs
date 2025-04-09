@@ -112,7 +112,6 @@ namespace SmartFarmManager.Service.Services
                 TotalCost = (decimal)waterUsage * waterPrice
             });
 
-            // 3️⃣ Chi phí thức ăn
             var foodLogs = await _unitOfWork.DailyFoodUsageLogs
                 .FindByCondition(f => f.Stage.FarmingBatch.FarmId == farmId && f.LogTime.Value.Date == date)
                 .ToListAsync();
