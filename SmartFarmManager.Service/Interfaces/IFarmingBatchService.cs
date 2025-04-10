@@ -30,6 +30,8 @@ namespace SmartFarmManager.Service.Interfaces
         Task<bool> UpdateStartDateAsync(Guid farmingBatchId, DateTime newStartDate);
         Task<FarmingBatchDetailModel> GetFarmingBatchDetailAsync(Guid farmingBatchId);
 
+        Task<FarmingBatchModel> GetFarmingBatchByCageIdAndueDateTaskAsync(Guid cageId, DateTime dueDateTask);
+
 
     }
 }
