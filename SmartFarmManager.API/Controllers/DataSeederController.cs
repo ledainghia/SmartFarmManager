@@ -1667,7 +1667,7 @@ namespace SmartFarmManager.API.Controllers
                 {
                     Id = Guid.NewGuid(),
                     FarmingBatchId = farmingBatchNewPrescriptionCage3.Id, // farming batch cụ thể
-                    Diagnosis = "Ủ rũ, kém hoạt động, Giảm ăn, bỏ ăn",
+                    Diagnosis = "Nhiễm trùng Adenovirus",
                     Status = MedicalSymptomStatuseEnum.Prescribed,
                     AffectedQuantity = 20,
                     QuantityInCage = 200,
@@ -1723,6 +1723,22 @@ namespace SmartFarmManager.API.Controllers
                 _context.Prescriptions.Add(prescriptionNewPrescriptionCage3);
                 _context.PrescriptionMedications.AddRange(prescriptionMeds);
                 _context.GrowthStages.Update(growStageActiveCage3);
+                _context.SaveChanges();
+
+                var symptomCage3_1 = _context.Symptoms.Where(s => s.SymptomName == "Ủ rũ, kém hoạt động").FirstOrDefault();
+                var medicalSymptomDetail1 = new MedicalSymtomDetail
+                {
+                    MedicalSymptomId = symptomNewPrescriptionCage3.Id,
+                    SymptomId = symptomCage3_1.Id
+                };
+                var symptomCage3_2 = _context.Symptoms.Where(s => s.SymptomName == "Giảm ăn, bỏ ăn").FirstOrDefault();
+                var medicalSymptomDetail2 = new MedicalSymtomDetail
+                {
+                    MedicalSymptomId = symptomNewPrescriptionCage3.Id,
+                    SymptomId = symptomCage3_2.Id
+                };
+                _context.MedicalSymtomDetails.Add(medicalSymptomDetail1);
+                _context.MedicalSymtomDetails.Add(medicalSymptomDetail2);
                 _context.SaveChanges();
 
                 // Bước 1: Lấy danh sách MedicationId
@@ -1936,7 +1952,7 @@ namespace SmartFarmManager.API.Controllers
                 {
                     Id = Guid.NewGuid(),
                     FarmingBatchId = farmingBatchNewPrescriptionCage3.Id, // farming batch cụ thể
-                    Diagnosis = "Ủ rũ, kém hoạt động, Giảm ăn, bỏ ăn",
+                    Diagnosis = "Nhiễm trùng Adenovirus",
                     Status = MedicalSymptomStatuseEnum.Prescribed,
                     AffectedQuantity = 20,
                     QuantityInCage = 200,
@@ -1994,7 +2010,22 @@ namespace SmartFarmManager.API.Controllers
                 _context.GrowthStages.Update(growStageActiveCage3);
                 _context.SaveChanges();
 
-                
+                var symptomCage3_1 = _context.Symptoms.Where(s => s.SymptomName == "Ủ rũ, kém hoạt động").FirstOrDefault();
+                var medicalSymptomDetail1 = new MedicalSymtomDetail
+                {
+                    MedicalSymptomId = symptomNewPrescriptionCage3.Id,
+                    SymptomId = symptomCage3_1.Id
+                };
+                var symptomCage3_2 = _context.Symptoms.Where(s => s.SymptomName == "Giảm ăn, bỏ ăn").FirstOrDefault();
+                var medicalSymptomDetail2 = new MedicalSymtomDetail
+                {
+                    MedicalSymptomId = symptomNewPrescriptionCage3.Id,
+                    SymptomId = symptomCage3_2.Id
+                };
+                _context.MedicalSymtomDetails.Add(medicalSymptomDetail1);
+                _context.MedicalSymtomDetails.Add(medicalSymptomDetail2);
+                _context.SaveChanges();
+
                 return Ok();
             }
             catch (Exception ex)
