@@ -225,6 +225,44 @@ namespace SmartFarmManager.API.Controllers
                 return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred. Please contact support."));
             }
         }
+        [HttpGet("cage/{cageId:guid}/{dueDateTask:Datetime}")]
+        public async Task<IActionResult> GetFarmingBatchByCageIdAndueDateTask(Guid cageId, DateTime dueDateTask)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                return BadRequest(ApiResult<Dictionary<string, string[]>>.Error(new Dictionary<string, string[]>
+            {
+                { "Errors", errors.ToArray() }
+            }));
+            }
+
+            try
+            {
+                var farmingBatch = await _farmingBatchService.GetFarmingBatchByCageIdAndueDateTaskAsync(cageId, dueDateTask);
+
+                if (farmingBatch == null)
+                    return NotFound(ApiResult<string>.Fail("No active farming batch found for the given CageId"));
+
+                return Ok(ApiResult<FarmingBatchModel>.Succeed(farmingBatch));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ApiResult<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResult<string>.Fail("An unexpected error occurred. Please contact support."));
+            }
+        }
         [HttpGet("active-batches-by-user")]
         public async Task<IActionResult> GetActiveBatchesByUser([FromQuery] Guid userId)
         {
