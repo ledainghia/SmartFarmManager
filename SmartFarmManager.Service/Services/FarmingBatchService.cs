@@ -1269,7 +1269,15 @@ namespace SmartFarmManager.Service.Services
                     Id = gs.Id,
                     Name = gs.Name,                 
                     AgeStartDate = gs.AgeStartDate,
-                    AgeEndDate = gs.AgeEndDate
+                    AgeEndDate = gs.AgeEndDate,
+                    WeightAnimal = gs.WeightAnimal,
+                    Quantity = gs.Quantity,
+                    FoodType = gs.FoodType,
+                    Status = gs.Status,
+                    AffectQuantity = gs.AffectedQuantity,
+                    DeadQuantity = gs.DeadQuantity,
+                    RecommendedWeightPerSession = gs.RecommendedWeightPerSession,
+                    WeightBasedOnBodyMass = gs.WeightBasedOnBodyMass,
                 }).ToList(),
                 MedicalSymptoms=farmingBatch.MedicalSymptoms.Select(ms => new MedicalSymptomInFarmingBatchModel
                 {

@@ -494,7 +494,7 @@ namespace SmartFarmManager.Service.Services
             if (request.Status == PrescriptionStatusEnum.Return)
             {
                 if (request.RemainingQuantity == null)
-                    throw new ArgumentException("RemainingQuantity is required for status 'Completed'.");
+                    throw new ArgumentException("RemainingQuantity is required for status 'Return'.");
 
                 if (request.RemainingQuantity > prescription.QuantityAnimal)
                     throw new ArgumentException("Remaining quantity cannot exceed total affected animals.");

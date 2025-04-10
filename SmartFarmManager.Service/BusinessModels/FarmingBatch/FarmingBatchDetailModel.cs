@@ -45,6 +45,14 @@ namespace SmartFarmManager.Service.BusinessModels.FarmingBatch
         public string Name { get; set; }
         public DateTime? AgeStartDate { get; set; }
         public DateTime? AgeEndDate { get; set; }
+        public decimal? WeightAnimal { get; set; }
+        public int? Quantity { get; set; }
+        public string FoodType { get; set; }
+        public string Status { get; set; }
+        public int? AffectQuantity { get; set; }
+        public int? DeadQuantity { get; set; }
+        public decimal? RecommendedWeightPerSession { get; set; }
+        public decimal? WeightBasedOnBodyMass { get; set; }
     }
     public class MedicalSymptomInFarmingBatchModel
     {
