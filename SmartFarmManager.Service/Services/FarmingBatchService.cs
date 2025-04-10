@@ -745,11 +745,20 @@ namespace SmartFarmManager.Service.Services
             (fb.EndDate.HasValue && fb.EndDate.Value.Date.AddDays(1) >= dueDateTask.Date)
         ),
     trackChanges: false
-).FirstOrDefaultAsync();
+).Include(fb => fb.GrowthStages).FirstOrDefaultAsync();
 
             if (farmingBatch == null)
                 return null;
 
+            var growthStage = farmingBatch.GrowthStages.Where(gs => gs.AgeStartDate.HasValue && (gs.AgeStartDate.HasValue || gs.AgeEndDate.HasValue)
+                                                                    && gs.AgeStartDate.Value.Date <= dueDateTask.Date &&
+                                                                    (gs.AgeEndDate.HasValue && gs.AgeEndDate.Value.Date >= dueDateTask.Date)).FirstOrDefault();
+            if (growthStage == null)
+            {
+                growthStage = farmingBatch.GrowthStages.Where(gs => gs.AgeStartDate.HasValue && (gs.AgeStartDate.HasValue || gs.AgeEndDate.HasValue)
+                                                                    && gs.AgeStartDate.Value.Date <= dueDateTask.Date &&
+                                                                    (gs.AgeEndDate.HasValue && gs.AgeEndDate.Value.Date.AddDays(1) >= dueDateTask.Date)).FirstOrDefault();
+            }
             return new FarmingBatchModel
             {
                 Id = farmingBatch.Id,
@@ -759,7 +768,23 @@ namespace SmartFarmManager.Service.Services
                 Status = farmingBatch.Status,
                 CleaningFrequency = farmingBatch.CleaningFrequency,
                 Quantity = farmingBatch.Quantity,
-                DeadQuantity = farmingBatch?.DeadQuantity
+                DeadQuantity = farmingBatch?.DeadQuantity,
+                GrowthStageDetails = new GrowthStageDetailModel
+                {
+                    Id = growthStage.Id,
+                    Name = growthStage.Name,
+                    WeightAnimal = growthStage.WeightAnimal,
+                    Quantity = growthStage.Quantity,
+                    AgeStart = growthStage.AgeStart,
+                    AgeEnd = growthStage.AgeEnd,
+                    AgeStartDate = growthStage.AgeStartDate,
+                    AgeEndDate = growthStage.AgeEndDate,
+                    Status = growthStage.Status,
+                    AffectQuantity = growthStage.AffectedQuantity,
+                    DeadQuantity = growthStage.DeadQuantity,
+                    RecommendedWeightPerSession = growthStage.RecommendedWeightPerSession,
+                    WeightBasedOnBodyMass = growthStage.WeightBasedOnBodyMass,
+                }
             };
         }
 
