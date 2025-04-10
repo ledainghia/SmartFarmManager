@@ -157,7 +157,7 @@ namespace SmartFarmManager.Service.Services
                 ValidateIssuer = false,
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(key),
-                ValidateLifetime = true // Ignore expiration for validation
+                ValidateLifetime = false // Ignore expiration for validation
             };
 
             try
