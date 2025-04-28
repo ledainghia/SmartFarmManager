@@ -19,24 +19,12 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Species = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Notes = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true)
+                    Notes = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK__AnimalTe__F87ADD27AE731EF5", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ControlBoardTypes",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newid())"),
-                    Name = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__ControlB__8CDFB1CCB09566BA", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -45,7 +33,8 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newid())"),
                     Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false)
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -57,6 +46,7 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newid())"),
+                    ExternalId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     FarmCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Name = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
                     Address = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
@@ -75,19 +65,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "JobTypes",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newid())"),
-                    Name = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__JobTypes__E1F462AD8039AD4A", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Medications",
                 columns: table => new
                 {
@@ -98,31 +75,12 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     DoseWeight = table.Column<int>(type: "int", nullable: true),
                     Weight = table.Column<int>(type: "int", nullable: true),
                     DoseQuantity = table.Column<int>(type: "int", nullable: true),
-                    PricePerDose = table.Column<decimal>(type: "decimal(10,2)", nullable: true)
+                    PricePerDose = table.Column<decimal>(type: "decimal(10,2)", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK__Medicati__62EC1AFA81A8C124", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "MqttConfigs",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newid())"),
-                    Port = table.Column<int>(type: "int", nullable: false),
-                    BrokerAddress = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    QoS = table.Column<int>(type: "int", nullable: false),
-                    KeepAlive = table.Column<int>(type: "int", nullable: false),
-                    CleanSession = table.Column<bool>(type: "bit", nullable: false),
-                    UserName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Password = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    WillMessage = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
-                    UseTls = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__MqttConf__065618CFF49F21BB", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -135,22 +93,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK__Notifica__54F5A3018831B14F", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Pricings",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newid())"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PricePerUnit = table.Column<int>(type: "int", nullable: false),
-                    Unit = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__Pricings__EC306B12D14952C7", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -179,21 +121,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Schedules",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newid())"),
-                    ScheduleCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    TimeOn = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: ""),
-                    TimeOff = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: "")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__Schedule__9C8A5B49CADB8578", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "SensorTypes",
                 columns: table => new
                 {
@@ -210,26 +137,12 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "SubscriptionPlans",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newid())"),
-                    PlanName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    CostPerUser = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
-                    CostPerVet = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
-                    MonthlyBaseCost = table.Column<decimal>(type: "decimal(10,2)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__Subscrip__755C22B7124150BB", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Symptoms",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newid())"),
-                    SymptomName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false)
+                    SymptomName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -257,8 +170,11 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     Method = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Price = table.Column<double>(type: "float", nullable: false),
+                    PricePerDose = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
+                    TotalDose = table.Column<int>(type: "int", nullable: true),
                     AgeStart = table.Column<int>(type: "int", nullable: true),
-                    AgeEnd = table.Column<int>(type: "int", nullable: true)
+                    AgeEnd = table.Column<int>(type: "int", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -331,7 +247,8 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newid())"),
                     DiseaseId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Notes = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    RecommendDay = table.Column<int>(type: "int", nullable: false)
+                    RecommendDay = table.Column<int>(type: "int", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -349,14 +266,15 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newid())"),
+                    ExternalId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     PenCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: ""),
                     FarmId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    Area = table.Column<double>(type: "float", nullable: false),
+                    Area = table.Column<double>(type: "float", nullable: true),
                     Location = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    Capacity = table.Column<int>(type: "int", nullable: false),
+                    Capacity = table.Column<int>(type: "int", nullable: true),
                     BoardCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    BoardStatus = table.Column<bool>(type: "bit", nullable: false),
+                    BoardStatus = table.Column<bool>(type: "bit", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
@@ -476,7 +394,8 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     FoodType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     Quantity = table.Column<decimal>(type: "decimal(10,2)", nullable: true),
                     CostPerKg = table.Column<decimal>(type: "decimal(10,2)", nullable: true),
-                    CurrentStock = table.Column<decimal>(type: "decimal(10,2)", nullable: true)
+                    CurrentStock = table.Column<decimal>(type: "decimal(10,2)", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -630,63 +549,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ControlBoards",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newid())"),
-                    CageId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ControlBoardTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ControlBoardCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    PinCode = table.Column<int>(type: "int", nullable: false),
-                    Status = table.Column<bool>(type: "bit", nullable: false),
-                    State = table.Column<bool>(type: "bit", nullable: false),
-                    CommandOn = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: ""),
-                    CommandOff = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: ""),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__ControlB__AB951CC9E119D9D0", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK__ControlBo__CageI__634EBE90",
-                        column: x => x.CageId,
-                        principalTable: "Cages",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK__ControlBo__Contr__6442E2C9",
-                        column: x => x.ControlBoardTypeId,
-                        principalTable: "ControlBoardTypes",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "ControlDevices",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newid())"),
-                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Type = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    ControlCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Command = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CageId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ControlDevices", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ControlDevices_Cages_CageId",
-                        column: x => x.CageId,
-                        principalTable: "Cages",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "FarmingBatchs",
                 columns: table => new
                 {
@@ -725,6 +587,7 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newid())"),
+                    ExternalId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     SensorTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CageId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SensorCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
@@ -822,44 +685,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "FarmSubscriptions",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newid())"),
-                    FarmId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    PlanId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    NumberOfUsers = table.Column<int>(type: "int", nullable: false),
-                    RequiresVet = table.Column<bool>(type: "bit", nullable: true, defaultValue: false),
-                    StartDate = table.Column<DateTime>(type: "datetime", nullable: true, defaultValueSql: "(getdate())"),
-                    EndDate = table.Column<DateTime>(type: "datetime", nullable: true),
-                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    TotalCost = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__FarmSubs__9A2B249D65D4C549", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK__FarmSubsc__FarmI__49C3F6B7",
-                        column: x => x.FarmId,
-                        principalTable: "Farms",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK__FarmSubsc__PlanI__4AB81AF0",
-                        column: x => x.PlanId,
-                        principalTable: "SubscriptionPlans",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK__FarmSubsc__UserI__4BAC3F29",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
                 name: "LeaveRequest",
                 columns: table => new
                 {
@@ -931,6 +756,7 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Session = table.Column<int>(type: "int", nullable: false),
                     IsWarning = table.Column<bool>(type: "bit", nullable: false),
+                    MedicalSymptomId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CompletedAt = table.Column<DateTime>(type: "datetime", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime", nullable: true, defaultValueSql: "(getdate())"),
                     IsTreatmentTask = table.Column<bool>(type: "bit", nullable: false),
@@ -967,7 +793,8 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     UnitPrice = table.Column<double>(type: "float", nullable: true),
                     Quantity = table.Column<int>(type: "int", nullable: false),
                     StaffId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SaleTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    SaleTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Weight = table.Column<decimal>(type: "decimal(10,2)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -983,6 +810,27 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                         column: x => x.FarmingBatchId,
                         principalTable: "FarmingBatchs",
                         principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DeadPoultryLogs",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newid())"),
+                    FarmingBatchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    Note = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DeadPoultryLogs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DeadPoultryLogs_FarmingBatchs_FarmingBatchId",
+                        column: x => x.FarmingBatchId,
+                        principalTable: "FarmingBatchs",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -1051,52 +899,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Jobs",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newid())"),
-                    ScheduleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ControlBoardId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SensorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    JobTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    JobCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
-                    StateSmaller = table.Column<bool>(type: "bit", nullable: false),
-                    ValueSmaller = table.Column<double>(type: "float", nullable: true),
-                    ValueLarger = table.Column<double>(type: "float", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    DeletedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__Jobs__056690C2461B319B", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK__Jobs__ControlBoa__03BB8E22",
-                        column: x => x.ControlBoardId,
-                        principalTable: "ControlBoards",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK__Jobs__JobTypeId__05A3D694",
-                        column: x => x.JobTypeId,
-                        principalTable: "JobTypes",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK__Jobs__ScheduleId__02C769E9",
-                        column: x => x.ScheduleId,
-                        principalTable: "Schedules",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK__Jobs__SensorId__04AFB25B",
-                        column: x => x.SensorId,
-                        principalTable: "Sensors",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
                 name: "SensorDataLogs",
                 columns: table => new
                 {
@@ -1118,35 +920,14 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Transactions",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newid())"),
-                    SubscriptionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TransactionDate = table.Column<DateTime>(type: "datetime", nullable: true, defaultValueSql: "(getdate())"),
-                    Amount = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    PaymentMethod = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Remarks = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__Transact__55433A6BAFE66D2B", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK__Transacti__Subsc__5165187F",
-                        column: x => x.SubscriptionId,
-                        principalTable: "FarmSubscriptions",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
                 name: "StatusLogs",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newid())"),
                     TaskId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime", nullable: true, defaultValueSql: "(getdate())"),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Log = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1328,27 +1109,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "JobLogs",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "(newid())"),
-                    JobId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SensorValue = table.Column<double>(type: "float", nullable: false),
-                    Command = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK__JobLogs__2B515D3E32FD6CEE", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK__JobLogs__JobId__0E391C95",
-                        column: x => x.JobId,
-                        principalTable: "Jobs",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
                 name: "VaccineScheduleLogs",
                 columns: table => new
                 {
@@ -1444,21 +1204,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 column: "StaffFarmId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ControlBoards_CageId",
-                table: "ControlBoards",
-                column: "CageId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ControlBoards_ControlBoardTypeId",
-                table: "ControlBoards",
-                column: "ControlBoardTypeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ControlDevices_CageId",
-                table: "ControlDevices",
-                column: "CageId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_CostingReport_FarmId",
                 table: "CostingReport",
                 column: "FarmId");
@@ -1467,6 +1212,11 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 name: "IX_DailyFoodUsageLogs_StageId",
                 table: "DailyFoodUsageLogs",
                 column: "StageId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DeadPoultryLogs_FarmingBatchId",
+                table: "DeadPoultryLogs",
+                column: "FarmingBatchId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_EggHarvests_GrowthStageId",
@@ -1510,21 +1260,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 column: "TemplateId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_FarmSubscriptions_FarmId",
-                table: "FarmSubscriptions",
-                column: "FarmId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_FarmSubscriptions_PlanId",
-                table: "FarmSubscriptions",
-                column: "PlanId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_FarmSubscriptions_UserId",
-                table: "FarmSubscriptions",
-                column: "UserId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_FoodStack_FarmId",
                 table: "FoodStack",
                 column: "FarmId");
@@ -1548,31 +1283,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 name: "IX_HealthLogs_PrescriptionId",
                 table: "HealthLogs",
                 column: "PrescriptionId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_JobLogs_JobId",
-                table: "JobLogs",
-                column: "JobId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Jobs_ControlBoardId",
-                table: "Jobs",
-                column: "ControlBoardId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Jobs_JobTypeId",
-                table: "Jobs",
-                column: "JobTypeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Jobs_ScheduleId",
-                table: "Jobs",
-                column: "ScheduleId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Jobs_SensorId",
-                table: "Jobs",
-                column: "SensorId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_LeaveRequest_StaffFarmId",
@@ -1718,11 +1428,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Transactions_SubscriptionId",
-                table: "Transactions",
-                column: "SubscriptionId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Users_RoleId",
                 table: "Users",
                 column: "RoleId");
@@ -1776,13 +1481,13 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 name: "CageStaffs");
 
             migrationBuilder.DropTable(
-                name: "ControlDevices");
-
-            migrationBuilder.DropTable(
                 name: "CostingReport");
 
             migrationBuilder.DropTable(
                 name: "DailyFoodUsageLogs");
+
+            migrationBuilder.DropTable(
+                name: "DeadPoultryLogs");
 
             migrationBuilder.DropTable(
                 name: "EggHarvests");
@@ -1806,9 +1511,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 name: "HealthLogs");
 
             migrationBuilder.DropTable(
-                name: "JobLogs");
-
-            migrationBuilder.DropTable(
                 name: "LeaveRequest");
 
             migrationBuilder.DropTable(
@@ -1818,9 +1520,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 name: "MedicalSymtomDetails");
 
             migrationBuilder.DropTable(
-                name: "MqttConfigs");
-
-            migrationBuilder.DropTable(
                 name: "Notifications");
 
             migrationBuilder.DropTable(
@@ -1828,9 +1527,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
 
             migrationBuilder.DropTable(
                 name: "PrescriptionMedications");
-
-            migrationBuilder.DropTable(
-                name: "Pricings");
 
             migrationBuilder.DropTable(
                 name: "SensorDataLogs");
@@ -1851,9 +1547,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 name: "TaskDailyTemplate");
 
             migrationBuilder.DropTable(
-                name: "Transactions");
-
-            migrationBuilder.DropTable(
                 name: "VaccineScheduleLogs");
 
             migrationBuilder.DropTable(
@@ -1869,9 +1562,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 name: "SaleTypes");
 
             migrationBuilder.DropTable(
-                name: "Jobs");
-
-            migrationBuilder.DropTable(
                 name: "Symptoms");
 
             migrationBuilder.DropTable(
@@ -1879,6 +1569,9 @@ namespace SmartFarmManager.DataAccessObject.Migrations
 
             migrationBuilder.DropTable(
                 name: "Prescriptions");
+
+            migrationBuilder.DropTable(
+                name: "Sensors");
 
             migrationBuilder.DropTable(
                 name: "Medications");
@@ -1896,46 +1589,25 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 name: "GrowthStageTemplates");
 
             migrationBuilder.DropTable(
-                name: "FarmSubscriptions");
-
-            migrationBuilder.DropTable(
                 name: "VaccineSchedules");
-
-            migrationBuilder.DropTable(
-                name: "ControlBoards");
-
-            migrationBuilder.DropTable(
-                name: "JobTypes");
-
-            migrationBuilder.DropTable(
-                name: "Schedules");
-
-            migrationBuilder.DropTable(
-                name: "Sensors");
 
             migrationBuilder.DropTable(
                 name: "MedicalSymptoms");
 
             migrationBuilder.DropTable(
-                name: "TaskTypes");
-
-            migrationBuilder.DropTable(
-                name: "SubscriptionPlans");
+                name: "SensorTypes");
 
             migrationBuilder.DropTable(
                 name: "Users");
+
+            migrationBuilder.DropTable(
+                name: "TaskTypes");
 
             migrationBuilder.DropTable(
                 name: "GrowthStages");
 
             migrationBuilder.DropTable(
                 name: "Vaccines");
-
-            migrationBuilder.DropTable(
-                name: "ControlBoardTypes");
-
-            migrationBuilder.DropTable(
-                name: "SensorTypes");
 
             migrationBuilder.DropTable(
                 name: "Diseases");

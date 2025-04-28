@@ -12,8 +12,8 @@ using SmartFarmManager.DataAccessObject.Models;
 namespace SmartFarmManager.DataAccessObject.Migrations
 {
     [DbContext(typeof(SmartFarmContext))]
-    [Migration("20250407025122_addFieldForStatusLogAndVaccine")]
-    partial class addFieldForStatusLogAndVaccine
+    [Migration("20250428135717_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -54,6 +54,9 @@ namespace SmartFarmManager.DataAccessObject.Migrations
 
                     b.Property<double?>("UnitPrice")
                         .HasColumnType("float");
+
+                    b.Property<decimal?>("Weight")
+                        .HasColumnType("decimal(10, 2)");
 
                     b.HasKey("Id")
                         .HasName("PK__AnimalSa__1EE3C3FF9307295C");
@@ -105,7 +108,7 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("(newid())");
 
-                    b.Property<double>("Area")
+                    b.Property<double?>("Area")
                         .HasColumnType("float");
 
                     b.Property<string>("BoardCode")
@@ -113,7 +116,7 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<bool>("BoardStatus")
+                    b.Property<bool?>("BoardStatus")
                         .HasColumnType("bit");
 
                     b.Property<string>("CameraUrl")
@@ -123,7 +126,7 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                         .HasColumnType("nvarchar(255)")
                         .HasDefaultValue("");
 
-                    b.Property<int>("Capacity")
+                    b.Property<int?>("Capacity")
                         .HasColumnType("int");
 
                     b.Property<int>("ChannelId")
@@ -134,6 +137,9 @@ namespace SmartFarmManager.DataAccessObject.Migrations
 
                     b.Property<DateTime?>("DeletedDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ExternalId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("FarmId")
                         .HasColumnType("uniqueidentifier");
@@ -197,136 +203,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     b.HasIndex("StaffFarmId");
 
                     b.ToTable("CageStaffs");
-                });
-
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.ControlBoard", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("(newid())");
-
-                    b.Property<Guid>("CageId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("CommandOff")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasDefaultValue("");
-
-                    b.Property<string>("CommandOn")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasDefaultValue("");
-
-                    b.Property<string>("ControlBoardCode")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<Guid>("ControlBoardTypeId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("DeletedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("ModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<int>("PinCode")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("State")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("Status")
-                        .HasColumnType("bit");
-
-                    b.HasKey("Id")
-                        .HasName("PK__ControlB__AB951CC9E119D9D0");
-
-                    b.HasIndex("CageId");
-
-                    b.HasIndex("ControlBoardTypeId");
-
-                    b.ToTable("ControlBoards");
-                });
-
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.ControlBoardType", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("(newid())");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.HasKey("Id")
-                        .HasName("PK__ControlB__8CDFB1CCB09566BA");
-
-                    b.ToTable("ControlBoardTypes");
-                });
-
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.ControlDevice", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("(newid())");
-
-                    b.Property<Guid>("CageId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Command")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("ControlCode")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CageId");
-
-                    b.ToTable("ControlDevices");
                 });
 
             modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.CostingReport", b =>
@@ -409,6 +285,33 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     b.HasIndex("StageId");
 
                     b.ToTable("DailyFoodUsageLogs");
+                });
+
+            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.DeadPoultryLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("(newid())");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("FarmingBatchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FarmingBatchId");
+
+                    b.ToTable("DeadPoultryLogs");
                 });
 
             modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.Disease", b =>
@@ -519,6 +422,9 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     b.Property<string>("Email")
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
+
+                    b.Property<Guid?>("ExternalId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("FarmCode")
                         .HasMaxLength(50)
@@ -661,66 +567,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                         .IsUnique();
 
                     b.ToTable("FarmConfigs");
-                });
-
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.FarmSubscription", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("(newid())");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("DeletedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime");
-
-                    b.Property<Guid>("FarmId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("NumberOfUsers")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("PlanId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool?>("RequiresVet")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
-                    b.Property<DateTime?>("StartDate")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime")
-                        .HasDefaultValueSql("(getdate())");
-
-                    b.Property<string>("Status")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<decimal>("TotalCost")
-                        .HasColumnType("decimal(10, 2)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id")
-                        .HasName("PK__FarmSubs__9A2B249D65D4C549");
-
-                    b.HasIndex("FarmId");
-
-                    b.HasIndex("PlanId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("FarmSubscriptions");
                 });
 
             modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.FarmingBatch", b =>
@@ -978,130 +824,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     b.ToTable("HealthLogs");
                 });
 
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.Job", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("(newid())");
-
-                    b.Property<Guid>("ControlBoardId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("DeletedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("JobCode")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<Guid>("JobTypeId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("ModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<Guid>("ScheduleId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("SensorId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("StateSmaller")
-                        .HasColumnType("bit");
-
-                    b.Property<double?>("ValueLarger")
-                        .HasColumnType("float");
-
-                    b.Property<double?>("ValueSmaller")
-                        .HasColumnType("float");
-
-                    b.HasKey("Id")
-                        .HasName("PK__Jobs__056690C2461B319B");
-
-                    b.HasIndex("ControlBoardId");
-
-                    b.HasIndex("JobTypeId");
-
-                    b.HasIndex("ScheduleId");
-
-                    b.HasIndex("SensorId");
-
-                    b.ToTable("Jobs");
-                });
-
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.JobLog", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("(newid())");
-
-                    b.Property<string>("Command")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("JobId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("ModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<double>("SensorValue")
-                        .HasColumnType("float");
-
-                    b.HasKey("Id")
-                        .HasName("PK__JobLogs__2B515D3E32FD6CEE");
-
-                    b.HasIndex("JobId");
-
-                    b.ToTable("JobLogs");
-                });
-
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.JobType", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("(newid())");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.HasKey("Id")
-                        .HasName("PK__JobTypes__E1F462AD8039AD4A");
-
-                    b.ToTable("JobTypes");
-                });
-
             modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.LeaveRequest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1299,50 +1021,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     b.ToTable("Medications");
                 });
 
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.MqttConfig", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("(newid())");
-
-                    b.Property<string>("BrokerAddress")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<bool>("CleanSession")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("KeepAlive")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Password")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("Port")
-                        .HasColumnType("int");
-
-                    b.Property<int>("QoS")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("UseTls")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("UserName")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("WillMessage")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.HasKey("Id")
-                        .HasName("PK__MqttConf__065618CFF49F21BB");
-
-                    b.ToTable("MqttConfigs");
-                });
-
             modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.Notification", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1528,36 +1206,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     b.ToTable("PrescriptionMedications");
                 });
 
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.Pricing", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("(newid())");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("ModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("PricePerUnit")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Unit")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id")
-                        .HasName("PK__Pricings__EC306B12D14952C7");
-
-                    b.ToTable("Pricings");
-                });
-
             modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.Role", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1600,43 +1248,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     b.ToTable("SaleTypes");
                 });
 
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.Schedule", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("(newid())");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("ScheduleCode")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("TimeOff")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasDefaultValue("");
-
-                    b.Property<string>("TimeOn")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasDefaultValue("");
-
-                    b.HasKey("Id")
-                        .HasName("PK__Schedule__9C8A5B49CADB8578");
-
-                    b.ToTable("Schedules");
-                });
-
             modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.Sensor", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1652,6 +1263,9 @@ namespace SmartFarmManager.DataAccessObject.Migrations
 
                     b.Property<DateTime?>("DeletedDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ExternalId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -1884,33 +1498,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     b.ToTable("StockLogs");
                 });
 
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.SubscriptionPlan", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("(newid())");
-
-                    b.Property<decimal>("CostPerUser")
-                        .HasColumnType("decimal(10, 2)");
-
-                    b.Property<decimal>("CostPerVet")
-                        .HasColumnType("decimal(10, 2)");
-
-                    b.Property<decimal>("MonthlyBaseCost")
-                        .HasColumnType("decimal(10, 2)");
-
-                    b.Property<string>("PlanName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id")
-                        .HasName("PK__Subscrip__755C22B7124150BB");
-
-                    b.ToTable("SubscriptionPlans");
-                });
-
             modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.Symptom", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1967,6 +1554,9 @@ namespace SmartFarmManager.DataAccessObject.Migrations
 
                     b.Property<bool>("IsWarning")
                         .HasColumnType("bit");
+
+                    b.Property<Guid?>("MedicalSymptomId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("PrescriptionId")
                         .HasColumnType("uniqueidentifier");
@@ -2093,44 +1683,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                         .IsUnique();
 
                     b.ToTable("TaskTypes");
-                });
-
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.Transaction", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("(newid())");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(10, 2)");
-
-                    b.Property<string>("PaymentMethod")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Remarks")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Status")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<Guid>("SubscriptionId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("TransactionDate")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime")
-                        .HasDefaultValueSql("(getdate())");
-
-                    b.HasKey("Id")
-                        .HasName("PK__Transact__55433A6BAFE66D2B");
-
-                    b.HasIndex("SubscriptionId");
-
-                    b.ToTable("Transactions");
                 });
 
             modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.User", b =>
@@ -2461,36 +2013,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     b.Navigation("StaffFarm");
                 });
 
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.ControlBoard", b =>
-                {
-                    b.HasOne("SmartFarmManager.DataAccessObject.Models.Cage", "Cage")
-                        .WithMany("ControlBoards")
-                        .HasForeignKey("CageId")
-                        .IsRequired()
-                        .HasConstraintName("FK__ControlBo__CageI__634EBE90");
-
-                    b.HasOne("SmartFarmManager.DataAccessObject.Models.ControlBoardType", "ControlBoardType")
-                        .WithMany("ControlBoards")
-                        .HasForeignKey("ControlBoardTypeId")
-                        .IsRequired()
-                        .HasConstraintName("FK__ControlBo__Contr__6442E2C9");
-
-                    b.Navigation("Cage");
-
-                    b.Navigation("ControlBoardType");
-                });
-
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.ControlDevice", b =>
-                {
-                    b.HasOne("SmartFarmManager.DataAccessObject.Models.Cage", "Cage")
-                        .WithMany("ControlDevices")
-                        .HasForeignKey("CageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Cage");
-                });
-
             modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.CostingReport", b =>
                 {
                     b.HasOne("SmartFarmManager.DataAccessObject.Models.Farm", "Farm")
@@ -2511,6 +2033,17 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                         .HasConstraintName("FK__DailyFood__Stage__2180FB33");
 
                     b.Navigation("Stage");
+                });
+
+            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.DeadPoultryLog", b =>
+                {
+                    b.HasOne("SmartFarmManager.DataAccessObject.Models.FarmingBatch", "FarmingBatch")
+                        .WithMany("DeadPoultryLogs")
+                        .HasForeignKey("FarmingBatchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FarmingBatch");
                 });
 
             modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.EggHarvest", b =>
@@ -2574,33 +2107,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                         .IsRequired();
 
                     b.Navigation("Farm");
-                });
-
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.FarmSubscription", b =>
-                {
-                    b.HasOne("SmartFarmManager.DataAccessObject.Models.Farm", "Farm")
-                        .WithMany("FarmSubscriptions")
-                        .HasForeignKey("FarmId")
-                        .IsRequired()
-                        .HasConstraintName("FK__FarmSubsc__FarmI__49C3F6B7");
-
-                    b.HasOne("SmartFarmManager.DataAccessObject.Models.SubscriptionPlan", "Plan")
-                        .WithMany("FarmSubscriptions")
-                        .HasForeignKey("PlanId")
-                        .IsRequired()
-                        .HasConstraintName("FK__FarmSubsc__PlanI__4AB81AF0");
-
-                    b.HasOne("SmartFarmManager.DataAccessObject.Models.User", "User")
-                        .WithMany("FarmSubscriptions")
-                        .HasForeignKey("UserId")
-                        .IsRequired()
-                        .HasConstraintName("FK__FarmSubsc__UserI__4BAC3F29");
-
-                    b.Navigation("Farm");
-
-                    b.Navigation("Plan");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.FarmingBatch", b =>
@@ -2675,52 +2181,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                         .HasConstraintName("FK__HealthLog__Presc__4A8310C6");
 
                     b.Navigation("Prescription");
-                });
-
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.Job", b =>
-                {
-                    b.HasOne("SmartFarmManager.DataAccessObject.Models.ControlBoard", "ControlBoard")
-                        .WithMany("Jobs")
-                        .HasForeignKey("ControlBoardId")
-                        .IsRequired()
-                        .HasConstraintName("FK__Jobs__ControlBoa__03BB8E22");
-
-                    b.HasOne("SmartFarmManager.DataAccessObject.Models.JobType", "JobType")
-                        .WithMany("Jobs")
-                        .HasForeignKey("JobTypeId")
-                        .IsRequired()
-                        .HasConstraintName("FK__Jobs__JobTypeId__05A3D694");
-
-                    b.HasOne("SmartFarmManager.DataAccessObject.Models.Schedule", "Schedule")
-                        .WithMany("Jobs")
-                        .HasForeignKey("ScheduleId")
-                        .IsRequired()
-                        .HasConstraintName("FK__Jobs__ScheduleId__02C769E9");
-
-                    b.HasOne("SmartFarmManager.DataAccessObject.Models.Sensor", "Sensor")
-                        .WithMany("Jobs")
-                        .HasForeignKey("SensorId")
-                        .IsRequired()
-                        .HasConstraintName("FK__Jobs__SensorId__04AFB25B");
-
-                    b.Navigation("ControlBoard");
-
-                    b.Navigation("JobType");
-
-                    b.Navigation("Schedule");
-
-                    b.Navigation("Sensor");
-                });
-
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.JobLog", b =>
-                {
-                    b.HasOne("SmartFarmManager.DataAccessObject.Models.Job", "Job")
-                        .WithMany("JobLogs")
-                        .HasForeignKey("JobId")
-                        .IsRequired()
-                        .HasConstraintName("FK__JobLogs__JobId__0E391C95");
-
-                    b.Navigation("Job");
                 });
 
             modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.LeaveRequest", b =>
@@ -2971,17 +2431,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     b.Navigation("GrowthStageTemplate");
                 });
 
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.Transaction", b =>
-                {
-                    b.HasOne("SmartFarmManager.DataAccessObject.Models.FarmSubscription", "Subscription")
-                        .WithMany("Transactions")
-                        .HasForeignKey("SubscriptionId")
-                        .IsRequired()
-                        .HasConstraintName("FK__Transacti__Subsc__5165187F");
-
-                    b.Navigation("Subscription");
-                });
-
             modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.User", b =>
                 {
                     b.HasOne("SmartFarmManager.DataAccessObject.Models.Role", "Role")
@@ -3058,25 +2507,11 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                 {
                     b.Navigation("CageStaffs");
 
-                    b.Navigation("ControlBoards");
-
-                    b.Navigation("ControlDevices");
-
                     b.Navigation("FarmingBatches");
 
                     b.Navigation("Sensors");
 
                     b.Navigation("Tasks");
-                });
-
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.ControlBoard", b =>
-                {
-                    b.Navigation("Jobs");
-                });
-
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.ControlBoardType", b =>
-                {
-                    b.Navigation("ControlBoards");
                 });
 
             modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.Disease", b =>
@@ -3100,8 +2535,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
 
                     b.Navigation("FarmConfig");
 
-                    b.Navigation("FarmSubscriptions");
-
                     b.Navigation("FoodStacks");
 
                     b.Navigation("MasterData");
@@ -3109,14 +2542,11 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     b.Navigation("WaterLogs");
                 });
 
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.FarmSubscription", b =>
-                {
-                    b.Navigation("Transactions");
-                });
-
             modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.FarmingBatch", b =>
                 {
                     b.Navigation("AnimalSales");
+
+                    b.Navigation("DeadPoultryLogs");
 
                     b.Navigation("GrowthStages");
 
@@ -3144,16 +2574,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     b.Navigation("FoodTemplates");
 
                     b.Navigation("TaskDailyTemplates");
-                });
-
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.Job", b =>
-                {
-                    b.Navigation("JobLogs");
-                });
-
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.JobType", b =>
-                {
-                    b.Navigation("Jobs");
                 });
 
             modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.MedicalSymptom", b =>
@@ -3194,15 +2614,8 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     b.Navigation("AnimalSales");
                 });
 
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.Schedule", b =>
-                {
-                    b.Navigation("Jobs");
-                });
-
             modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.Sensor", b =>
                 {
-                    b.Navigation("Jobs");
-
                     b.Navigation("SensorDataLogs");
                 });
 
@@ -3214,11 +2627,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
             modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.StandardPrescription", b =>
                 {
                     b.Navigation("StandardPrescriptionMedications");
-                });
-
-            modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.SubscriptionPlan", b =>
-                {
-                    b.Navigation("FarmSubscriptions");
                 });
 
             modelBuilder.Entity("SmartFarmManager.DataAccessObject.Models.Symptom", b =>
@@ -3241,8 +2649,6 @@ namespace SmartFarmManager.DataAccessObject.Migrations
                     b.Navigation("CageStaffs");
 
                     b.Navigation("FarmAdmins");
-
-                    b.Navigation("FarmSubscriptions");
 
                     b.Navigation("Notifications");
 

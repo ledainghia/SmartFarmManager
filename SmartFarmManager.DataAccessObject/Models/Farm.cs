@@ -36,7 +36,6 @@ public partial class Farm : EntityBase
 
     public virtual ICollection<FarmCamera> FarmCameras { get; set; } = new List<FarmCamera>();
 
-    public virtual ICollection<FarmSubscription> FarmSubscriptions { get; set; } = new List<FarmSubscription>();
 
     public virtual ICollection<FoodStack> FoodStacks { get; set; } = new List<FoodStack>();
 

@@ -31,8 +31,6 @@ public partial class User : EntityBase
 
     public virtual ICollection<FarmAdmin> FarmAdmins { get; set; } = new List<FarmAdmin>();
 
-    public virtual ICollection<FarmSubscription> FarmSubscriptions { get; set; } = new List<FarmSubscription>();
-
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
     public virtual Role Role { get; set; }

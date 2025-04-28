@@ -33,7 +33,6 @@ public partial class Sensor : EntityBase
 
     public virtual Cage Cage { get; set; }
 
-    public virtual ICollection<Job> Jobs { get; set; } = new List<Job>();
 
     public virtual ICollection<SensorDataLog> SensorDataLogs { get; set; } = new List<SensorDataLog>();
 

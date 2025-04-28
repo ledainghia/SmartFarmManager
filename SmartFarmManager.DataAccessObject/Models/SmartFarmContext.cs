@@ -48,7 +48,7 @@ public partial class SmartFarmContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         //optionsBuilder.UseSqlServer("Server=localhost;Database=Farm3;User Id=sa;Password=12345;Encrypt=True;TrustServerCertificate=True;");
-        optionsBuilder.UseSqlServer("Server=103.48.193.165,5053;Database=Farm4;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;");
+        optionsBuilder.UseSqlServer("Server=103.48.193.165,5053;Database=FarmCapstoneProject;User Id=sa;Password=YourStronggg@Passw0rd;Encrypt=True;TrustServerCertificate=True;");
 
     }
 
@@ -60,9 +60,6 @@ public partial class SmartFarmContext : DbContext
 
     public virtual DbSet<CageStaff> CageStaffs { get; set; }
 
-    public virtual DbSet<ControlBoard> ControlBoards { get; set; }
-
-    public virtual DbSet<ControlBoardType> ControlBoardTypes { get; set; }
 
     public virtual DbSet<DailyFoodUsageLog> DailyFoodUsageLogs { get; set; }
 
@@ -74,7 +71,6 @@ public partial class SmartFarmContext : DbContext
 
     public virtual DbSet<FarmCamera> FarmCameras { get; set; }
 
-    public virtual DbSet<FarmSubscription> FarmSubscriptions { get; set; }
 
     public virtual DbSet<FarmingBatch> FarmingBatchs { get; set; }
 
@@ -88,17 +84,11 @@ public partial class SmartFarmContext : DbContext
 
     public virtual DbSet<HealthLog> HealthLogs { get; set; }
 
-    public virtual DbSet<Job> Jobs { get; set; }
-
-    public virtual DbSet<JobLog> JobLogs { get; set; }
-
-    public virtual DbSet<JobType> JobTypes { get; set; }
 
     public virtual DbSet<MedicalSymptom> MedicalSymptoms { get; set; }
 
     public virtual DbSet<Medication> Medications { get; set; }
 
-    public virtual DbSet<MqttConfig> MqttConfigs { get; set; }
 
     public virtual DbSet<Notification> Notifications { get; set; }
 
@@ -110,11 +100,8 @@ public partial class SmartFarmContext : DbContext
 
     public virtual DbSet<PrescriptionMedication> PrescriptionMedications { get; set; }
 
-    public virtual DbSet<Pricing> Pricings { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
-
-    public virtual DbSet<Schedule> Schedules { get; set; }
 
     public virtual DbSet<Sensor> Sensors { get; set; }
 
@@ -127,13 +114,11 @@ public partial class SmartFarmContext : DbContext
 
     public virtual DbSet<StockLog> StockLogs { get; set; }
 
-    public virtual DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
 
     public virtual DbSet<Task> Tasks { get; set; }
 
     public virtual DbSet<TaskType> TaskTypes { get; set; }
 
-    public virtual DbSet<Transaction> Transactions { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
 
@@ -153,7 +138,6 @@ public partial class SmartFarmContext : DbContext
     public virtual DbSet<MedicalSymtomDetail> MedicalSymtomDetails { get; set; }
     public virtual DbSet<Disease> Diseases { get; set; }
     public virtual DbSet<StandardPrescription> StandardPrescriptions { get; set; }
-    public virtual  DbSet<ControlDevice> ControlDevices { get; set; }
 
     public virtual DbSet<StandardPrescriptionMedication> StandardPrescriptionMedications { get; set; }
     public virtual DbSet<MasterData> MasterData { get; set; }
@@ -275,34 +259,6 @@ public partial class SmartFarmContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade); // Xóa cascade
         });
 
-        modelBuilder.Entity<ControlDevice>(entity =>
-        {
-
-            entity.HasKey(e => e.Id); // Đặt Id làm khóa chính
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("(newid())");
-
-            entity.Property(e => e.Name)
-                .IsRequired()
-                .HasMaxLength(100); // Tên thiết bị, bắt buộc, tối đa 100 ký tự
-
-            entity.Property(e => e.Type)
-                .HasMaxLength(50); // Loại thiết bị, tối đa 50 ký tự
-
-            entity.Property(e => e.ControlCode)
-                .IsRequired()
-                .HasMaxLength(50); // Lệnh điều khiển, bắt buộc, tối đa 50 ký tự
-
-            entity.Property(e => e.Command)
-                .HasMaxLength(255); 
-
-
-            entity.HasOne(e => e.Cage) // Thiết lập quan hệ với bảng Cage
-                .WithMany(c => c.ControlDevices) // Một Cage có nhiều ControlDevice
-                .HasForeignKey(e => e.CageId) // Khóa ngoại là CageId
-                .OnDelete(DeleteBehavior.Cascade); // Xóa Cascade nếu Cage bị xóa
-        });
         modelBuilder.Entity<Symptom>(entity =>
         {
 
@@ -527,47 +483,6 @@ public partial class SmartFarmContext : DbContext
                 .HasConstraintName("FK__CageStaff__Staff__6B24EA82");
         });
 
-        modelBuilder.Entity<ControlBoard>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__ControlB__AB951CC9E119D9D0");
-
-            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.CommandOff)
-                .IsRequired()
-                .HasMaxLength(50)
-                .HasDefaultValue("");
-            entity.Property(e => e.CommandOn)
-                .IsRequired()
-                .HasMaxLength(50)
-                .HasDefaultValue("");
-            entity.Property(e => e.ControlBoardCode)
-                .IsRequired()
-                .HasMaxLength(50);
-            entity.Property(e => e.Name)
-                .IsRequired()
-                .HasMaxLength(255);
-
-            entity.HasOne(d => d.Cage).WithMany(p => p.ControlBoards)
-                .HasForeignKey(d => d.CageId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ControlBo__CageI__634EBE90");
-
-            entity.HasOne(d => d.ControlBoardType).WithMany(p => p.ControlBoards)
-                .HasForeignKey(d => d.ControlBoardTypeId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ControlBo__Contr__6442E2C9");
-        });
-
-        modelBuilder.Entity<ControlBoardType>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__ControlB__8CDFB1CCB09566BA");
-
-            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.Description).HasMaxLength(2000);
-            entity.Property(e => e.Name)
-                .IsRequired()
-                .HasMaxLength(255);
-        });
 
         modelBuilder.Entity<DailyFoodUsageLog>(entity =>
         {
@@ -660,34 +575,6 @@ public partial class SmartFarmContext : DbContext
                 .HasConstraintName("FK__FarmCamer__FarmI__69FBBC1F");
         });
 
-        modelBuilder.Entity<FarmSubscription>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__FarmSubs__9A2B249D65D4C549");
-
-            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.EndDate).HasColumnType("datetime");
-            entity.Property(e => e.RequiresVet).HasDefaultValue(false);
-            entity.Property(e => e.StartDate)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.Status).HasMaxLength(50);
-            entity.Property(e => e.TotalCost).HasColumnType("decimal(10, 2)");
-
-            entity.HasOne(d => d.Farm).WithMany(p => p.FarmSubscriptions)
-                .HasForeignKey(d => d.FarmId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__FarmSubsc__FarmI__49C3F6B7");
-
-            entity.HasOne(d => d.Plan).WithMany(p => p.FarmSubscriptions)
-                .HasForeignKey(d => d.PlanId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__FarmSubsc__PlanI__4AB81AF0");
-
-            entity.HasOne(d => d.User).WithMany(p => p.FarmSubscriptions)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__FarmSubsc__UserI__4BAC3F29");
-        });
 
         modelBuilder.Entity<FarmingBatch>(entity =>
         {
@@ -804,63 +691,6 @@ public partial class SmartFarmContext : DbContext
                 .HasConstraintName("FK__HealthLog__Presc__4A8310C6");
         });
 
-        modelBuilder.Entity<Job>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__Jobs__056690C2461B319B");
-
-            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.Description).HasMaxLength(2000);
-            entity.Property(e => e.JobCode)
-                .IsRequired()
-                .HasMaxLength(50);
-            entity.Property(e => e.Name)
-                .IsRequired()
-                .HasMaxLength(255);
-
-            entity.HasOne(d => d.ControlBoard).WithMany(p => p.Jobs)
-                .HasForeignKey(d => d.ControlBoardId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Jobs__ControlBoa__03BB8E22");
-
-            entity.HasOne(d => d.JobType).WithMany(p => p.Jobs)
-                .HasForeignKey(d => d.JobTypeId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Jobs__JobTypeId__05A3D694");
-
-            entity.HasOne(d => d.Schedule).WithMany(p => p.Jobs)
-                .HasForeignKey(d => d.ScheduleId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Jobs__ScheduleId__02C769E9");
-
-            entity.HasOne(d => d.Sensor).WithMany(p => p.Jobs)
-                .HasForeignKey(d => d.SensorId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Jobs__SensorId__04AFB25B");
-        });
-
-        modelBuilder.Entity<JobLog>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__JobLogs__2B515D3E32FD6CEE");
-
-            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.Command).HasMaxLength(255);
-
-            entity.HasOne(d => d.Job).WithMany(p => p.JobLogs)
-                .HasForeignKey(d => d.JobId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__JobLogs__JobId__0E391C95");
-        });
-
-        modelBuilder.Entity<JobType>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__JobTypes__E1F462AD8039AD4A");
-
-            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.Description).HasMaxLength(2000);
-            entity.Property(e => e.Name)
-                .IsRequired()
-                .HasMaxLength(255);
-        });
 
         modelBuilder.Entity<MedicalSymptom>(entity =>
         {
@@ -907,16 +737,6 @@ public partial class SmartFarmContext : DbContext
                 .HasColumnType("decimal(10, 2)"); // Giá mỗi liều
         });
 
-        modelBuilder.Entity<MqttConfig>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__MqttConf__065618CFF49F21BB");
-
-            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.BrokerAddress).HasMaxLength(255);
-            entity.Property(e => e.Password).HasMaxLength(50);
-            entity.Property(e => e.UserName).HasMaxLength(50);
-            entity.Property(e => e.WillMessage).HasMaxLength(2000);
-        });
 
         modelBuilder.Entity<Notification>(entity =>
         {
@@ -1004,14 +824,6 @@ public partial class SmartFarmContext : DbContext
                 .HasConstraintName("FK__Prescript__Presc__45BE5BA9");
         });
 
-        modelBuilder.Entity<Pricing>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__Pricings__EC306B12D14952C7");
-
-            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.Name).IsRequired();
-            entity.Property(e => e.Unit).IsRequired();
-        });
 
         modelBuilder.Entity<Role>(entity =>
         {
@@ -1025,26 +837,6 @@ public partial class SmartFarmContext : DbContext
                 .HasMaxLength(50);
         });
 
-        modelBuilder.Entity<Schedule>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__Schedule__9C8A5B49CADB8578");
-
-            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.Name)
-                .IsRequired()
-                .HasMaxLength(255);
-            entity.Property(e => e.ScheduleCode)
-                .IsRequired()
-                .HasMaxLength(50);
-            entity.Property(e => e.TimeOff)
-                .IsRequired()
-                .HasMaxLength(50)
-                .HasDefaultValue("");
-            entity.Property(e => e.TimeOn)
-                .IsRequired()
-                .HasMaxLength(50)
-                .HasDefaultValue("");
-        });
 
         modelBuilder.Entity<Sensor>(entity =>
         {
@@ -1135,19 +927,6 @@ public partial class SmartFarmContext : DbContext
                 .HasConstraintName("FK__StockLogs__Stack__0C85DE4D");
         });
 
-        modelBuilder.Entity<SubscriptionPlan>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__Subscrip__755C22B7124150BB");
-
-            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.CostPerUser).HasColumnType("decimal(10, 2)");
-            entity.Property(e => e.CostPerVet).HasColumnType("decimal(10, 2)");
-            entity.Property(e => e.MonthlyBaseCost).HasColumnType("decimal(10, 2)");
-            entity.Property(e => e.PlanName)
-                .IsRequired()
-                .HasMaxLength(100);
-        });
-
         modelBuilder.Entity<Task>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Tasks__7C6949B12CFAA294");
@@ -1191,24 +970,6 @@ public partial class SmartFarmContext : DbContext
                 .HasMaxLength(50);
         });
 
-        modelBuilder.Entity<Transaction>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__Transact__55433A6BAFE66D2B");
-
-            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.Amount).HasColumnType("decimal(10, 2)");
-            entity.Property(e => e.PaymentMethod).HasMaxLength(50);
-            entity.Property(e => e.Remarks).HasMaxLength(255);
-            entity.Property(e => e.Status).HasMaxLength(50);
-            entity.Property(e => e.TransactionDate)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-
-            entity.HasOne(d => d.Subscription).WithMany(p => p.Transactions)
-                .HasForeignKey(d => d.SubscriptionId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Transacti__Subsc__5165187F");
-        });
 
         modelBuilder.Entity<User>(entity =>
         {

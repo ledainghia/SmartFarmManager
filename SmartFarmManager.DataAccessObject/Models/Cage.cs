@@ -36,7 +36,6 @@ public partial class Cage : EntityBase
 
     public virtual ICollection<CageStaff> CageStaffs { get; set; } = new List<CageStaff>();
 
-    public virtual ICollection<ControlBoard> ControlBoards { get; set; } = new List<ControlBoard>();
 
     public virtual ICollection<FarmingBatch> FarmingBatches { get; set; } = new List<FarmingBatch>();
 
@@ -44,5 +43,4 @@ public partial class Cage : EntityBase
     public virtual Farm Farm { get; set; }
 
     public virtual ICollection<Task> Tasks { get; set; } = new List<Task>();
-    public virtual ICollection<ControlDevice> ControlDevices { get; set; } = new List<ControlDevice>();
 }
