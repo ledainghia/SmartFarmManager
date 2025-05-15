@@ -433,6 +433,7 @@ namespace SmartFarmManager.Service.Services
             // Lấy thông tin FarmingBatch
             var farmingBatch = await _unitOfWork.FarmingBatches
                 .FindByCondition(fb => fb.Id == farmingBatchId)
+                .Include(fb => fb.Cage)
                 .Include(fb => fb.GrowthStages)
                 .ThenInclude(gs => gs.VaccineSchedules)
                 .Include(fb => fb.GrowthStages)
@@ -564,6 +565,14 @@ namespace SmartFarmManager.Service.Services
                     }
 
                     await _unitOfWork.GrowthStages.UpdateAsync(stage);
+                }
+                var listTask = await _unitOfWork.Tasks
+                    .FindByCondition(x => x.CageId == farmingBatch.Cage.Id)
+                    .ToListAsync();
+                foreach (var task in listTask)
+                {
+                    task.Status = TaskStatusEnum.Cancelled;
+                    await _unitOfWork.Tasks.UpdateAsync(task);
                 }
 
                 // Lưu thay đổi
